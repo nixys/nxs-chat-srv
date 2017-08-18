@@ -4,6 +4,7 @@
 // clang-format off
 
 /*%%_NXS_TPL_HEADERS_BEGIN_%%*/
+#include <collections/mysql/mysql.h>
 #include <collections/tlgrm/tlgrm.h>
 /*%%_NXS_TPL_HEADERS_END_%%*/
 
