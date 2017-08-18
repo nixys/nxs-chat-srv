@@ -69,10 +69,20 @@ typedef struct
 
 typedef struct
 {
+	nxs_string_t				name;
+	nxs_string_t				user;
+	nxs_string_t				pass;
+	nxs_string_t				host;
+	uint16_t				port;
+} nxs_chat_srv_cfg_mysql_t;
+
+typedef struct
+{
 	nxs_chat_srv_cfg_log_t			log;
 	nxs_chat_srv_cfg_bind_t			bind;
 	nxs_chat_srv_cfg_ssl_t			ssl;
 	nxs_chat_srv_cfg_tlgrm_t		tlgrm;
+	nxs_chat_srv_cfg_mysql_t		mysql;
 } nxs_chat_srv_cfg_t;
 
 /* Project includes */

@@ -43,6 +43,8 @@ static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_ssl(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_tlgrm(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_conf_file_json_read_mysql(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 
 // clang-format off
 
@@ -60,6 +62,12 @@ static nxs_string_t _s_par_key			= nxs_string("key");
 static nxs_string_t _s_par_telegram		= nxs_string("telegram");
 static nxs_string_t _s_par_bot_api_addr		= nxs_string("bot_api_addr");
 static nxs_string_t _s_par_bot_api_key		= nxs_string("bot_api_key");
+
+static nxs_string_t _s_par_mysql		= nxs_string("mysql");
+static nxs_string_t _s_par_name			= nxs_string("name");
+static nxs_string_t _s_par_user			= nxs_string("user");
+static nxs_string_t _s_par_pass			= nxs_string("pass");
+static nxs_string_t _s_par_host			= nxs_string("host");
 
 /* Module global functions */
 
@@ -85,6 +93,7 @@ nxs_chat_srv_err_t nxs_chat_srv_conf_file_json_runtime(nxs_chat_srv_cfg_ctx_t *c
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bind,		&nxs_chat_srv_cfg.bind,		&nxs_chat_srv_conf_file_json_read_bind,		NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ssl,		&nxs_chat_srv_cfg.ssl,		&nxs_chat_srv_conf_file_json_read_ssl,		NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_telegram,	&nxs_chat_srv_cfg.tlgrm,	&nxs_chat_srv_conf_file_json_read_tlgrm,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_mysql,		&nxs_chat_srv_cfg.mysql,	&nxs_chat_srv_conf_file_json_read_mysql,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -263,6 +272,46 @@ static nxs_cfg_json_state_t
 	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
 
 		nxs_log_write_raw(&process, "config read error: 'telegram' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_conf_file_json_read_mysql(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_cfg_mysql_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t            cfg_json;
+	nxs_array_t               cfg_arr;
+	nxs_cfg_json_state_t      rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,	&var->name,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_user,	&var->user,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_pass,	&var->pass,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_host,	&var->host,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_port,	&var->port,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT_16,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "config read error: 'mysql' block");
 
 		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
 	}
