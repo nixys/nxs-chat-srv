@@ -110,6 +110,8 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init(&nxs_chat_srv_cfg.mysql.user);
 	nxs_string_init(&nxs_chat_srv_cfg.mysql.pass);
 	nxs_string_init(&nxs_chat_srv_cfg.mysql.host);
+	nxs_string_init(&nxs_chat_srv_cfg.rdmn.host);
+	nxs_string_init(&nxs_chat_srv_cfg.rdmn.api_key);
 
 	nxs_chat_srv_cfg.log.level  = NXS_LOG_LEVEL_MEM | NXS_LOG_LEVEL_INFO | NXS_LOG_LEVEL_WARN | NXS_LOG_LEVEL_ERROR;
 	nxs_chat_srv_cfg.bind.port  = 0;
