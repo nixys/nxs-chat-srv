@@ -5,15 +5,15 @@
 /* Project core include */
 #include <nxs-chat-srv-core.h>
 #include <nxs-chat-srv-meta.h>
-#include <nxs-chat-srv-proc.h>
+#include <nxs-chat-srv-collections.h>
 
-#include <proc/bootstrap-subproc.h>
+#include <proc/rest-api/tlgrm/ctx/tlgrm-ctx.h>
 
 /* Definitions */
 
 
 /* Project globals */
-extern		nxs_process_t		process;
+extern		nxs_process_t			process;
 extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 
 /* Module typedefs */
@@ -38,20 +38,12 @@ extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap(void)
+void nxs_chat_srv_p_rest_api_tlgrm_ctx_init(nxs_chat_srv_p_rest_api_tlgrm_ctx_t *p_ctx)
 {
-	nxs_chat_srv_err_t rc;
+}
 
-	/*
-	if(nxs_chat_srv_cfg.daemonized == NXS_YES){
-
-	        nxs_proc_daemonize(&process, NXS_PROCESS_CHLD_SIG_CLEAR, NULL, NXS_PROCESS_NO_UID, NXS_PROCESS_NO_UMASK, NULL);
-	}
-	*/
-
-	rc = nxs_chat_srv_p_rest_api_runtime();
-
-	return rc;
+void nxs_chat_srv_p_rest_api_tlgrm_ctx_free(nxs_chat_srv_p_rest_api_tlgrm_ctx_t *p_ctx)
+{
 }
 
 /* Module internal (static) functions */

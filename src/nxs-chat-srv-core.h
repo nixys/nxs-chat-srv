@@ -18,7 +18,11 @@
 
 /* Project global structures */
 
-
+typedef enum
+{
+	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_NONE,
+	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_MESSAGE
+} nxs_chat_srv_tlgrm_request_type_t;
 
 /* Project errors */
 typedef enum
@@ -59,9 +63,16 @@ typedef struct
 
 typedef struct
 {
+	nxs_string_t				bot_api_addr;
+	nxs_string_t				bot_api_key;
+} nxs_chat_srv_cfg_tlgrm_t;
+
+typedef struct
+{
 	nxs_chat_srv_cfg_log_t			log;
 	nxs_chat_srv_cfg_bind_t			bind;
 	nxs_chat_srv_cfg_ssl_t			ssl;
+	nxs_chat_srv_cfg_tlgrm_t		tlgrm;
 } nxs_chat_srv_cfg_t;
 
 /* Project includes */
