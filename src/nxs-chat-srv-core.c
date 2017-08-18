@@ -42,12 +42,12 @@ nxs_chat_srv_cfg_t nxs_chat_srv_cfg;
 
 int main(int argc, char *argv[])
 {
-	int	rc;
+	int rc;
 
 	nxs_proc_init(&process, (u_char *)argv[0]);
 	nxs_proc_setlog(&process, NXS_LOG_LEVEL_ALL, NXS_LOG_MODE_KEEP_OPEN, NXS_LOG_SYSLOG_DONT_USE, NULL);
 
-	switch(nxs_chat_srv_conf_runtime(argc, argv)){
+	switch(nxs_chat_srv_conf_runtime(argc, argv)) {
 
 		case NXS_CHAT_SRV_E_OK:
 
@@ -57,12 +57,14 @@ int main(int argc, char *argv[])
 
 			exit(EXIT_SUCCESS);
 
-		case NXS_CHAT_SRV_E_ERR: default:
+		case NXS_CHAT_SRV_E_ERR:
+		default:
 
 			exit(EXIT_FAILURE);
 	}
 
-	nxs_proc_setlog(&process, nxs_chat_srv_cfg.log_level, NXS_LOG_MODE_KEEP_OPEN, NXS_LOG_SYSLOG_DONT_USE, &nxs_chat_srv_cfg.log_path);
+	nxs_proc_setlog(
+	        &process, nxs_chat_srv_cfg.log.level, NXS_LOG_MODE_KEEP_OPEN, NXS_LOG_SYSLOG_DONT_USE, &(nxs_chat_srv_cfg.log.path));
 
 	rc = nxs_chat_srv_p_bootstrap();
 

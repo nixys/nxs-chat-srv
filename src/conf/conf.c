@@ -17,10 +17,10 @@
  * 1 - ini-config
  * 2 - json-config
  */
-#define NXS_NXS_CHAT_SRV_CFG_TYPE		0
+#define NXS_NXS_CHAT_SRV_CFG_TYPE		2
 
 /* Project globals */
-extern		nxs_process_t				process;
+extern		nxs_process_t			process;
 extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module typedefs */
@@ -35,7 +35,7 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 // clang-format on
 
-static void						nxs_nxs_chat_srv_conf_cfg_ctx_init				(nxs_chat_srv_cfg_ctx_t *cfg_ctx);
+static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx);
 
 // clang-format off
 
@@ -49,12 +49,12 @@ static void						nxs_nxs_chat_srv_conf_cfg_ctx_init				(nxs_chat_srv_cfg_ctx_t *
 
 nxs_chat_srv_err_t nxs_chat_srv_conf_runtime(int argc, char *argv[])
 {
-	nxs_chat_srv_cfg_ctx_t	cfg_ctx;
-	nxs_chat_srv_err_t		rc;
-	nxs_args_t				args;
+	nxs_chat_srv_cfg_ctx_t cfg_ctx;
+	nxs_chat_srv_err_t     rc;
+	nxs_args_t             args;
 
 #if NXS_NXS_CHAT_SRV_CFG_TYPE & 1
-	nxs_cfg_t				cfg;
+	nxs_cfg_t cfg;
 #endif
 
 	nxs_nxs_chat_srv_conf_cfg_ctx_init(&cfg_ctx);
@@ -63,28 +63,28 @@ nxs_chat_srv_err_t nxs_chat_srv_conf_runtime(int argc, char *argv[])
 
 	nxs_chat_srv_conf_args_init(&args, &cfg_ctx);
 
-	if((rc = nxs_chat_srv_conf_args_runtime(args, argc, (u_char **)argv)) != NXS_CHAT_SRV_E_OK){
+	if((rc = nxs_chat_srv_conf_args_runtime(args, argc, (u_char **)argv)) != NXS_CHAT_SRV_E_OK) {
 
 		return rc;
 	}
 
-	/* Config in ini-format */
+/* Config in ini-format */
 
 #if NXS_NXS_CHAT_SRV_CFG_TYPE & 1
 	nxs_chat_srv_conf_file_ini_init(&cfg, &cfg_ctx);
 
-	if(nxs_chat_srv_conf_file_ini_runtime(cfg, &cfg_ctx) != NXS_CHAT_SRV_E_OK){
+	if(nxs_chat_srv_conf_file_ini_runtime(cfg, &cfg_ctx) != NXS_CHAT_SRV_E_OK) {
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
 #endif
 
-	/* Config in json-format */
+/* Config in json-format */
 
 #if NXS_NXS_CHAT_SRV_CFG_TYPE & 2
 	nxs_chat_srv_conf_file_json_init(&cfg_ctx);
 
-	if(nxs_chat_srv_conf_file_json_runtime(&cfg_ctx) != NXS_CHAT_SRV_E_OK){
+	if(nxs_chat_srv_conf_file_json_runtime(&cfg_ctx) != NXS_CHAT_SRV_E_OK) {
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -100,9 +100,13 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 
 	/* Init config values */
 
-	nxs_string_init(&nxs_chat_srv_cfg.log_path);
+	nxs_string_init(&nxs_chat_srv_cfg.log.path);
+	nxs_string_init(&nxs_chat_srv_cfg.bind.iface);
+	nxs_string_init(&nxs_chat_srv_cfg.ssl.crt);
+	nxs_string_init(&nxs_chat_srv_cfg.ssl.key);
 
-	nxs_chat_srv_cfg.log_level = NXS_LOG_LEVEL_MEM | NXS_LOG_LEVEL_INFO | NXS_LOG_LEVEL_WARN | NXS_LOG_LEVEL_ERROR;
+	nxs_chat_srv_cfg.log.level = NXS_LOG_LEVEL_MEM | NXS_LOG_LEVEL_INFO | NXS_LOG_LEVEL_WARN | NXS_LOG_LEVEL_ERROR;
+	nxs_chat_srv_cfg.bind.port = 0;
 
 	/* Init cfg context values */
 
