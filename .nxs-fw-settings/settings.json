@@ -1,0 +1,11 @@
+{
+	"project_name": "nxs-chat-srv",
+	"nxs_fw_version": "1.9.0",
+	"project_modules": [
+		"nxs-cfg-json",
+		"nxs-curl",
+		"nxs-json",
+		"nxs-mysql",
+		"nxs-rest-api"
+	]
+}

@@ -1,0 +1,7 @@
+/.project
+/.autotools
+/.cproject
+/.settings
+/objs/*
+/nxs-chat-srv.conf
+/tmp
