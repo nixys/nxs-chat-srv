@@ -47,8 +47,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_rest_api_ctx_init(nxs_chat_srv_p_rest_api_ctx_
 	                              &nxs_chat_srv_cfg.bind.iface,
 	                              nxs_chat_srv_cfg.bind.port,
 	                              NXS_REST_API_FORMAT_ERR_JSON,
-	                              &nxs_chat_srv_cfg.ssl.crt,
-	                              &nxs_chat_srv_cfg.ssl.key)) != NXS_REST_API_E_OK) {
+	                              &nxs_chat_srv_cfg.bind.ssl.crt,
+	                              &nxs_chat_srv_cfg.bind.ssl.key)) != NXS_REST_API_E_OK) {
 
 		nxs_log_write_error(&process, "[%s]: rest api init error (error code: %d)", nxs_proc_get_name(&process), ra_rc);
 

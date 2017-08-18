@@ -40,7 +40,7 @@ static nxs_cfg_json_state_t
 static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_bind(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_ssl(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+        nxs_chat_srv_conf_file_json_read_bind_ssl(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_tlgrm(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
@@ -94,7 +94,6 @@ nxs_chat_srv_err_t nxs_chat_srv_conf_file_json_runtime(nxs_chat_srv_cfg_ctx_t *c
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_logging,	&nxs_chat_srv_cfg.log,		&nxs_chat_srv_conf_file_json_read_log,		NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bind,		&nxs_chat_srv_cfg.bind,		&nxs_chat_srv_conf_file_json_read_bind,		NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ssl,		&nxs_chat_srv_cfg.ssl,		&nxs_chat_srv_conf_file_json_read_ssl,		NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_telegram,	&nxs_chat_srv_cfg.tlgrm,	&nxs_chat_srv_conf_file_json_read_tlgrm,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_mysql,		&nxs_chat_srv_cfg.mysql,	&nxs_chat_srv_conf_file_json_read_mysql,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_redmine,	&nxs_chat_srv_cfg.rdmn,		&nxs_chat_srv_conf_file_json_read_rdmn,		NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
@@ -193,8 +192,9 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_port,	&var->port,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT_16,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_iface,	&var->iface,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_port,	&var->port,	NULL,						NULL,	NXS_CFG_JSON_TYPE_INT_16,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_iface,	&var->iface,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ssl,	&var->ssl,	&nxs_chat_srv_conf_file_json_read_bind_ssl,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -216,12 +216,13 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_ssl(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t
+        nxs_chat_srv_conf_file_json_read_bind_ssl(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
 {
-	nxs_chat_srv_cfg_ssl_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
-	nxs_cfg_json_t          cfg_json;
-	nxs_array_t             cfg_arr;
-	nxs_cfg_json_state_t    rc;
+	nxs_chat_srv_cfg_bind_ssl_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t               cfg_json;
+	nxs_array_t                  cfg_arr;
+	nxs_cfg_json_state_t         rc;
 
 	rc = NXS_CFG_JSON_CONF_OK;
 
@@ -238,7 +239,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_ssl(nxs_process_t *
 
 	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
 
-		nxs_log_write_raw(&process, "config read error: 'ssl' block");
+		nxs_log_write_raw(&process, "config read error: 'bind.ssl' block");
 
 		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
 	}

@@ -51,15 +51,16 @@ typedef struct
 
 typedef struct
 {
-	nxs_string_t				iface;
-	uint16_t				port;
-} nxs_chat_srv_cfg_bind_t;
+	nxs_string_t				crt;
+	nxs_string_t				key;
+} nxs_chat_srv_cfg_bind_ssl_t;
 
 typedef struct
 {
-	nxs_string_t				crt;
-	nxs_string_t				key;
-} nxs_chat_srv_cfg_ssl_t;
+	nxs_string_t				iface;
+	uint16_t				port;
+	nxs_chat_srv_cfg_bind_ssl_t		ssl;
+} nxs_chat_srv_cfg_bind_t;
 
 typedef struct
 {
@@ -86,7 +87,6 @@ typedef struct
 {
 	nxs_chat_srv_cfg_log_t			log;
 	nxs_chat_srv_cfg_bind_t			bind;
-	nxs_chat_srv_cfg_ssl_t			ssl;
 	nxs_chat_srv_cfg_tlgrm_t		tlgrm;
 	nxs_chat_srv_cfg_mysql_t		mysql;
 	nxs_chat_srv_cfg_rdmn_t			rdmn;

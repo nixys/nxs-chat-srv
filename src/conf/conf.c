@@ -102,8 +102,8 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 
 	nxs_string_init(&nxs_chat_srv_cfg.log.path);
 	nxs_string_init(&nxs_chat_srv_cfg.bind.iface);
-	nxs_string_init(&nxs_chat_srv_cfg.ssl.crt);
-	nxs_string_init(&nxs_chat_srv_cfg.ssl.key);
+	nxs_string_init(&nxs_chat_srv_cfg.bind.ssl.crt);
+	nxs_string_init(&nxs_chat_srv_cfg.bind.ssl.key);
 	nxs_string_init(&nxs_chat_srv_cfg.tlgrm.bot_api_addr);
 	nxs_string_init(&nxs_chat_srv_cfg.tlgrm.bot_api_key);
 	nxs_string_init(&nxs_chat_srv_cfg.mysql.name);
