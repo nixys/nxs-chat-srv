@@ -161,6 +161,18 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_users_find_by_tid(nxs_chat_srv_u_db_users_t
 	nxs_chat_srv_u_db_users_el_t *u;
 	size_t                        i;
 
+	if(u_ctx == NULL || user == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if(tlgrm_id == 0) {
+
+		nxs_chat_srv_u_db_users_fill(user, NULL);
+
+		return NXS_CHAT_SRV_E_EXIST;
+	}
+
 	for(i = 0; i < nxs_array_count(&u_ctx->users); i++) {
 
 		u = nxs_array_get(&u_ctx->users, i);
@@ -184,6 +196,18 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_users_find_by_tusername(nxs_chat_srv_u_db_u
 {
 	nxs_chat_srv_u_db_users_el_t *u;
 	size_t                        i;
+
+	if(u_ctx == NULL || user == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if(tlgrm_username == NULL || nxs_string_len(tlgrm_username) == 0) {
+
+		nxs_chat_srv_u_db_users_fill(user, NULL);
+
+		return NXS_CHAT_SRV_E_EXIST;
+	}
 
 	for(i = 0; i < nxs_array_count(&u_ctx->users); i++) {
 
