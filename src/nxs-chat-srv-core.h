@@ -75,6 +75,7 @@ typedef struct
 {
 	nxs_string_t				bot_api_addr;
 	nxs_string_t				bot_api_key;
+	nxs_string_t				auth_token;
 } nxs_chat_srv_cfg_tlgrm_t;
 
 typedef struct
@@ -90,6 +91,7 @@ typedef struct
 {
 	nxs_string_t				host;
 	nxs_string_t				api_key;
+	nxs_string_t				auth_token;
 } nxs_chat_srv_cfg_rdmn_t;
 
 typedef struct

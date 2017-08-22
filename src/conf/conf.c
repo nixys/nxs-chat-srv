@@ -107,12 +107,14 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init(&nxs_chat_srv_cfg.bind.ssl.key);
 	nxs_string_init(&nxs_chat_srv_cfg.tlgrm.bot_api_addr);
 	nxs_string_init(&nxs_chat_srv_cfg.tlgrm.bot_api_key);
+	nxs_string_init(&nxs_chat_srv_cfg.tlgrm.auth_token);
 	nxs_string_init(&nxs_chat_srv_cfg.mysql.name);
 	nxs_string_init(&nxs_chat_srv_cfg.mysql.user);
 	nxs_string_init(&nxs_chat_srv_cfg.mysql.pass);
 	nxs_string_init(&nxs_chat_srv_cfg.mysql.host);
 	nxs_string_init(&nxs_chat_srv_cfg.rdmn.host);
 	nxs_string_init(&nxs_chat_srv_cfg.rdmn.api_key);
+	nxs_string_init(&nxs_chat_srv_cfg.rdmn.auth_token);
 	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_path);
 	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_user);
 	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_group);
