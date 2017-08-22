@@ -100,6 +100,7 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 
 	/* Init config values */
 
+	nxs_string_init(&nxs_chat_srv_cfg.proc.pid_file);
 	nxs_string_init(&nxs_chat_srv_cfg.log.path);
 	nxs_string_init(&nxs_chat_srv_cfg.bind.iface);
 	nxs_string_init(&nxs_chat_srv_cfg.bind.ssl.crt);
@@ -112,10 +113,17 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init(&nxs_chat_srv_cfg.mysql.host);
 	nxs_string_init(&nxs_chat_srv_cfg.rdmn.host);
 	nxs_string_init(&nxs_chat_srv_cfg.rdmn.api_key);
+	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_path);
+	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_user);
+	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_group);
 
-	nxs_chat_srv_cfg.log.level  = NXS_LOG_LEVEL_MEM | NXS_LOG_LEVEL_INFO | NXS_LOG_LEVEL_WARN | NXS_LOG_LEVEL_ERROR;
-	nxs_chat_srv_cfg.bind.port  = 0;
-	nxs_chat_srv_cfg.mysql.port = 0;
+	nxs_chat_srv_cfg.proc.queue_worker_term_timeout = 1;
+	nxs_chat_srv_cfg.proc.rest_api_term_timeout     = 1;
+	nxs_chat_srv_cfg.log.level                      = NXS_LOG_LEVEL_MEM | NXS_LOG_LEVEL_INFO | NXS_LOG_LEVEL_WARN | NXS_LOG_LEVEL_ERROR;
+	nxs_chat_srv_cfg.bind.port                      = 0;
+	nxs_chat_srv_cfg.mysql.port                     = 0;
+	nxs_chat_srv_cfg.queue_worker.sock_mode         = 0;
+	nxs_chat_srv_cfg.queue_worker.sock_max_conn     = 0;
 
 	/* Init cfg context values */
 

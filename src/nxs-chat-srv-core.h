@@ -34,6 +34,7 @@ typedef enum
 	NXS_CHAT_SRV_E_INIT,
 	NXS_CHAT_SRV_E_EXIT,
 	NXS_CHAT_SRV_E_EXIST,
+	NXS_CHAT_SRV_E_TIMEOUT,
 } nxs_chat_srv_err_t;
 
 /* Project config structures */
@@ -42,6 +43,13 @@ typedef struct
 {
 	nxs_string_t				cfg_path;
 } nxs_chat_srv_cfg_ctx_t;
+
+typedef struct
+{
+	nxs_string_t				pid_file;
+	size_t					queue_worker_term_timeout;
+	size_t					rest_api_term_timeout;
+} nxs_chat_srv_cfg_proc_t;
 
 typedef struct
 {
@@ -85,11 +93,22 @@ typedef struct
 
 typedef struct
 {
+	nxs_string_t				sock_path;
+	nxs_string_t				sock_user;
+	nxs_string_t				sock_group;
+	mode_t					sock_mode;
+	size_t					sock_max_conn;
+} nxs_chat_srv_cfg_queue_worker_t;
+
+typedef struct
+{
+	nxs_chat_srv_cfg_proc_t			proc;
 	nxs_chat_srv_cfg_log_t			log;
 	nxs_chat_srv_cfg_bind_t			bind;
 	nxs_chat_srv_cfg_tlgrm_t		tlgrm;
 	nxs_chat_srv_cfg_mysql_t		mysql;
 	nxs_chat_srv_cfg_rdmn_t			rdmn;
+	nxs_chat_srv_cfg_queue_worker_t		queue_worker;
 } nxs_chat_srv_cfg_t;
 
 /* Project includes */
