@@ -230,9 +230,8 @@ error:
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_recv(nxs_net_unix_server_t *sock, nxs_string_t *data)
+nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_recv(nxs_net_unix_server_t *sock, nxs_buf_t *data)
 {
-	nxs_buf_t          d;
 	nxs_chat_srv_err_t rc;
 	int                ec;
 	nxs_net_connect_t  client;
@@ -251,8 +250,6 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_recv(nxs_net_unix_server_t *sock, nx
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	nxs_buf_init(&d, 1);
-
 	nxs_net_unix_connect_init(&client, (u_char *)"");
 
 	if((ec = nxs_net_unix_accept(&process, sock, &client)) != NXS_NET_E_OK) {
@@ -262,7 +259,7 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_recv(nxs_net_unix_server_t *sock, nx
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if((ec = nxs_net_recv(&process, &client, NXS_CHAT_SRV_C_UNIX_SOCK_RECV_TIMEOUT, &d, NXS_NET_DATA_TYPE_STRING)) != NXS_NET_E_OK) {
+	if((ec = nxs_net_recv(&process, &client, NXS_CHAT_SRV_C_UNIX_SOCK_RECV_TIMEOUT, data, NXS_NET_DATA_TYPE_STRING)) != NXS_NET_E_OK) {
 
 		nxs_log_write_warn(
 		        &process, "[%s]: queue recieve error: receive command error (error code: %d)", nxs_proc_get_name(&process), ec);
@@ -270,17 +267,14 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_recv(nxs_net_unix_server_t *sock, nx
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	nxs_buf_set_char(&d, nxs_buf_get_len(&d), (u_char)'\0');
+	nxs_buf_set_char(data, nxs_buf_get_len(data), (u_char)'\0');
 
-	nxs_buf_to_string(&d, 0, data);
-
-	nxs_log_write_debug(&process, "[%s]: got queue request (request: \"%s\")", nxs_proc_get_name(&process), nxs_string_str(data));
+	nxs_log_write_debug(
+	        &process, "[%s]: got queue request (request: \"%s\")", nxs_proc_get_name(&process), nxs_buf_get_subbuf(data, 0));
 
 /* TODO: add send confirm to rest-api peer */
 
 error:
-
-	nxs_buf_free(&d);
 
 	nxs_net_unix_connect_close(&process, &client);
 
