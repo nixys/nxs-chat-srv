@@ -26,7 +26,11 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module declarations */
 
-
+typedef struct
+{
+	nxs_chat_srv_m_queue_com_types_t	type;
+	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_queue_com_types_t type, nxs_string_t *data);
+} nxs_chat_srv_p_queue_worker_type_handler_t;
 
 /* Module internal (static) functions prototypes */
 
@@ -41,7 +45,12 @@ static void nxs_chat_srv_p_queue_worker_sighandler_usr1(int sig, void *data);
 
 /* Module initializations */
 
+nxs_chat_srv_p_queue_worker_type_handler_t type_handlers[] =
+{
+	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_UPDATE,	&nxs_chat_srv_p_queue_worker_tlgrm_update_runtime},
 
+	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_NONE,	NULL}
+};
 
 /* Module global functions */
 
@@ -94,8 +103,12 @@ error:
 
 static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_queue_worker_ctx_t *p_ctx)
 {
-	nxs_string_t       data;
-	nxs_chat_srv_err_t rc;
+	nxs_string_t                     body;
+	nxs_buf_t                        data;
+	nxs_chat_srv_m_queue_com_types_t com_type;
+	nxs_chat_srv_err_t               rc;
+	nxs_bool_t                       f;
+	size_t                           i;
 
 	if(p_ctx == NULL) {
 
@@ -104,7 +117,8 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_que
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	nxs_string_init(&data);
+	nxs_buf_init(&data, 1);
+	nxs_string_init(&body);
 
 	switch(nxs_chat_srv_c_unix_sock_recv(nxs_chat_srv_p_queue_worker_ctx_get_sock(p_ctx), &data)) {
 
@@ -121,11 +135,29 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_que
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-/* TODO: request processing */
+	/* request processing */
+
+	nxs_chat_srv_c_queue_com_deserialize(&data, &com_type, &body);
+
+	for(f = NXS_NO, i = 0; type_handlers[i].type != NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_NONE; i++) {
+
+		if(type_handlers[i].type == com_type) {
+
+			f = NXS_YES;
+
+			type_handlers[i].handler(com_type, &body);
+		}
+	}
+
+	if(f == NXS_NO) {
+
+		nxs_log_write_warn(&process, "[%s]: unknown queue com type (type: %d)", nxs_proc_get_name(&process), com_type);
+	}
 
 error:
 
-	nxs_string_free(&data);
+	nxs_buf_free(&data);
+	nxs_string_free(&body);
 
 	return rc;
 }
