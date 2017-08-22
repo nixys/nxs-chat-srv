@@ -39,6 +39,9 @@ static nxs_rest_api_err_t nxs_chat_srv_p_rest_api_log_handler(nxs_rest_api_ctx_t
                                                               nxs_rest_api_log_stage_t stage,
                                                               void *                   user_ctx);
 
+static void nxs_chat_srv_p_rest_api_sighandler_term(int sig, void *data);
+static void nxs_chat_srv_p_rest_api_sighandler_usr1(int sig, void *data);
+
 // clang-format off
 
 /* Module initializations */
@@ -65,6 +68,13 @@ nxs_chat_srv_err_t nxs_chat_srv_p_rest_api_runtime(void)
 	}
 
 	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_proc_signal_set(
+	        &process, SIGTERM, NXS_PROCESS_SA_FLAG_EMPTY, &nxs_chat_srv_p_rest_api_sighandler_term, &p_ctx, NXS_PROCESS_FORCE_NO);
+	nxs_proc_signal_set(
+	        &process, SIGUSR1, NXS_PROCESS_SA_FLAG_EMPTY, &nxs_chat_srv_p_rest_api_sighandler_usr1, &p_ctx, NXS_PROCESS_FORCE_NO);
+
+	nxs_proc_signal_set(&process, SIGINT, NXS_PROCESS_SA_FLAG_EMPTY, NXS_SIG_IGN, NULL, NXS_PROCESS_FORCE_NO);
 
 	/*
 	 * Start Rest API server
@@ -114,7 +124,6 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_rest_api_handlers_init(nxs_chat_srv_p_r
 static nxs_chat_srv_err_t nxs_chat_srv_p_rest_api_exec(nxs_chat_srv_p_rest_api_ctx_t *p_ctx)
 {
 	nxs_rest_api_ctx_t *api_ctx;
-	nxs_rest_api_err_t  re;
 
 	if((api_ctx = nxs_chat_srv_p_rest_api_ctx_get_ra_conn(p_ctx)) == NULL) {
 
@@ -123,12 +132,14 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_rest_api_exec(nxs_chat_srv_p_rest_api_c
 
 	while(1) {
 
-		re = nxs_rest_api_process(api_ctx, 1, 0);
+		nxs_proc_signal_block(&process, SIGTERM, SIGUSR1, NXS_PROCESS_SIG_END_ARGS);
 
-		if(re != NXS_REST_API_E_OK && re != NXS_REST_API_E_TIMEOUT) {
+		if(nxs_rest_api_process(api_ctx, 1, 0) != NXS_REST_API_E_OK) {
 
 			return NXS_CHAT_SRV_E_ERR;
 		}
+
+		nxs_proc_signal_unblock(&process, SIGUSR1, SIGTERM, NXS_PROCESS_SIG_END_ARGS);
 	}
 
 	return NXS_CHAT_SRV_E_OK;
@@ -204,4 +215,23 @@ static nxs_rest_api_err_t nxs_chat_srv_p_rest_api_log_handler(nxs_rest_api_ctx_t
 	nxs_string_free(&parts);
 
 	return NXS_REST_API_E_OK;
+}
+
+static void nxs_chat_srv_p_rest_api_sighandler_term(int sig, void *data)
+{
+	nxs_chat_srv_p_rest_api_ctx_t *p_ctx = data;
+
+	nxs_log_write_debug(&process, "[%s]: got TERM, terminating process", nxs_proc_get_name(&process));
+
+	nxs_chat_srv_p_rest_api_ctx_free(p_ctx);
+
+	exit(EXIT_SUCCESS);
+}
+
+static void nxs_chat_srv_p_rest_api_sighandler_usr1(int sig, void *data)
+{
+
+	nxs_log_write_debug(&process, "[%s]: got SIGUSR1, going to reopen log-file", nxs_proc_get_name(&process));
+
+	nxs_log_reopen(&process);
 }
