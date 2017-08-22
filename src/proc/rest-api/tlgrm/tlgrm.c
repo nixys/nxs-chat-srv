@@ -47,14 +47,11 @@ static nxs_string_t _s_ra_arg_key_token			= nxs_string("token");
 
 void nxs_chat_srv_p_rest_api_tlgrm_handler_post(nxs_rest_api_ctx_t *rest_api_ctx, nxs_rest_api_request_t *req, void *custom_ctx)
 {
-	nxs_string_t *                      auth_token;
-	nxs_buf_t *                         bdy_in;
-	nxs_chat_srv_u_tlgrm_update_t *     tlgrm_update_ctx;
-	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_chat_srv_m_tlgrm_update_t *     update;
+	nxs_string_t *auth_token, q_com_out, base64_encoded;
+	nxs_buf_t *   bdy_in;
 
-	tlgrm_update_ctx      = nxs_chat_srv_u_tlgrm_update_init();
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
+	nxs_string_init(&base64_encoded);
+	nxs_string_init(&q_com_out);
 
 	nxs_rest_api_header_add(req, &_s_ra_header_ct_key, &_s_ra_header_ct_val);
 
@@ -69,24 +66,24 @@ void nxs_chat_srv_p_rest_api_tlgrm_handler_post(nxs_rest_api_ctx_t *rest_api_ctx
 		goto error;
 	}
 
-	if(nxs_chat_srv_u_tlgrm_update_pull_json(tlgrm_update_ctx, bdy_in) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_string_cmp(&nxs_chat_srv_cfg.tlgrm.auth_token, 0, auth_token, 0) == NXS_STRING_CMP_NE) {
 
-		nxs_rest_api_page_std(req, NXS_REST_API_FORMAT_ERR_JSON, NXS_HTTP_CODE_400_BAD_REQUEST, (u_char *)"");
+		nxs_rest_api_page_std(req, NXS_REST_API_FORMAT_ERR_JSON, NXS_HTTP_CODE_403_FORBIDDEN, (u_char *)"");
 
 		goto error;
 	}
 
-	update = nxs_chat_srv_u_tlgrm_update_get(tlgrm_update_ctx);
+	nxs_log_write_debug(&process,
+	                    "[%s]: received message from telegram (auth token: \"%s\" (correct), post body: \"%s\")",
+	                    nxs_proc_get_name(&process),
+	                    nxs_string_str(auth_token),
+	                    nxs_buf_get_subbuf(bdy_in, 0));
 
-	nxs_log_write_warn(&process,
-	                   "[%s]: received message from telegram (username: \"%s\", text: \"%s\")",
-	                   nxs_proc_get_name(&process),
-	                   nxs_string_str(&update->message.chat.username),
-	                   nxs_string_str(&update->message.text));
+	nxs_base64_encode_string(&base64_encoded, (nxs_string_t *)bdy_in);
 
-	nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, update->message.chat.id, &update->message.text);
+	nxs_chat_srv_c_queue_com_serialize(&q_com_out, NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_UPDATE, &base64_encoded);
 
-	if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_c_unix_sock_send(&q_com_out) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_rest_api_page_std(req, NXS_REST_API_FORMAT_ERR_JSON, NXS_HTTP_CODE_500_INTERNAL_SERVER_ERROR, (u_char *)"");
 
@@ -97,8 +94,8 @@ void nxs_chat_srv_p_rest_api_tlgrm_handler_post(nxs_rest_api_ctx_t *rest_api_ctx
 
 error:
 
-	tlgrm_update_ctx      = nxs_chat_srv_u_tlgrm_update_free(tlgrm_update_ctx);
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
+	nxs_string_free(&base64_encoded);
+	nxs_string_free(&q_com_out);
 }
 
 /* Module internal (static) functions */
