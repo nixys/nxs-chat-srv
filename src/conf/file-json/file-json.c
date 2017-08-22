@@ -85,6 +85,7 @@ static nxs_string_t _s_par_sock_user			= nxs_string("sock_user");
 static nxs_string_t _s_par_sock_group			= nxs_string("sock_group");
 static nxs_string_t _s_par_sock_mode			= nxs_string("sock_mode");
 static nxs_string_t _s_par_sock_max_conn		= nxs_string("sock_max_conn");
+static nxs_string_t _s_par_daemonize			= nxs_string("daemonize");
 
 /* Module global functions */
 
@@ -175,6 +176,7 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_pid_file,			&var->pid_file,				NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_queue_worker_term_timeout,	&var->queue_worker_term_timeout,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		1,	3600,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_rest_api_term_timeout,		&var->rest_api_term_timeout,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		1,	3600,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_daemonize,			&var->daemonize,			NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 

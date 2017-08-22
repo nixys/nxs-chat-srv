@@ -49,6 +49,7 @@ typedef struct
 	nxs_string_t				pid_file;
 	size_t					queue_worker_term_timeout;
 	size_t					rest_api_term_timeout;
+	nxs_bool_t				daemonize;
 } nxs_chat_srv_cfg_proc_t;
 
 typedef struct

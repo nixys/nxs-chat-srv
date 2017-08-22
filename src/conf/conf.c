@@ -117,8 +117,9 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_user);
 	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_group);
 
-	nxs_chat_srv_cfg.proc.queue_worker_term_timeout = 1;
-	nxs_chat_srv_cfg.proc.rest_api_term_timeout     = 1;
+	nxs_chat_srv_cfg.proc.queue_worker_term_timeout = 10;
+	nxs_chat_srv_cfg.proc.rest_api_term_timeout     = 10;
+	nxs_chat_srv_cfg.proc.daemonize                 = NXS_YES;
 	nxs_chat_srv_cfg.log.level                      = NXS_LOG_LEVEL_MEM | NXS_LOG_LEVEL_INFO | NXS_LOG_LEVEL_WARN | NXS_LOG_LEVEL_ERROR;
 	nxs_chat_srv_cfg.bind.port                      = 0;
 	nxs_chat_srv_cfg.mysql.port                     = 0;
