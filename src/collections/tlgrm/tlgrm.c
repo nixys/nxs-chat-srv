@@ -32,6 +32,12 @@ typedef struct
 	nxs_string_t				name;
 } nxs_chat_srv_c_tlgrm_types_t;
 
+typedef struct
+{
+	nxs_chat_srv_m_tlgrm_parse_mode_t	parse_mode;
+	nxs_string_t				name;
+} nxs_chat_srv_c_tlgrm_parse_mode_t;
+
 /* Module internal (static) functions prototypes */
 
 // clang-format on
@@ -48,6 +54,14 @@ static nxs_chat_srv_c_tlgrm_types_t chat_types[] =
 	{NXS_CHAT_SRV_M_TLGRM_CHAT_TYPE_CHANNEL,		nxs_string("channel")},
 
 	{NXS_CHAT_SRV_M_TLGRM_CHAT_TYPE_NONE,			nxs_string("")}
+};
+
+static nxs_chat_srv_c_tlgrm_parse_mode_t parse_mode[] =
+{
+	{NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN,		nxs_string("Markdown")},
+	{NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML,		nxs_string("HTML")},
+
+	{NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE,		nxs_string("")}
 };
 
 /* Module global functions */
@@ -192,6 +206,21 @@ nxs_chat_srv_m_tlgrm_chat_type_t nxs_chat_srv_c_tlgrm_chat_type_map(nxs_string_t
 	return NXS_CHAT_SRV_M_TLGRM_CHAT_TYPE_NONE;
 }
 
+nxs_string_t *nxs_chat_srv_c_tlgrm_parse_mode_map(nxs_chat_srv_m_tlgrm_parse_mode_t mode)
+{
+	size_t i;
+
+	for(i = 0; parse_mode[i].parse_mode != NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE; i++) {
+
+		if(parse_mode[i].parse_mode == mode) {
+
+			return &parse_mode[i].name;
+		}
+	}
+
+	return &parse_mode[i].name;
+}
+
 void nxs_chat_srv_c_tlgrm_user_init(nxs_chat_srv_m_tlgrm_user_t *user)
 {
 
@@ -224,6 +253,103 @@ void nxs_chat_srv_c_tlgrm_user_free(nxs_chat_srv_m_tlgrm_user_t *user)
 	nxs_string_free(&user->last_name);
 	nxs_string_free(&user->username);
 	nxs_string_free(&user->language_code);
+}
+
+void nxs_chat_srv_c_tlgrm_inl_keyboard_init(nxs_chat_srv_m_tlgrm_inl_keyboard_t *inl_keyboard)
+{
+
+	if(inl_keyboard == NULL) {
+
+		return;
+	}
+
+	inl_keyboard->_is_used = NXS_NO;
+
+	nxs_array_init2(&inl_keyboard->inline_keyboard, nxs_array_t);
+}
+
+void nxs_chat_srv_c_tlgrm_inl_keyboard_free(nxs_chat_srv_m_tlgrm_inl_keyboard_t *inl_keyboard)
+{
+	nxs_chat_srv_m_tlgrm_inl_keybutton_t *ikm;
+	nxs_array_t *                         a;
+	size_t                                i, j;
+
+	if(inl_keyboard == NULL) {
+
+		return;
+	}
+
+	inl_keyboard->_is_used = NXS_NO;
+
+	for(i = 0; i < nxs_array_count(&inl_keyboard->inline_keyboard); i++) {
+
+		a = nxs_array_get(&inl_keyboard->inline_keyboard, i);
+
+		for(j = 0; j < nxs_array_count(a); j++) {
+
+			ikm = nxs_array_get(a, j);
+
+			nxs_chat_srv_c_tlgrm_inl_keybutton_free(ikm);
+		}
+
+		nxs_array_free(a);
+	}
+
+	nxs_array_free(&inl_keyboard->inline_keyboard);
+}
+
+void nxs_chat_srv_c_tlgrm_inl_keybutton_init(nxs_chat_srv_m_tlgrm_inl_keybutton_t *inl_keybutton)
+{
+
+	if(inl_keybutton == NULL) {
+
+		return;
+	}
+
+	inl_keybutton->_is_used = NXS_NO;
+
+	nxs_string_init2(&inl_keybutton->text, 0, NXS_STRING_EMPTY_STR);
+	nxs_string_init2(&inl_keybutton->url, 0, NXS_STRING_EMPTY_STR);
+	nxs_string_init2(&inl_keybutton->callback_data, 0, NXS_STRING_EMPTY_STR);
+}
+
+void nxs_chat_srv_c_tlgrm_inl_keybutton_free(nxs_chat_srv_m_tlgrm_inl_keybutton_t *inl_keybutton)
+{
+
+	if(inl_keybutton == NULL) {
+
+		return;
+	}
+
+	inl_keybutton->_is_used = NXS_NO;
+
+	nxs_string_free(&inl_keybutton->text);
+	nxs_string_free(&inl_keybutton->url);
+	nxs_string_free(&inl_keybutton->callback_data);
+}
+
+void nxs_chat_srv_c_tlgrm_force_reply_init(nxs_chat_srv_m_tlgrm_force_reply_t *force_reply)
+{
+
+	if(force_reply == NULL) {
+
+		return;
+	}
+
+	force_reply->_is_used    = NXS_NO;
+	force_reply->force_reply = NXS_NO;
+}
+
+void nxs_chat_srv_c_tlgrm_force_reply_free(nxs_chat_srv_m_tlgrm_force_reply_t *force_reply)
+{
+
+	if(force_reply == NULL) {
+
+		return;
+	}
+
+	force_reply->_is_used    = NXS_NO;
+	force_reply->force_reply = NXS_NO;
 }
 
 /* Module internal (static) functions */
