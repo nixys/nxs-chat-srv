@@ -42,6 +42,9 @@ struct nxs_chat_srv_u_tlgrm_update_s
 static nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_update_pull_json_extract(nxs_chat_srv_m_tlgrm_update_t *update, nxs_buf_t *json_buf);
 static nxs_cfg_json_state_t
         nxs_chat_srv_u_tlgrm_update_pull_json_extract_message(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_u_tlgrm_update_pull_json_extract_callback_query(nxs_process_t *     proc,
+                                                                                         nxs_json_t *        json,
+                                                                                         nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
         nxs_chat_srv_u_tlgrm_update_pull_json_extract_chat(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
@@ -64,6 +67,9 @@ static nxs_string_t	_s_par_first_name	= nxs_string("first_name");
 static nxs_string_t	_s_par_last_name	= nxs_string("last_name");
 static nxs_string_t	_s_par_language_code	= nxs_string("language_code");
 static nxs_string_t	_s_par_reply_to_message	= nxs_string("reply_to_message");
+static nxs_string_t	_s_par_callback_query	= nxs_string("callback_query");
+static nxs_string_t	_s_par_chat_instance	= nxs_string("chat_instance");
+static nxs_string_t	_s_par_data		= nxs_string("data");
 
 /* Module global functions */
 
@@ -133,8 +139,9 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_update_pull_json_extract(nxs_chat
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_update_id,	&update->update_id,	NULL,							NULL,	NXS_CFG_JSON_TYPE_INT,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_message,	&update->message,	&nxs_chat_srv_u_tlgrm_update_pull_json_extract_message,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_update_id,	&update->update_id,		NULL,								NULL,	NXS_CFG_JSON_TYPE_INT,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_message,	&update->message,		&nxs_chat_srv_u_tlgrm_update_pull_json_extract_message,		NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_callback_query,	&update->callback_query,	&nxs_chat_srv_u_tlgrm_update_pull_json_extract_callback_query,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -201,6 +208,51 @@ static nxs_cfg_json_state_t
 error:
 
 	m = nxs_chat_srv_c_tlgrm_message_reply_destroy(m);
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_u_tlgrm_update_pull_json_extract_callback_query(nxs_process_t *     proc,
+                                                                                         nxs_json_t *        json,
+                                                                                         nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_m_tlgrm_callback_query_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t                         cfg_json;
+	nxs_array_t                            cfg_arr;
+	nxs_cfg_json_state_t                   rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	var->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,							NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_from,		&var->from,		&nxs_chat_srv_u_tlgrm_update_pull_json_extract_user,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_message,	&var->message,		&nxs_chat_srv_u_tlgrm_update_pull_json_extract_message,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_chat_instance,	&var->chat_instance,	NULL,							NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_data,		&var->data,		NULL,							NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "json read error: 'callback_query' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
 
 	nxs_cfg_json_free(&cfg_json);
 

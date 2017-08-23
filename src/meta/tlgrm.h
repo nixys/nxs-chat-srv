@@ -10,6 +10,7 @@ typedef enum			nxs_chat_srv_m_tlgrm_reply_markup_type_e	nxs_chat_srv_m_tlgrm_rep
 typedef enum			nxs_chat_srv_m_tlgrm_parse_mode_e		nxs_chat_srv_m_tlgrm_parse_mode_t;
 
 typedef struct			nxs_chat_srv_m_tlgrm_update_s			nxs_chat_srv_m_tlgrm_update_t;
+typedef struct			nxs_chat_srv_m_tlgrm_callback_query_s		nxs_chat_srv_m_tlgrm_callback_query_t;
 typedef struct			nxs_chat_srv_m_tlgrm_message_s			nxs_chat_srv_m_tlgrm_message_t;
 typedef struct			nxs_chat_srv_m_tlgrm_chat_s			nxs_chat_srv_m_tlgrm_chat_t;
 typedef struct			nxs_chat_srv_m_tlgrm_user_s			nxs_chat_srv_m_tlgrm_user_t;
@@ -96,12 +97,24 @@ struct nxs_chat_srv_m_tlgrm_message_s
 	nxs_string_t				text;			/* Optional */
 };
 
+struct nxs_chat_srv_m_tlgrm_callback_query_s
+{
+	nxs_bool_t				_is_used;
+
+	nxs_string_t				id;
+	nxs_chat_srv_m_tlgrm_user_t		from;
+	nxs_chat_srv_m_tlgrm_message_t		message;		/* Optional */
+	nxs_string_t				chat_instance;
+	nxs_string_t				data;			/* Optional */
+};
+
 struct nxs_chat_srv_m_tlgrm_update_s
 {
 	nxs_bool_t				_is_used;
 
 	size_t					update_id;
 	nxs_chat_srv_m_tlgrm_message_t		message;		/* Optional */
+	nxs_chat_srv_m_tlgrm_callback_query_t	callback_query;		/* Optional */
 };
 
 #endif /* _INCLUDE_NXS_CHAT_SRV_M_TLGRM_H */

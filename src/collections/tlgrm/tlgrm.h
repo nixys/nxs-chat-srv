@@ -8,6 +8,9 @@
 void					nxs_chat_srv_c_tlgrm_update_init		(nxs_chat_srv_m_tlgrm_update_t *update);
 void					nxs_chat_srv_c_tlgrm_update_free		(nxs_chat_srv_m_tlgrm_update_t *update);
 
+void					nxs_chat_srv_c_tlgrm_callback_query_init	(nxs_chat_srv_m_tlgrm_callback_query_t *callback_query);
+void					nxs_chat_srv_c_tlgrm_callback_query_free	(nxs_chat_srv_m_tlgrm_callback_query_t *callback_query);
+
 void					nxs_chat_srv_c_tlgrm_message_init		(nxs_chat_srv_m_tlgrm_message_t *message);
 void					nxs_chat_srv_c_tlgrm_message_free		(nxs_chat_srv_m_tlgrm_message_t *message);
 nxs_chat_srv_m_tlgrm_message_t		*nxs_chat_srv_c_tlgrm_message_reply_alloc	(void);

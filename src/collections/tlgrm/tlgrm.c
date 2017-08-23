@@ -79,6 +79,7 @@ void nxs_chat_srv_c_tlgrm_update_init(nxs_chat_srv_m_tlgrm_update_t *update)
 	update->_is_used  = NXS_NO;
 	update->update_id = 0;
 
+	nxs_chat_srv_c_tlgrm_callback_query_init(&update->callback_query);
 	nxs_chat_srv_c_tlgrm_message_init(&update->message);
 }
 
@@ -93,7 +94,42 @@ void nxs_chat_srv_c_tlgrm_update_free(nxs_chat_srv_m_tlgrm_update_t *update)
 	update->_is_used  = NXS_NO;
 	update->update_id = 0;
 
+	nxs_chat_srv_c_tlgrm_callback_query_free(&update->callback_query);
 	nxs_chat_srv_c_tlgrm_message_free(&update->message);
+}
+
+void nxs_chat_srv_c_tlgrm_callback_query_init(nxs_chat_srv_m_tlgrm_callback_query_t *callback_query)
+{
+	if(callback_query == NULL) {
+
+		return;
+	}
+
+	callback_query->_is_used = NXS_NO;
+
+	nxs_string_init2(&callback_query->id, 0, NXS_STRING_EMPTY_STR);
+	nxs_string_init2(&callback_query->chat_instance, 0, NXS_STRING_EMPTY_STR);
+	nxs_string_init2(&callback_query->data, 0, NXS_STRING_EMPTY_STR);
+
+	nxs_chat_srv_c_tlgrm_user_init(&callback_query->from);
+	nxs_chat_srv_c_tlgrm_message_init(&callback_query->message);
+}
+
+void nxs_chat_srv_c_tlgrm_callback_query_free(nxs_chat_srv_m_tlgrm_callback_query_t *callback_query)
+{
+	if(callback_query == NULL) {
+
+		return;
+	}
+
+	callback_query->_is_used = NXS_NO;
+
+	nxs_string_free(&callback_query->id);
+	nxs_string_free(&callback_query->chat_instance);
+	nxs_string_free(&callback_query->data);
+
+	nxs_chat_srv_c_tlgrm_user_free(&callback_query->from);
+	nxs_chat_srv_c_tlgrm_message_free(&callback_query->message);
 }
 
 void nxs_chat_srv_c_tlgrm_message_init(nxs_chat_srv_m_tlgrm_message_t *message)
