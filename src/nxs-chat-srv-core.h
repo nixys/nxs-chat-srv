@@ -35,6 +35,7 @@ typedef enum
 	NXS_CHAT_SRV_E_EXIT,
 	NXS_CHAT_SRV_E_EXIST,
 	NXS_CHAT_SRV_E_TIMEOUT,
+	NXS_CHAT_SRV_E_TYPE,
 } nxs_chat_srv_err_t;
 
 /* Project config structures */
