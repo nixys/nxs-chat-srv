@@ -1,0 +1,8 @@
+#ifndef _INCLUDE_NXS_CHAT_SRV_U_TLGRM_EDITMESSAGETEXT_TYPEDEF_H
+#define _INCLUDE_NXS_CHAT_SRV_U_TLGRM_EDITMESSAGETEXT_TYPEDEF_H
+
+// clang-format off
+
+typedef struct		nxs_chat_srv_u_tlgrm_editmessagetext_s		nxs_chat_srv_u_tlgrm_editmessagetext_t;
+
+#endif /* _INCLUDE_NXS_CHAT_SRV_U_TLGRM_EDITMESSAGETEXT_TYPEDEF_H */
