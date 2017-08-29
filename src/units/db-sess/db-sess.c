@@ -453,6 +453,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_set_wait_for(nxs_chat_srv_u_db_sess_t 
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE:
 
 			if(wait_for != NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_ISSUE_SUBJECT &&
+			   wait_for != NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_ISSUE_DESCRIPTION &&
 			   wait_for != NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_TYPE, error);
@@ -759,14 +760,14 @@ error:
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_issue(nxs_chat_srv_u_db_sess_t *u_ctx,
-                                                          size_t                    sess_id,
-                                                          size_t                    project_id,
-                                                          nxs_string_t *            project_name,
-                                                          size_t                    priority_id,
-                                                          nxs_string_t *            priority_name,
-                                                          nxs_string_t *            subject,
-                                                          nxs_string_t *            description)
+nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_new_issue(nxs_chat_srv_u_db_sess_t *u_ctx,
+                                                              size_t                    sess_id,
+                                                              size_t                    project_id,
+                                                              nxs_string_t *            project_name,
+                                                              size_t                    priority_id,
+                                                              nxs_string_t *            priority_name,
+                                                              nxs_string_t *            subject,
+                                                              nxs_string_t *            description)
 {
 	nxs_chat_srv_u_db_sess_el_t *        s;
 	nxs_chat_srv_u_db_sess_t_message_t   m;
@@ -800,6 +801,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_issue(nxs_chat_srv_u_db_sess
 
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE:
 
+			/* conv from 's->type' session type */
+
 			if(nxs_chat_srv_u_db_sess_s_message_deserialize(&m, &s->data) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -818,6 +821,85 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_issue(nxs_chat_srv_u_db_sess
 
 			s->updated_at = time(NULL);
 			s->type       = NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE;
+			s->wait_for   = NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE;
+
+			if(nxs_chat_srv_d_db_sess_update(&mysql,
+			                                 s->id,
+			                                 s->tlgrm_userid,
+			                                 s->chat_id,
+			                                 s->message_id,
+			                                 s->updated_at,
+			                                 s->type,
+			                                 s->wait_for,
+			                                 &s->data) != NXS_CHAT_SRV_E_OK) {
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+
+			break;
+
+		default:
+
+			nxs_error(rc, NXS_CHAT_SRV_E_TYPE, error);
+	}
+
+error:
+
+	nxs_chat_srv_c_mysql_disconnect(&mysql);
+
+	nxs_chat_srv_u_db_sess_s_message_free(&m);
+	nxs_chat_srv_u_db_sess_s_new_issue_free(&iss);
+
+	return rc;
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_message(nxs_chat_srv_u_db_sess_t *u_ctx, size_t sess_id, nxs_string_t *message)
+{
+	nxs_chat_srv_u_db_sess_el_t *        s;
+	nxs_chat_srv_u_db_sess_t_message_t   m;
+	nxs_chat_srv_u_db_sess_t_new_issue_t iss;
+	nxs_chat_srv_err_t                   rc;
+	nxs_mysql_t                          mysql;
+
+	if(u_ctx == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if((s = nxs_chat_srv_u_db_sess_el_get(u_ctx, sess_id)) == NULL) {
+
+		return NXS_CHAT_SRV_E_EXIST;
+	}
+
+	if(nxs_chat_srv_c_mysql_connect(&mysql) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_error(&process, "[%s]: MySQL connect error: \"%s\"", nxs_proc_get_name(&process), mysql.err_str);
+
+		return NXS_CHAT_SRV_E_ERR;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_chat_srv_u_db_sess_s_message_init(&m);
+	nxs_chat_srv_u_db_sess_s_new_issue_init(&iss);
+
+	switch(s->type) {
+
+		case NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE:
+
+			/* conv 's->type' from session type */
+
+			if(nxs_chat_srv_u_db_sess_s_new_issue_deserialize(&iss, &s->data) != NXS_CHAT_SRV_E_OK) {
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+
+			nxs_base64_decode_string(&m.message, &iss.description);
+
+			nxs_chat_srv_u_db_sess_s_message_serialize(&m, &s->data);
+
+			s->updated_at = time(NULL);
+			s->type       = NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE;
 			s->wait_for   = NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE;
 
 			if(nxs_chat_srv_d_db_sess_update(&mysql,
