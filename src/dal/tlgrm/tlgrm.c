@@ -68,6 +68,8 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_
 	nxs_chat_srv_err_t rc;
 	nxs_curl_t         curl;
 	nxs_string_t *     method;
+	nxs_http_code_t    h;
+	nxs_buf_t *        b;
 	int                ec;
 
 	if(body == NULL) {
@@ -103,14 +105,26 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
+	h = nxs_curl_get_ret_code(&curl);
+	b = nxs_curl_get_out_buf(&curl);
+
+	if(h != NXS_HTTP_CODE_200_OK) {
+
+		nxs_log_write_warn(&process,
+		                   "[%s]: wrong telegram http response code (response code: %d, reesponse body: \"%s\")",
+		                   nxs_proc_get_name(&process),
+		                   h,
+		                   nxs_buf_get_subbuf(b, 0));
+	}
+
 	if(http_code != NULL) {
 
-		*http_code = nxs_curl_get_ret_code(&curl);
+		*http_code = h;
 	}
 
 	if(out_buf != NULL) {
 
-		nxs_buf_clone(out_buf, nxs_curl_get_out_buf(&curl));
+		nxs_buf_clone(out_buf, b);
 	}
 
 error:
