@@ -49,8 +49,9 @@ static nxs_string_t		_s_content_type		= nxs_string("Content-Type: application/js
 
 nxs_chat_srv_d_tlgrm_method_t tlgrm_methods[] =
 {
-	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_MESSAGE,		nxs_string("sendMessage")},
-	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_EDIT_MESSAGE_TEXT,	nxs_string("editMessageText")},
+	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_MESSAGE,			nxs_string("sendMessage")},
+	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_EDIT_MESSAGE_TEXT,		nxs_string("editMessageText")},
+	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_ANSWER_CALLBACK_QUERY,		nxs_string("answerCallbackQuery")},
 
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_NONE, {NULL, 0, 0}}
 };

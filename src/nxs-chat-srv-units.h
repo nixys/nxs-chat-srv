@@ -4,6 +4,7 @@
 // clang-format off
 
 /*%%_NXS_TPL_HEADERS_TYPEDEF_BEGIN_%%*/
+#include <units/tlgrm-answercallbackquery/tlgrm-answercallbackquery-typedefs.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage-typedefs.h>
 #include <units/tlgrm-editmessagetext/tlgrm-editmessagetext-typedefs.h>
 #include <units/rdmn-issues/rdmn-issues-typedefs.h>
@@ -12,6 +13,7 @@
 /*%%_NXS_TPL_HEADERS_TYPEDEF_END_%%*/
 
 /*%%_NXS_TPL_HEADERS_BEGIN_%%*/
+#include <units/tlgrm-answercallbackquery/tlgrm-answercallbackquery.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage.h>
 #include <units/tlgrm-editmessagetext/tlgrm-editmessagetext.h>
 #include <units/rdmn-issues/rdmn-issues.h>
