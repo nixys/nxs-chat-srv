@@ -598,10 +598,18 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_set_message(nxs_chat_srv_u_db_sess_t
 
 	if((s = nxs_chat_srv_u_db_sess_el_get(u_ctx, sess_id)) == NULL) {
 
+		nxs_log_write_warn(&process, "[%s]: can't find session (session id: %zu)", nxs_proc_get_name(&process), sess_id);
+
 		return NXS_CHAT_SRV_E_EXIST;
 	}
 
 	if(s->type != NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE) {
+
+		nxs_log_write_warn(&process,
+		                   "[%s]: wrong session type for 'sess_t_set_message' (session id: %zu, session type: %d)",
+		                   nxs_proc_get_name(&process),
+		                   sess_id,
+		                   s->type);
 
 		return NXS_CHAT_SRV_E_TYPE;
 	}
