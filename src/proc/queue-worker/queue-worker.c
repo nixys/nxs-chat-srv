@@ -29,14 +29,15 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 typedef struct
 {
 	nxs_chat_srv_m_queue_com_types_t	type;
-	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_queue_com_types_t type, nxs_string_t *data);
+	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_queue_com_types_t type, nxs_string_t *data, nxs_chat_srv_u_queue_cache_t *queue_cache);
 } nxs_chat_srv_p_queue_worker_type_handler_t;
 
 /* Module internal (static) functions prototypes */
 
 // clang-format on
 
-static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_queue_worker_ctx_t *p_ctx);
+static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_queue_worker_ctx_t *p_ctx,
+                                                              nxs_chat_srv_u_queue_cache_t *     queue_cache);
 
 static void nxs_chat_srv_p_queue_worker_sighandler_term(int sig, void *data);
 static void nxs_chat_srv_p_queue_worker_sighandler_usr1(int sig, void *data);
@@ -59,6 +60,7 @@ nxs_chat_srv_p_queue_worker_type_handler_t type_handlers[] =
 nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_runtime(void)
 {
 	nxs_chat_srv_p_queue_worker_ctx_t p_ctx;
+	nxs_chat_srv_u_queue_cache_t *    queue_cache;
 	nxs_chat_srv_err_t                rc, ec;
 
 	rc = NXS_CHAT_SRV_E_OK;
@@ -75,11 +77,13 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_runtime(void)
 
 	nxs_proc_signal_set(&process, SIGINT, NXS_PROCESS_SA_FLAG_EMPTY, NXS_SIG_IGN, NULL, NXS_PROCESS_FORCE_NO);
 
+	queue_cache = nxs_chat_srv_u_queue_cache_init();
+
 	while(1) {
 
 		nxs_proc_signal_block(&process, SIGTERM, SIGUSR1, NXS_PROCESS_SIG_END_ARGS);
 
-		while((ec = nxs_chat_srv_p_queue_worker_process(&p_ctx)) == NXS_CHAT_SRV_E_OK) {
+		while((ec = nxs_chat_srv_p_queue_worker_process(&p_ctx, queue_cache)) == NXS_CHAT_SRV_E_OK) {
 
 			/* continue */
 		};
@@ -94,6 +98,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_runtime(void)
 
 error:
 
+	queue_cache = nxs_chat_srv_u_queue_cache_free(queue_cache);
+
 	nxs_chat_srv_p_queue_worker_ctx_free(&p_ctx);
 
 	return rc;
@@ -101,7 +107,8 @@ error:
 
 /* Module internal (static) functions */
 
-static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_queue_worker_ctx_t *p_ctx)
+static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_queue_worker_ctx_t *p_ctx,
+                                                              nxs_chat_srv_u_queue_cache_t *     queue_cache)
 {
 	nxs_string_t                     body;
 	nxs_buf_t                        data;
@@ -145,7 +152,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_que
 
 			f = NXS_YES;
 
-			type_handlers[i].handler(com_type, &body);
+			type_handlers[i].handler(com_type, &body, queue_cache);
 		}
 	}
 

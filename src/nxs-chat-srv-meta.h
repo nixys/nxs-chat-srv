@@ -5,6 +5,7 @@
 
 /*%%_NXS_TPL_HEADERS_BEGIN_%%*/
 #include <meta/tlgrm.h>
+#include <meta/queue-cache.h>
 #include <meta/db-sess.h>
 #include <meta/db-users.h>
 #include <meta/queue-com.h>
