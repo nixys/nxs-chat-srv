@@ -134,7 +134,7 @@ nxs_chat_srv_u_db_sess_t *nxs_chat_srv_u_db_sess_free(nxs_chat_srv_u_db_sess_t *
 		return NULL;
 	}
 
-	for(s = nxs_list_ptr_init(NXS_LIST_PTR_INIT_HEAD, &u_ctx->sessions); s != NULL;
+	for(s = nxs_list_ptr_init(&u_ctx->sessions, NXS_LIST_PTR_INIT_HEAD); s != NULL;
 	    s = nxs_list_del(&u_ctx->sessions, NXS_LIST_MOVE_NEXT)) {
 
 		nxs_chat_srv_u_db_sess_el_clear(s);
@@ -234,7 +234,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_start(nxs_chat_srv_u_db_sess_t *      
 	rc = NXS_CHAT_SRV_E_OK;
 
 	/* dropping other user sessions */
-	for(s = nxs_list_ptr_init(NXS_LIST_PTR_INIT_HEAD, &u_ctx->sessions); s != NULL;) {
+	for(s = nxs_list_ptr_init(&u_ctx->sessions, NXS_LIST_PTR_INIT_HEAD); s != NULL;) {
 
 		if(s->tlgrm_userid == tlgrm_user_id) {
 
@@ -298,7 +298,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_destroy(nxs_chat_srv_u_db_sess_t *u_ct
 
 	rc = NXS_CHAT_SRV_E_EXIST;
 
-	for(s = nxs_list_ptr_init(NXS_LIST_PTR_INIT_HEAD, &u_ctx->sessions); s != NULL;) {
+	for(s = nxs_list_ptr_init(&u_ctx->sessions, NXS_LIST_PTR_INIT_HEAD); s != NULL;) {
 
 		if(s->id == sess_id) {
 
@@ -344,7 +344,7 @@ size_t nxs_chat_srv_u_db_sess_get_id(nxs_chat_srv_u_db_sess_t *u_ctx, size_t tlg
 		return 0;
 	}
 
-	for(s = nxs_list_ptr_init(NXS_LIST_PTR_INIT_HEAD, &u_ctx->sessions); s != NULL; s = nxs_list_ptr_next(&u_ctx->sessions)) {
+	for(s = nxs_list_ptr_init(&u_ctx->sessions, NXS_LIST_PTR_INIT_HEAD); s != NULL; s = nxs_list_ptr_next(&u_ctx->sessions)) {
 
 		if(s->tlgrm_userid == tlgrm_user_id) {
 
@@ -961,7 +961,7 @@ static nxs_chat_srv_u_db_sess_el_t *nxs_chat_srv_u_db_sess_el_get(nxs_chat_srv_u
 		return NULL;
 	}
 
-	for(s = nxs_list_ptr_init(NXS_LIST_PTR_INIT_HEAD, &u_ctx->sessions); s != NULL; s = nxs_list_ptr_next(&u_ctx->sessions)) {
+	for(s = nxs_list_ptr_init(&u_ctx->sessions, NXS_LIST_PTR_INIT_HEAD); s != NULL; s = nxs_list_ptr_next(&u_ctx->sessions)) {
 
 		if(s->id == sess_id) {
 
