@@ -41,6 +41,7 @@ typedef struct
 	nxs_string_t					priority_name;		/* redmine priority name */
 	nxs_string_t					subject;		/* redmine issue subject */
 	nxs_string_t					description;		/* redmine issue description */
+	nxs_string_t					project_name_regex;	/* regex to filter redmine projects name */
 } nxs_chat_srv_u_db_sess_t_new_issue_t;
 
 /*
@@ -107,6 +108,7 @@ static nxs_string_t _s_par_priority_id		= nxs_string("priority_id");
 static nxs_string_t _s_par_priority_name	= nxs_string("priority_name");
 static nxs_string_t _s_par_subject		= nxs_string("subject");
 static nxs_string_t _s_par_description		= nxs_string("description");
+static nxs_string_t _s_par_project_name_regex	= nxs_string("project_name_regex");
 
 /* Module global functions */
 
@@ -452,8 +454,10 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_set_wait_for(nxs_chat_srv_u_db_sess_t 
 
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE:
 
+			/* check available 'wait-for' types for this session type */
 			if(wait_for != NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_ISSUE_SUBJECT &&
 			   wait_for != NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_ISSUE_DESCRIPTION &&
+			   wait_for != NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_PROJECTNAME_REGEX &&
 			   wait_for != NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_TYPE, error);
@@ -654,7 +658,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_get_new_issue(nxs_chat_srv_u_db_sess
                                                           size_t *                  priority_id,
                                                           nxs_string_t *            priority_name,
                                                           nxs_string_t *            subject,
-                                                          nxs_string_t *            description)
+                                                          nxs_string_t *            description,
+                                                          nxs_string_t *            project_name_regex)
 {
 	nxs_chat_srv_u_db_sess_el_t *        s;
 	nxs_chat_srv_u_db_sess_t_new_issue_t iss;
@@ -692,6 +697,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_get_new_issue(nxs_chat_srv_u_db_sess
 	nxs_base64_decode_string(priority_name, &iss.priority_name);
 	nxs_base64_decode_string(subject, &iss.subject);
 	nxs_base64_decode_string(description, &iss.description);
+	nxs_base64_decode_string(project_name_regex, &iss.project_name_regex);
 
 error:
 
@@ -707,7 +713,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_set_new_issue(nxs_chat_srv_u_db_sess
                                                           size_t                    priority_id,
                                                           nxs_string_t *            priority_name,
                                                           nxs_string_t *            subject,
-                                                          nxs_string_t *            description)
+                                                          nxs_string_t *            description,
+                                                          nxs_string_t *            project_name_regex)
 {
 	nxs_chat_srv_u_db_sess_el_t *        s;
 	nxs_chat_srv_u_db_sess_t_new_issue_t iss;
@@ -747,6 +754,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_set_new_issue(nxs_chat_srv_u_db_sess
 	nxs_string_clone(&iss.priority_name, priority_name);
 	nxs_string_clone(&iss.subject, subject);
 	nxs_string_clone(&iss.description, description);
+	nxs_string_clone(&iss.project_name_regex, project_name_regex);
 
 	nxs_chat_srv_u_db_sess_s_new_issue_serialize(&iss, &s->data);
 
@@ -775,7 +783,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_new_issue(nxs_chat_srv_u_db_
                                                               size_t                    priority_id,
                                                               nxs_string_t *            priority_name,
                                                               nxs_string_t *            subject,
-                                                              nxs_string_t *            description)
+                                                              nxs_string_t *            description,
+                                                              nxs_string_t *            project_name_regex)
 {
 	nxs_chat_srv_u_db_sess_el_t *        s;
 	nxs_chat_srv_u_db_sess_t_message_t   m;
@@ -824,6 +833,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_new_issue(nxs_chat_srv_u_db_
 			nxs_string_clone(&iss.project_name, project_name);
 			nxs_string_clone(&iss.priority_name, priority_name);
 			nxs_string_clone(&iss.subject, subject);
+			nxs_string_clone(&iss.project_name_regex, project_name_regex);
 
 			nxs_chat_srv_u_db_sess_s_new_issue_serialize(&iss, &s->data);
 
@@ -1023,7 +1033,7 @@ static void nxs_chat_srv_u_db_sess_s_message_serialize(nxs_chat_srv_u_db_sess_t_
 
 	nxs_base64_encode_string(&message_encoded, &ctx->message);
 
-	nxs_string_printf_dyn(out_str, "{\"message\":\"%r\"}", &message_encoded);
+	nxs_string_printf(out_str, "{\"message\":\"%r\"}", &message_encoded);
 
 	nxs_string_free(&message_encoded);
 }
@@ -1071,6 +1081,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_init(nxs_chat_srv_u_db_sess_t_new
 	nxs_string_init_empty(&ctx->priority_name);
 	nxs_string_init_empty(&ctx->project_name);
 	nxs_string_init_empty(&ctx->subject);
+	nxs_string_init_empty(&ctx->project_name_regex);
 }
 
 static void nxs_chat_srv_u_db_sess_s_new_issue_free(nxs_chat_srv_u_db_sess_t_new_issue_t *ctx)
@@ -1082,40 +1093,46 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_free(nxs_chat_srv_u_db_sess_t_new
 	nxs_string_free(&ctx->priority_name);
 	nxs_string_free(&ctx->project_name);
 	nxs_string_free(&ctx->subject);
+	nxs_string_free(&ctx->project_name_regex);
 }
 
 static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_t_new_issue_t *ctx, nxs_string_t *out_str)
 {
-	nxs_string_t description_encoded, priority_name_encoded, project_name_encoded, subject_encoded;
+	nxs_string_t description_encoded, priority_name_encoded, project_name_encoded, subject_encoded, project_name_regex_encoded;
 
 	nxs_string_init(&description_encoded);
 	nxs_string_init(&priority_name_encoded);
 	nxs_string_init(&project_name_encoded);
 	nxs_string_init(&subject_encoded);
+	nxs_string_init(&project_name_regex_encoded);
 
 	nxs_base64_encode_string(&description_encoded, &ctx->description);
 	nxs_base64_encode_string(&priority_name_encoded, &ctx->priority_name);
 	nxs_base64_encode_string(&project_name_encoded, &ctx->project_name);
 	nxs_base64_encode_string(&subject_encoded, &ctx->subject);
+	nxs_base64_encode_string(&project_name_regex_encoded, &ctx->project_name_regex);
 
-	nxs_string_printf_dyn(out_str,
-	                      "{\"project_id\":%zu,"
-	                      "\"project_name\":\"%r\","
-	                      "\"priority_id\":%zu,"
-	                      "\"priority_name\":\"%r\","
-	                      "\"subject\":\"%r\","
-	                      "\"description\":\"%r\"}",
-	                      ctx->project_id,
-	                      &project_name_encoded,
-	                      ctx->priority_id,
-	                      &priority_name_encoded,
-	                      &subject_encoded,
-	                      &description_encoded);
+	nxs_string_printf(out_str,
+	                  "{\"project_id\":%zu,"
+	                  "\"project_name\":\"%r\","
+	                  "\"priority_id\":%zu,"
+	                  "\"priority_name\":\"%r\","
+	                  "\"subject\":\"%r\","
+	                  "\"description\":\"%r\","
+	                  "\"project_name_regex\":\"%r\"}",
+	                  ctx->project_id,
+	                  &project_name_encoded,
+	                  ctx->priority_id,
+	                  &priority_name_encoded,
+	                  &subject_encoded,
+	                  &description_encoded,
+	                  &project_name_regex_encoded);
 
 	nxs_string_free(&description_encoded);
 	nxs_string_free(&priority_name_encoded);
 	nxs_string_free(&project_name_encoded);
 	nxs_string_free(&subject_encoded);
+	nxs_string_free(&project_name_regex_encoded);
 }
 
 static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize(nxs_chat_srv_u_db_sess_t_new_issue_t *ctx, nxs_string_t *data)
@@ -1132,12 +1149,13 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize(nxs_cha
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_id,	&ctx->project_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_name,	&ctx->project_name,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority_id,	&ctx->priority_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority_name,	&ctx->priority_name,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,	&ctx->subject,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,	&ctx->description,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_id,		&ctx->project_id,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_name,		&ctx->project_name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority_id,		&ctx->priority_id,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority_name,		&ctx->priority_name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,		&ctx->subject,			NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,		&ctx->description,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_name_regex,	&ctx->project_name_regex,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
