@@ -213,7 +213,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_users_find_by_tusername(nxs_chat_srv_u_db_u
 
 		u = nxs_array_get(&u_ctx->users, i);
 
-		if(nxs_string_cmp(&u->tlgrm_username, 0, tlgrm_username, 0) == NXS_STRING_CMP_EQ) {
+		if(nxs_string_cmp(&u->tlgrm_username, 0, tlgrm_username, 0) == NXS_YES) {
 
 			nxs_chat_srv_u_db_users_fill(user, u);
 

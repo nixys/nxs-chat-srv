@@ -17,7 +17,7 @@
 
 
 /* Project globals */
-extern		nxs_process_t				process;
+extern		nxs_process_t			process;
 extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module typedefs */
@@ -51,7 +51,7 @@ void nxs_chat_srv_c_queue_com_serialize(nxs_string_t *out_msg, nxs_chat_srv_m_qu
 		return;
 	}
 
-	nxs_string_printf_dyn(out_msg, "{\"%r\":%d,\"%r\":\"%r\"}", &_s_par_com_type, type, &_s_par_body, body);
+	nxs_string_printf(out_msg, "{\"%r\":%d,\"%r\":\"%r\"}", &_s_par_com_type, type, &_s_par_body, body);
 }
 
 nxs_chat_srv_err_t nxs_chat_srv_c_queue_com_deserialize(nxs_buf_t *in_msg, nxs_chat_srv_m_queue_com_types_t *type, nxs_string_t *body)

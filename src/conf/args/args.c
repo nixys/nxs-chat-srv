@@ -34,12 +34,12 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 // clang-format on
 
-static int		nxs_chat_srv_conf_args_prep		(nxs_args_t args, int argc, u_char **argv);
-static int		nxs_chat_srv_conf_args_post		(nxs_args_t args, int argc, u_char **argv);
-static int		nxs_chat_srv_conf_args_freeargs		(nxs_args_t args, int argc, int argind, u_char **argv);
-static int		nxs_chat_srv_conf_args_help		(nxs_args_t args, u_char arg, u_char *optarg);
-static int		nxs_chat_srv_conf_args_version		(nxs_args_t args, u_char arg, u_char *optarg);
-static int		nxs_chat_srv_conf_args_conf		(nxs_args_t args, u_char arg, u_char *optarg);
+static int nxs_chat_srv_conf_args_prep(nxs_args_t args, int argc, u_char **argv);
+static int nxs_chat_srv_conf_args_post(nxs_args_t args, int argc, u_char **argv);
+static int nxs_chat_srv_conf_args_freeargs(nxs_args_t args, int argc, int argind, u_char **argv);
+static int nxs_chat_srv_conf_args_help(nxs_args_t args, u_char arg, u_char *optarg);
+static int nxs_chat_srv_conf_args_version(nxs_args_t args, u_char arg, u_char *optarg);
+static int nxs_chat_srv_conf_args_conf(nxs_args_t args, u_char arg, u_char *optarg);
 
 // clang-format off
 
@@ -62,21 +62,21 @@ void nxs_chat_srv_conf_args_init(nxs_args_t *args, void *user_ctx)
 {
 
 	nxs_string_init(&args->help);
-	nxs_string_printf_dyn(&args->help, NXS_CHAT_SRV_CONF_ARGS_HELP_MSG, NXS_CHAT_SRV_CONF_PATH_DEFAULT);
+	nxs_string_printf(&args->help, NXS_CHAT_SRV_CONF_ARGS_HELP_MSG, NXS_CHAT_SRV_CONF_PATH_DEFAULT);
 
-	args->prep_function		= &nxs_chat_srv_conf_args_prep;
-	args->post_function		= &nxs_chat_srv_conf_args_post;
-	args->freeargs_function		= &nxs_chat_srv_conf_args_freeargs;
+	args->prep_function     = &nxs_chat_srv_conf_args_prep;
+	args->post_function     = &nxs_chat_srv_conf_args_post;
+	args->freeargs_function = &nxs_chat_srv_conf_args_freeargs;
 
-	args->args_s_els		= shortopts;
+	args->args_s_els = shortopts;
 
-	args->ctx			= user_ctx;
+	args->ctx = user_ctx;
 }
 
 nxs_chat_srv_err_t nxs_chat_srv_conf_args_runtime(nxs_args_t args, int argc, u_char **argv)
 {
 
-	switch(nxs_args_handler(&process, args, argc, argv)){
+	switch(nxs_args_handler(&process, args, argc, argv)) {
 
 		case NXS_ARGS_CONF_ERROR:
 
@@ -121,24 +121,24 @@ static int nxs_chat_srv_conf_args_freeargs(nxs_args_t args, int argc, int argind
 
 	for(i = argind; i < argc; i++){
 
-		switch(i - argind){
+	        switch(i - argind){
 
-			case POSITION_1:
-
-
-				break;
-
-			case POSITION_2:
+	                case POSITION_1:
 
 
-				break;
+	                        break;
 
-			default:
+	                case POSITION_2:
 
-				nxs_log_write_error(&process, "too many arguments");
 
-				return NXS_ARGS_CONF_ERROR;
-		}
+	                        break;
+
+	                default:
+
+	                        nxs_log_write_error(&process, "too many arguments");
+
+	                        return NXS_ARGS_CONF_ERROR;
+	        }
 	}
 	*/
 
@@ -163,9 +163,9 @@ static int nxs_chat_srv_conf_args_version(nxs_args_t args, u_char arg, u_char *o
 
 static int nxs_chat_srv_conf_args_conf(nxs_args_t args, u_char arg, u_char *optarg)
 {
-	nxs_chat_srv_cfg_ctx_t	*cfg_ctx = nxs_args_get_ctx(args);
+	nxs_chat_srv_cfg_ctx_t *cfg_ctx = nxs_args_get_ctx(args);
 
-	nxs_string_char_cpy_dyn(&cfg_ctx->cfg_path, 0, optarg);
+	nxs_string_char_cpy(&cfg_ctx->cfg_path, 0, optarg);
 
 	return NXS_ARGS_CONF_OK;
 }

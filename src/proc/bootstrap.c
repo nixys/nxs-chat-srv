@@ -205,7 +205,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_write_pidfile(void)
 	 * Write new pid-file
 	 */
 
-	nxs_string_printf_dyn(&pid_str, "%d", nxs_proc_get_pid(&process));
+	nxs_string_printf(&pid_str, "%d", nxs_proc_get_pid(&process));
 
 	switch(nxs_fs_write_file(&nxs_chat_srv_cfg.proc.pid_file, (nxs_buf_t *)&pid_str, 0640)) {
 

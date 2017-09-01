@@ -288,7 +288,7 @@ nxs_chat_srv_m_tlgrm_chat_type_t nxs_chat_srv_c_tlgrm_chat_type_map(nxs_string_t
 
 	for(i = 0; chat_types[i].type != NXS_CHAT_SRV_M_TLGRM_CHAT_TYPE_NONE; i++) {
 
-		if(nxs_string_cmp(&chat_types[i].name, 0, type_name, 0) == NXS_STRING_CMP_EQ) {
+		if(nxs_string_cmp(&chat_types[i].name, 0, type_name, 0) == NXS_YES) {
 
 			return chat_types[i].type;
 		}
@@ -484,10 +484,10 @@ void nxs_chat_srv_c_tlgrm_inl_keyboard_serialize(nxs_chat_srv_m_tlgrm_inl_keyboa
 
 		if(i > 0) {
 
-			nxs_string_char_add_char_dyn(&p, (u_char)',');
+			nxs_string_char_add_char(&p, (u_char)',');
 		}
 
-		nxs_string_printf2_cat_dyn(&p, "[");
+		nxs_string_printf2_cat(&p, "[");
 
 		for(f = NXS_NO, j = 0; j < nxs_array_count(a); j++) {
 
@@ -497,27 +497,27 @@ void nxs_chat_srv_c_tlgrm_inl_keyboard_serialize(nxs_chat_srv_m_tlgrm_inl_keyboa
 
 				if(f == NXS_YES) {
 
-					nxs_string_char_add_char_dyn(&p, (u_char)',');
+					nxs_string_char_add_char(&p, (u_char)',');
 				}
 
 				f = NXS_YES;
 
 				if(nxs_string_len(&ikm->url) > 0) {
 
-					nxs_string_printf2_cat_dyn(&p, "{\"text\":\"%r\",\"url\":\"%r\"}", &ikm->text, &ikm->url);
+					nxs_string_printf2_cat(&p, "{\"text\":\"%r\",\"url\":\"%r\"}", &ikm->text, &ikm->url);
 				}
 				else {
 
-					nxs_string_printf2_cat_dyn(
+					nxs_string_printf2_cat(
 					        &p, "{\"text\":\"%r\",\"callback_data\":\"%r\"}", &ikm->text, &ikm->callback_data);
 				}
 			}
 		}
 
-		nxs_string_printf2_cat_dyn(&p, "]");
+		nxs_string_printf2_cat(&p, "]");
 	}
 
-	nxs_string_printf2_cat_dyn(out_str, ",\"reply_markup\": {\"inline_keyboard\":[%r]}", &p);
+	nxs_string_printf2_cat(out_str, ",\"reply_markup\": {\"inline_keyboard\":[%r]}", &p);
 
 	nxs_string_free(&p);
 }
@@ -600,7 +600,7 @@ void nxs_chat_srv_c_tlgrm_force_reply_serialize(nxs_chat_srv_m_tlgrm_force_reply
 
 	if(force_reply->_is_used && force_reply->force_reply == NXS_YES) {
 
-		nxs_string_printf2_cat_dyn(out_str, ",\"reply_markup\": {\"force_reply\":true}");
+		nxs_string_printf2_cat(out_str, ",\"reply_markup\": {\"force_reply\":true}");
 	}
 }
 

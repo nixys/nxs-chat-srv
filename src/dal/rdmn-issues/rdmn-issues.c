@@ -69,14 +69,14 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 
 	nxs_curl_init(&curl);
 
-	nxs_string_printf_dyn(&api_key, "X-Redmine-API-Key: %r", user_api_key);
+	nxs_string_printf(&api_key, "X-Redmine-API-Key: %r", user_api_key);
 
 	nxs_curl_add_header(&curl, &api_key);
 	nxs_curl_add_header(&curl, &_s_content_type);
 
 	nxs_string_escape(&note_escaped, note, NXS_STRING_ESCAPE_TYPE_JSON);
 
-	nxs_string_printf_dyn(&data, "{\"issue\":{\"notes\":\"%r\"}}", &note_escaped);
+	nxs_string_printf(&data, "{\"issue\":{\"notes\":\"%r\"}}", &note_escaped);
 
 	nxs_curl_set_post(&curl, (nxs_buf_t *)&data);
 

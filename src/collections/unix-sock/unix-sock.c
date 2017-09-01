@@ -243,7 +243,7 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_recv(nxs_net_unix_server_t *sock, nx
 
 	if(ec != NXS_NET_E_OK) {
 
-		nxs_log_write_error(&process, "[%s]: queue recieve error: poll error (error code: %d)", nxs_proc_get_name(&process), ec);
+		nxs_log_write_error(&process, "[%s]: queue receive error: poll error (error code: %d)", nxs_proc_get_name(&process), ec);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -254,7 +254,7 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_recv(nxs_net_unix_server_t *sock, nx
 
 	if((ec = nxs_net_unix_accept(&process, sock, &client)) != NXS_NET_E_OK) {
 
-		nxs_log_write_warn(&process, "[%s]: queue recieve error: accept error (error code: %d)", nxs_proc_get_name(&process), ec);
+		nxs_log_write_warn(&process, "[%s]: queue receive error: accept error (error code: %d)", nxs_proc_get_name(&process), ec);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -262,7 +262,7 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_recv(nxs_net_unix_server_t *sock, nx
 	if((ec = nxs_net_recv(&process, &client, NXS_CHAT_SRV_C_UNIX_SOCK_RECV_TIMEOUT, data, NXS_NET_DATA_TYPE_STRING)) != NXS_NET_E_OK) {
 
 		nxs_log_write_warn(
-		        &process, "[%s]: queue recieve error: receive command error (error code: %d)", nxs_proc_get_name(&process), ec);
+		        &process, "[%s]: queue receive error: receive command error (error code: %d)", nxs_proc_get_name(&process), ec);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}

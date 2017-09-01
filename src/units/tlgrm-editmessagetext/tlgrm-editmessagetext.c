@@ -126,13 +126,13 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_editmessagetext_push(nxs_chat_srv_u_tlgr
 
 	nxs_chat_srv_u_tlgrm_editmessagetext_rmarkaup_serialize(&u_ctx->reply_markup, &reply_markup_str);
 
-	nxs_string_printf_dyn(&message,
-	                      "{\"chat_id\":%zu,\"message_id\":%zu,\"parse_mode\":\"%r\",\"text\":\"%r\"%r}",
-	                      u_ctx->chat_id,
-	                      u_ctx->message_id,
-	                      nxs_chat_srv_c_tlgrm_parse_mode_map(u_ctx->parse_mode),
-	                      &u_ctx->text,
-	                      &reply_markup_str);
+	nxs_string_printf(&message,
+	                  "{\"chat_id\":%zu,\"message_id\":%zu,\"parse_mode\":\"%r\",\"text\":\"%r\"%r}",
+	                  u_ctx->chat_id,
+	                  u_ctx->message_id,
+	                  nxs_chat_srv_c_tlgrm_parse_mode_map(u_ctx->parse_mode),
+	                  &u_ctx->text,
+	                  &reply_markup_str);
 
 	if(nxs_chat_srv_d_tlgrm_request(NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_EDIT_MESSAGE_TEXT, &message, &u_ctx->response_buf, &http_code) !=
 	   NXS_CHAT_SRV_E_OK) {

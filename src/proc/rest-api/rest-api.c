@@ -166,19 +166,19 @@ static nxs_rest_api_err_t nxs_chat_srv_p_rest_api_log_handler(nxs_rest_api_ctx_t
 
 	if(nxs_rest_api_get_req_part(req, 0) == NULL) {
 
-		nxs_string_char_add_char_dyn(&parts, (u_char)'/');
+		nxs_string_char_add_char(&parts, (u_char)'/');
 	}
 	else {
 
 		for(i = 0; (s = nxs_rest_api_get_req_part(req, i)) != NULL; i++) {
 
-			nxs_string_printf2_cat_dyn(&parts, "%r", s);
+			nxs_string_printf2_cat(&parts, "%r", s);
 		}
 	}
 
 	if(nxs_rest_api_get_req_args_key(req, 0) != NULL) {
 
-		nxs_string_char_add_char_dyn(&args, (u_char)'?');
+		nxs_string_char_add_char(&args, (u_char)'?');
 
 		for(i = 0; (s = nxs_rest_api_get_req_args_key(req, i)) != NULL; i++) {
 
@@ -186,10 +186,10 @@ static nxs_rest_api_err_t nxs_chat_srv_p_rest_api_log_handler(nxs_rest_api_ctx_t
 
 			if(i > 0) {
 
-				nxs_string_char_add_char_dyn(&args, (u_char)'&');
+				nxs_string_char_add_char(&args, (u_char)'&');
 			}
 
-			nxs_string_printf2_cat_dyn(&args, "%r=%r", s, v);
+			nxs_string_printf2_cat(&args, "%r=%r", s, v);
 		}
 	}
 
@@ -197,16 +197,16 @@ static nxs_rest_api_err_t nxs_chat_srv_p_rest_api_log_handler(nxs_rest_api_ctx_t
 
 	b = nxs_rest_api_get_out_buf(req);
 
-	nxs_string_printf_dyn(&l,
-	                      "connection accepted\t%r:%d\t\"%s %r%r\"\t%d\t%zu\t\"%r\"",
-	                      ip,
-	                      port,
-	                      method,
-	                      &parts,
-	                      &args,
-	                      nxs_rest_api_get_req_http_status(req),
-	                      nxs_buf_get_len(b),
-	                      u);
+	nxs_string_printf(&l,
+	                  "connection accepted\t%r:%d\t\"%s %r%r\"\t%d\t%zu\t\"%r\"",
+	                  ip,
+	                  port,
+	                  method,
+	                  &parts,
+	                  &args,
+	                  nxs_rest_api_get_req_http_status(req),
+	                  nxs_buf_get_len(b),
+	                  u);
 
 	nxs_log_write_info(&process, "%s", nxs_string_str(&l));
 

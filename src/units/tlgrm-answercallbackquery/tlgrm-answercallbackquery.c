@@ -66,15 +66,15 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_answercallbackquery_push(nxs_string_t *c
 
 	if(text != NULL) {
 
-		nxs_string_printf_dyn(&message,
-		                      "{\"callback_query_id\":\"%r\",\"text\":\"%r\",\"show_alert\":true,\"cache_time\":%zu}",
-		                      callback_query_id,
-		                      text,
-		                      cache_time);
+		nxs_string_printf(&message,
+		                  "{\"callback_query_id\":\"%r\",\"text\":\"%r\",\"show_alert\":true,\"cache_time\":%zu}",
+		                  callback_query_id,
+		                  text,
+		                  cache_time);
 	}
 	else {
 
-		nxs_string_printf_dyn(&message, "{\"callback_query_id\":\"%r\",\"cache_time\":%zu}", callback_query_id, cache_time);
+		nxs_string_printf(&message, "{\"callback_query_id\":\"%r\",\"cache_time\":%zu}", callback_query_id, cache_time);
 	}
 
 	if(nxs_chat_srv_d_tlgrm_request(NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_ANSWER_CALLBACK_QUERY, &message, NULL, &http_code) !=

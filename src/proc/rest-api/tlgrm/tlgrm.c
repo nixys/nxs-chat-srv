@@ -66,7 +66,7 @@ void nxs_chat_srv_p_rest_api_tlgrm_handler_post(nxs_rest_api_ctx_t *rest_api_ctx
 		goto error;
 	}
 
-	if(nxs_string_cmp(&nxs_chat_srv_cfg.tlgrm.auth_token, 0, auth_token, 0) == NXS_STRING_CMP_NE) {
+	if(nxs_string_cmp(&nxs_chat_srv_cfg.tlgrm.auth_token, 0, auth_token, 0) == NXS_NO) {
 
 		nxs_rest_api_page_std(req, NXS_REST_API_FORMAT_ERR_JSON, NXS_HTTP_CODE_403_FORBIDDEN, (u_char *)"");
 

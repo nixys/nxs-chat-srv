@@ -69,7 +69,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_users_get(size_t           user_id,
 
 	nxs_string_init(&api_key_header);
 
-	nxs_string_printf_dyn(&api_key_header, "X-Redmine-API-Key: %r", api_key);
+	nxs_string_printf(&api_key_header, "X-Redmine-API-Key: %r", api_key);
 
 	nxs_curl_add_header(&curl, &api_key_header);
 	nxs_curl_add_header(&curl, &_s_content_type);
