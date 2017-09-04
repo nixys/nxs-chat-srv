@@ -490,28 +490,4 @@ error:
 	return rc;
 }
 
-// static nxs_cfg_json_state_t
-//        nxs_chat_srv_conf_file_json_read_mode(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
-//{
-/*
-mode_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
-size_t  i;
-
-for(i = 0; i < nxs_string_len(val); i++) {
-
-        if(nxs_string_get_char(val, i) < '0' || nxs_string_get_char(val, i) > '7') {
-
-                nxs_log_write_error(
-                        &process, "option '%s' has wrong value (value: \"%s\")", nxs_string_str(opt), nxs_string_str(val));
-
-                return NXS_CFG_CONF_ERROR;
-        }
-}
-
-sscanf((char *)nxs_string_str(val), "%o", var);
-
-return NXS_CFG_CONF_OK;
-*/
-//}
-
 #endif /* USE_NXS_JSON */
