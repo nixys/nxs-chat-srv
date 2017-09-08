@@ -74,10 +74,11 @@ void nxs_chat_srv_p_rest_api_tlgrm_handler_post(nxs_rest_api_ctx_t *rest_api_ctx
 	}
 
 	nxs_log_write_debug(&process,
-	                    "[%s]: received message from telegram (auth token: \"%s\" (correct), post body: \"%s\")",
+	                    "[%s]: received message from telegram (auth token: \"%r\" (correct), post body: \"%R\")",
 	                    nxs_proc_get_name(&process),
-	                    nxs_string_str(auth_token),
-	                    nxs_buf_get_subbuf(bdy_in, 0));
+	                    auth_token,
+	                    bdy_in,
+	                    0);
 
 	nxs_base64_encode_string(&base64_encoded, (nxs_string_t *)bdy_in);
 

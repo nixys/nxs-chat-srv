@@ -164,18 +164,18 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_write_pidfile(void)
 		case NXS_FS_E_FILE_BUF:
 
 			nxs_log_write_error(&process,
-			                    "[%s]: can't write pid file: NULL pointer (pid file: %s)",
+			                    "[%s]: can't write pid file: NULL pointer (pid file: %r)",
 			                    nxs_proc_get_name(&process),
-			                    nxs_string_str(&nxs_chat_srv_cfg.proc.pid_file));
+			                    &nxs_chat_srv_cfg.proc.pid_file);
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 
 		case NXS_FS_E_FILE_READ:
 
 			nxs_log_write_error(&process,
-			                    "[%s]: can't write pid file: existing pid file read error (pid file: %s, error: %s)",
+			                    "[%s]: can't write pid file: existing pid file read error (pid file: %r, error: %s)",
 			                    nxs_proc_get_name(&process),
-			                    nxs_string_str(&nxs_chat_srv_cfg.proc.pid_file),
+			                    &nxs_chat_srv_cfg.proc.pid_file,
 			                    strerror(errno));
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -183,9 +183,9 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_write_pidfile(void)
 		case NXS_FS_E_FILE_CLOSE:
 
 			nxs_log_write_error(&process,
-			                    "[%s]: can't write pid file: existing pid file close error (pid file: %s, error: %s)",
+			                    "[%s]: can't write pid file: existing pid file close error (pid file: %r, error: %s)",
 			                    nxs_proc_get_name(&process),
-			                    nxs_string_str(&nxs_chat_srv_cfg.proc.pid_file),
+			                    &nxs_chat_srv_cfg.proc.pid_file,
 			                    strerror(errno));
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -193,10 +193,10 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_write_pidfile(void)
 		default:
 
 			nxs_log_write_error(&process,
-			                    "[%s]: can't write pid file: pid file already exist, check process with pid %s (pid file: %s)",
+			                    "[%s]: can't write pid file: pid file already exist, check process with pid %r (pid file: %r)",
 			                    nxs_proc_get_name(&process),
-			                    nxs_string_str(&nxs_chat_srv_cfg.proc.pid_file),
-			                    nxs_string_str(&pid_str));
+			                    &nxs_chat_srv_cfg.proc.pid_file,
+			                    &pid_str);
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -212,9 +212,9 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_write_pidfile(void)
 		case NXS_FS_E_FILE_OPEN:
 
 			nxs_log_write_error(&process,
-			                    "[%s]: can't write pid file: can't open file for write (pid file: %s, error: %s)",
+			                    "[%s]: can't write pid file: can't open file for write (pid file: %r, error: %s)",
 			                    nxs_proc_get_name(&process),
-			                    nxs_string_str(&nxs_chat_srv_cfg.proc.pid_file),
+			                    &nxs_chat_srv_cfg.proc.pid_file,
 			                    strerror(errno));
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -222,8 +222,8 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_write_pidfile(void)
 		case NXS_FS_E_FILE_WRITE:
 
 			nxs_log_write_error(&process,
-			                    "[%s]: can't write pid file: write error (pid file: %s, error: %s)",
-			                    nxs_string_str(&nxs_chat_srv_cfg.proc.pid_file),
+			                    "[%s]: can't write pid file: write error (pid file: %r, error: %s)",
+			                    &nxs_chat_srv_cfg.proc.pid_file,
 			                    strerror(errno));
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -231,18 +231,18 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_write_pidfile(void)
 		case NXS_FS_E_FILE_CLOSE:
 
 			nxs_log_write_error(&process,
-			                    "c[%s]: an't write pid file: close error (pid file: %s, error: %s)",
+			                    "c[%s]: an't write pid file: close error (pid file: %r, error: %s)",
 			                    nxs_proc_get_name(&process),
-			                    nxs_string_str(&nxs_chat_srv_cfg.proc.pid_file),
+			                    &nxs_chat_srv_cfg.proc.pid_file,
 			                    strerror(errno));
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
 	nxs_log_write_debug(&process,
-	                    "[%s]: pid file successfully created (pid file: %s)",
+	                    "[%s]: pid file successfully created (pid file: %r)",
 	                    nxs_proc_get_name(&process),
-	                    nxs_string_str(&nxs_chat_srv_cfg.proc.pid_file));
+	                    &nxs_chat_srv_cfg.proc.pid_file);
 
 error:
 
@@ -372,10 +372,10 @@ static void nxs_chat_srv_p_bootstrap_term(nxs_chat_srv_p_bootstrap_ctx_t *p_ctx)
 	if(nxs_fs_unlink(&nxs_chat_srv_cfg.proc.pid_file) == -1) {
 
 		nxs_log_write_warn(&process,
-		                   "[%s]: can't delete pid file: %s (pidfile: \"%s\")",
+		                   "[%s]: can't delete pid file: %s (pidfile: \"%r\")",
 		                   nxs_proc_get_name(&process),
 		                   strerror(errno),
-		                   nxs_string_str(&nxs_chat_srv_cfg.proc.pid_file));
+		                   &nxs_chat_srv_cfg.proc.pid_file);
 	}
 
 	nxs_log_write_info(&process, "[%s]: shutdown process", nxs_proc_get_name(&process));

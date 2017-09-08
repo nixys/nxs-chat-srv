@@ -705,9 +705,8 @@ static nxs_chat_srv_err_t project_regex_set(project_regex_t *r_ctx, nxs_string_t
 
 		if(regcomp(&regex, (char *)nxs_string_str(&r_ctx->regex_str), REG_ICASE) != 0) {
 
-			nxs_log_write_error(&process,
-			                    "set user regex ctx error: could not compile regex (regex string: \"%s\")",
-			                    nxs_string_str(&r_ctx->regex_str));
+			nxs_log_write_error(
+			        &process, "set user regex ctx error: could not compile regex (regex string: \"%r\")", &r_ctx->regex_str);
 
 			return NXS_CHAT_SRV_E_ERR;
 		}
@@ -732,8 +731,8 @@ static nxs_chat_srv_err_t project_regex_set(project_regex_t *r_ctx, nxs_string_t
 
 					nxs_log_write_error(
 					        &process,
-					        "get user projects from cache error: regex failed (regex string: \"%s\", error: %s)",
-					        nxs_string_str(&r_ctx->regex_str),
+					        "get user projects from cache error: regex failed (regex string: \"%r\", error: %s)",
+					        &r_ctx->regex_str,
 					        msgbuf);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);

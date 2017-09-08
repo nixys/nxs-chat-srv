@@ -208,7 +208,7 @@ static nxs_rest_api_err_t nxs_chat_srv_p_rest_api_log_handler(nxs_rest_api_ctx_t
 	                  nxs_buf_get_len(b),
 	                  u);
 
-	nxs_log_write_info(&process, "%s", nxs_string_str(&l));
+	nxs_log_write_info(&process, "%r", &l);
 
 	nxs_string_free(&l);
 	nxs_string_free(&args);

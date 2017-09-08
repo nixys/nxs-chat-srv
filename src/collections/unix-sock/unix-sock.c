@@ -63,36 +63,36 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_create(nxs_net_unix_server_t *sock)
 			case NXS_NET_E_MAX_UNIX_PATH_SIZE:
 
 				nxs_log_write_error(&process,
-				                    "[%s]: failed to create queue socket: socket path is too long (sock path: \"%s\")",
+				                    "[%s]: failed to create queue socket: socket path is too long (sock path: \"%r\")",
 				                    nxs_proc_get_name(&process),
-				                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path));
+				                    &nxs_chat_srv_cfg.queue_worker.sock_path);
 
 				break;
 
 			case NXS_NET_E_PWNAM:
 
 				nxs_log_write_error(&process,
-				                    "[%s]: failed to create queue socket: can't resolve user name (sock path: \"%s\")",
+				                    "[%s]: failed to create queue socket: can't resolve user name (sock path: \"%r\")",
 				                    nxs_proc_get_name(&process),
-				                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path));
+				                    &nxs_chat_srv_cfg.queue_worker.sock_path);
 
 				break;
 
 			case NXS_NET_E_GRNAM:
 
 				nxs_log_write_error(&process,
-				                    "[%s]: failed to create queue socket: can't resolve group name (sock path: \"%s\")",
+				                    "[%s]: failed to create queue socket: can't resolve group name (sock path: \"%r\")",
 				                    nxs_proc_get_name(&process),
-				                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path));
+				                    &nxs_chat_srv_cfg.queue_worker.sock_path);
 
 				break;
 
 			default:
 
 				nxs_log_write_error(&process,
-				                    "[%s]: failed to create queue socket (sock path: \"%s\", error code: %d)",
+				                    "[%s]: failed to create queue socket (sock path: \"%r\", error code: %d)",
 				                    nxs_proc_get_name(&process),
-				                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path),
+				                    &nxs_chat_srv_cfg.queue_worker.sock_path,
 				                    ec);
 
 				break;
@@ -104,9 +104,9 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_create(nxs_net_unix_server_t *sock)
 	if((ec = nxs_net_unix_listen(&process, sock)) != NXS_NET_E_OK) {
 
 		nxs_log_write_error(&process,
-		                    "[%s]: failed to create queue socket: listen error (sock path: \"%s\", error: \"%s\", error code: %d)",
+		                    "[%s]: failed to create queue socket: listen error (sock path: \"%r\", error: \"%s\", error code: %d)",
 		                    nxs_proc_get_name(&process),
-		                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path),
+		                    &nxs_chat_srv_cfg.queue_worker.sock_path,
 		                    strerror(errno),
 		                    ec);
 
@@ -116,9 +116,9 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_create(nxs_net_unix_server_t *sock)
 	if((ec = nxs_net_unix_accept_poll_init(sock)) != NXS_NET_E_OK) {
 
 		nxs_log_write_error(&process,
-		                    "[%s]: failed to create queue socket: poll error (sock path: \"%s\", error code: %d)",
+		                    "[%s]: failed to create queue socket: poll error (sock path: \"%r\", error code: %d)",
 		                    nxs_proc_get_name(&process),
-		                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path),
+		                    &nxs_chat_srv_cfg.queue_worker.sock_path,
 		                    ec);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -148,9 +148,9 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_send(nxs_string_t *message)
 		case NXS_NET_E_MAX_UNIX_PATH_SIZE:
 
 			nxs_log_write_error(&process,
-			                    "[%s]: error while connecting to socket: socket path is too long (sock path: \"%s\")",
+			                    "[%s]: error while connecting to socket: socket path is too long (sock path: \"%r\")",
 			                    nxs_proc_get_name(&process),
-			                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path));
+			                    &nxs_chat_srv_cfg.queue_worker.sock_path);
 
 			return NXS_CHAT_SRV_E_ERR;
 
@@ -159,9 +159,9 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_send(nxs_string_t *message)
 			if(ec != NXS_NET_E_OK) {
 
 				nxs_log_write_error(&process,
-				                    "[%s]: error while connecting to socket (sock path: \"%s\", error code: %d)",
+				                    "[%s]: error while connecting to socket (sock path: \"%r\", error code: %d)",
 				                    nxs_proc_get_name(&process),
-				                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path),
+				                    &nxs_chat_srv_cfg.queue_worker.sock_path,
 				                    ec);
 
 				return NXS_CHAT_SRV_E_ERR;
@@ -175,9 +175,9 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_send(nxs_string_t *message)
 		case NXS_NET_E_SOCK_CREATE:
 
 			nxs_log_write_error(&process,
-			                    "[%s]: error while connecting to socket: socket create error (sock path: \"%s\")",
+			                    "[%s]: error while connecting to socket: socket create error (sock path: \"%r\")",
 			                    nxs_proc_get_name(&process),
-			                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path));
+			                    &nxs_chat_srv_cfg.queue_worker.sock_path);
 
 			return NXS_CHAT_SRV_E_ERR;
 
@@ -185,9 +185,9 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_send(nxs_string_t *message)
 
 			nxs_log_write_error(&process,
 			                    "[%s]: error while connecting to socket: socket connect error, check socket existence and "
-			                    "permissions (sock path: \"%s\")",
+			                    "permissions (sock path: \"%r\")",
 			                    nxs_proc_get_name(&process),
-			                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path));
+			                    &nxs_chat_srv_cfg.queue_worker.sock_path);
 
 			return NXS_CHAT_SRV_E_ERR;
 
@@ -196,9 +196,9 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_send(nxs_string_t *message)
 			if(ec != NXS_NET_E_OK) {
 
 				nxs_log_write_error(&process,
-				                    "[%s]: error while connecting to socket (sock path: \"%s\", error code: %d)",
+				                    "[%s]: error while connecting to socket (sock path: \"%r\", error code: %d)",
 				                    nxs_proc_get_name(&process),
-				                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path),
+				                    &nxs_chat_srv_cfg.queue_worker.sock_path,
 				                    ec);
 
 				return NXS_CHAT_SRV_E_ERR;
@@ -206,16 +206,16 @@ nxs_chat_srv_err_t nxs_chat_srv_c_unix_sock_send(nxs_string_t *message)
 	}
 
 	nxs_log_write_debug(&process,
-	                    "[%s]: connected to socket (sock path: \"%s\")",
+	                    "[%s]: connected to socket (sock path: \"%r\")",
 	                    nxs_proc_get_name(&process),
-	                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path));
+	                    &nxs_chat_srv_cfg.queue_worker.sock_path);
 
 	if((ec = nxs_net_send(&process, &ctl_conn, NXS_NET_TIMEOUT_DEFAULT, message, NXS_NET_DATA_TYPE_STRING)) != NXS_NET_E_OK) {
 
 		nxs_log_write_error(&process,
-		                    "[%s]: error while sending command to socket (sock path: \"%s\", error code: %d)",
+		                    "[%s]: error while sending command to socket (sock path: \"%r\", error code: %d)",
 		                    nxs_proc_get_name(&process),
-		                    nxs_string_str(&nxs_chat_srv_cfg.queue_worker.sock_path),
+		                    &nxs_chat_srv_cfg.queue_worker.sock_path,
 		                    ec);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);

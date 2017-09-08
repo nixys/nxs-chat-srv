@@ -148,7 +148,7 @@ static int nxs_chat_srv_conf_args_freeargs(nxs_args_t args, int argc, int argind
 static int nxs_chat_srv_conf_args_help(nxs_args_t args, u_char arg, u_char *optarg)
 {
 
-	nxs_log_write_info(&process, "%s", nxs_string_str(&args.help));
+	nxs_log_write_info(&process, "%r", &args.help);
 
 	return NXS_ARGS_CONF_OK_EXIT;
 }

@@ -468,10 +468,7 @@ static nxs_cfg_json_state_t
 
 		if(nxs_string_get_char(&mode, i) < '0' || nxs_string_get_char(&mode, i) > '7') {
 
-			nxs_log_write_error(&process,
-			                    "option '%s' has wrong value (value: \"%s\")",
-			                    nxs_string_str(&_s_par_sock_mode),
-			                    nxs_string_str(&mode));
+			nxs_log_write_error(&process, "option '%r' has wrong value (value: \"%r\")", &_s_par_sock_mode, &mode);
 
 			nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
 		}
