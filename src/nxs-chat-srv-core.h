@@ -93,6 +93,12 @@ typedef struct
 typedef struct
 {
 	nxs_string_t				host;
+	uint16_t				port;
+} nxs_chat_srv_cfg_redis_t;
+
+typedef struct
+{
+	nxs_string_t				host;
 	nxs_string_t				api_key;
 	nxs_string_t				auth_token;
 } nxs_chat_srv_cfg_rdmn_t;
@@ -113,6 +119,7 @@ typedef struct
 	nxs_chat_srv_cfg_bind_t			bind;
 	nxs_chat_srv_cfg_tlgrm_t		tlgrm;
 	nxs_chat_srv_cfg_mysql_t		mysql;
+	nxs_chat_srv_cfg_redis_t		redis;
 	nxs_chat_srv_cfg_rdmn_t			rdmn;
 	nxs_chat_srv_cfg_queue_worker_t		queue_worker;
 } nxs_chat_srv_cfg_t;
