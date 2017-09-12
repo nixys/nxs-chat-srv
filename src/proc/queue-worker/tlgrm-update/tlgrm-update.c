@@ -29,65 +29,55 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 typedef struct
 {
 	nxs_chat_srv_m_db_sess_type_t		type;
-	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback, nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_u_db_users_t *users_ctx, size_t tlgrm_userid, nxs_chat_srv_u_queue_cache_t *queue_cache);
+	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback, nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_user_ctx_t *user_ctx);
 } handlers_callback_t;
 
 typedef struct
 {
 	nxs_chat_srv_m_db_sess_type_t		type;
-	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_u_db_users_t *users_ctx, size_t tlgrm_userid, nxs_chat_srv_u_queue_cache_t *queue_cache);
+	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_user_ctx_t *user_ctx);
 } handlers_message_t;
 
 /* Module internal (static) functions prototypes */
 
 // clang-format on
 
-static nxs_bool_t check_user(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                             nxs_chat_srv_u_db_users_t *    users_ctx,
-                             nxs_chat_srv_m_tlgrm_update_t *update,
-                             size_t *                       tlgrm_user_id);
+static size_t check_user(nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_user_ctx_t *user_ctx, nxs_chat_srv_m_tlgrm_update_t *update);
 
 static nxs_chat_srv_err_t handler_callback_exec(nxs_chat_srv_m_tlgrm_update_t *update,
                                                 nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                nxs_chat_srv_u_db_users_t *    users_ctx,
-                                                size_t                         tlgrm_user_id,
-                                                nxs_chat_srv_u_queue_cache_t * queue_cache);
+                                                nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                nxs_chat_srv_m_user_ctx_t *    user_ctx);
 
 static nxs_chat_srv_err_t handler_message_exec(nxs_chat_srv_m_tlgrm_update_t *update,
                                                nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                               nxs_chat_srv_u_db_users_t *    users_ctx,
-                                               size_t                         tlgrm_user_id,
-                                               nxs_chat_srv_u_queue_cache_t * queue_cache);
+                                               nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                               nxs_chat_srv_m_user_ctx_t *    user_ctx);
 
 static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
                                                              nxs_chat_srv_m_tlgrm_update_t *       update,
                                                              nxs_chat_srv_u_db_sess_t *            sess_ctx,
-                                                             nxs_chat_srv_u_db_users_t *           users_ctx,
-                                                             size_t                                tlgrm_userid,
-                                                             nxs_chat_srv_u_queue_cache_t *        queue_cache);
+                                                             nxs_chat_srv_u_db_cache_t *           cache_ctx,
+                                                             nxs_chat_srv_m_user_ctx_t *           user_ctx);
 static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
                                                                nxs_chat_srv_m_tlgrm_update_t *       update,
                                                                nxs_chat_srv_u_db_sess_t *            sess_ctx,
-                                                               nxs_chat_srv_u_db_users_t *           users_ctx,
-                                                               size_t                                tlgrm_userid,
-                                                               nxs_chat_srv_u_queue_cache_t *        queue_cache);
+                                                               nxs_chat_srv_u_db_cache_t *           cache_ctx,
+                                                               nxs_chat_srv_m_user_ctx_t *           user_ctx);
 
 static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_m_tlgrm_update_t *update,
                                                           nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                          nxs_chat_srv_u_db_users_t *    users_ctx,
-                                                          size_t                         tlgrm_userid,
-                                                          nxs_chat_srv_u_queue_cache_t * queue_cache);
+                                                          nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                          nxs_chat_srv_m_user_ctx_t *    user_ctx);
 
 static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_m_tlgrm_update_t *update,
                                                             nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                            nxs_chat_srv_u_db_users_t *    users_ctx,
-                                                            size_t                         tlgrm_userid,
-                                                            nxs_chat_srv_u_queue_cache_t * queue_cache);
+                                                            nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                            nxs_chat_srv_m_user_ctx_t *    user_ctx);
 static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlgrm_update_t *update,
                                                               nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                              nxs_chat_srv_u_db_users_t *    users_ctx,
-                                                              size_t                         tlgrm_userid,
-                                                              nxs_chat_srv_u_queue_cache_t * queue_cache);
+                                                              nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                              nxs_chat_srv_m_user_ctx_t *    user_ctx);
 
 // clang-format off
 
@@ -109,28 +99,17 @@ static handlers_message_t handlers_message[] =
 	{NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE,		NULL}
 };
 
-/* TODO: replace this by real redmine projects array (used by dev purposes) */
-static nxs_string_t tmp_priority[] =
-{
-	nxs_string("Низкий"),
-	nxs_string("Нормальный"),
-	nxs_string("Высокий"),
-
-	nxs_string("")
-};
-
 /* Module global functions */
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv_m_queue_com_types_t type,
-                                                                    nxs_string_t *                   data,
-                                                                    nxs_chat_srv_u_queue_cache_t *   queue_cache)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv_m_queue_com_types_t type, nxs_string_t *data)
 {
 	nxs_string_t                  base64_decoded;
 	nxs_chat_srv_m_tlgrm_update_t update;
-	nxs_chat_srv_u_db_users_t *   users_ctx;
 	nxs_chat_srv_u_db_sess_t *    sess_ctx;
+	nxs_chat_srv_u_db_cache_t *   cache_ctx;
+	nxs_chat_srv_m_user_ctx_t     user_ctx;
 	nxs_chat_srv_err_t            rc;
 	size_t                        tlgrm_user_id;
 
@@ -140,8 +119,10 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 
 	nxs_chat_srv_c_tlgrm_update_init(&update);
 
-	users_ctx = nxs_chat_srv_u_db_users_init();
 	sess_ctx  = nxs_chat_srv_u_db_sess_init();
+	cache_ctx = nxs_chat_srv_u_db_cache_init();
+
+	nxs_chat_srv_c_user_ctx_init(&user_ctx);
 
 	nxs_base64_decode_string(&base64_decoded, data);
 
@@ -150,12 +131,12 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(nxs_chat_srv_u_db_users_pull(users_ctx) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_u_db_cache_pull(cache_ctx) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(check_user(sess_ctx, users_ctx, &update, &tlgrm_user_id) == NXS_NO) {
+	if((tlgrm_user_id = check_user(cache_ctx, &user_ctx, &update)) == 0) {
 
 		/* User not found */
 
@@ -173,11 +154,11 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 
 		nxs_chat_srv_u_tlgrm_answercallbackquery_push(&update.callback_query.id, NULL, 0);
 
-		nxs_error(rc, handler_callback_exec(&update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache), error);
+		nxs_error(rc, handler_callback_exec(&update, sess_ctx, cache_ctx, &user_ctx), error);
 	}
 	else {
 
-		nxs_error(rc, handler_message_exec(&update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache), error);
+		nxs_error(rc, handler_message_exec(&update, sess_ctx, cache_ctx, &user_ctx), error);
 	}
 
 error:
@@ -186,45 +167,69 @@ error:
 
 	nxs_chat_srv_c_tlgrm_update_free(&update);
 
-	users_ctx = nxs_chat_srv_u_db_users_free(users_ctx);
+	nxs_chat_srv_c_user_ctx_free(&user_ctx);
+
 	sess_ctx  = nxs_chat_srv_u_db_sess_free(sess_ctx);
+	cache_ctx = nxs_chat_srv_u_db_cache_free(cache_ctx);
 
 	return rc;
 }
 
 /* Module internal (static) functions */
 
-static nxs_bool_t check_user(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                             nxs_chat_srv_u_db_users_t *    users_ctx,
-                             nxs_chat_srv_m_tlgrm_update_t *update,
-                             size_t *                       tlgrm_user_id)
+static size_t check_user(nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_user_ctx_t *user_ctx, nxs_chat_srv_m_tlgrm_update_t *update)
 {
-	nxs_chat_srv_m_db_users_t m_user;
-
-	*tlgrm_user_id = 0;
+	nxs_string_t *tlgrm_username, *tlgrm_userlang, *s;
+	size_t        tlgrm_user_id, i;
+	nxs_bool_t    f;
 
 	if(update->callback_query._is_used == NXS_YES) {
 
-		*tlgrm_user_id = update->callback_query.from.id;
+		tlgrm_user_id  = update->callback_query.from.id;
+		tlgrm_username = &update->callback_query.from.username;
+		tlgrm_userlang = &update->callback_query.from.language_code;
 	}
 	else {
 
-		*tlgrm_user_id = update->message.from.id;
+		tlgrm_user_id  = update->message.from.id;
+		tlgrm_username = &update->message.from.username;
+		tlgrm_userlang = &update->message.from.language_code;
 	}
 
-	if(nxs_chat_srv_u_db_users_find_by_tid(users_ctx, *tlgrm_user_id, &m_user) == NXS_CHAT_SRV_E_OK) {
+	if(nxs_array_count(&nxs_chat_srv_cfg.dev_accounts) > 0) {
 
-		return NXS_YES;
+		for(f = NXS_NO, i = 0; i < nxs_array_count(&nxs_chat_srv_cfg.dev_accounts); i++) {
+
+			s = nxs_array_get(&nxs_chat_srv_cfg.dev_accounts, i);
+
+			if(nxs_string_cmp(s, 0, tlgrm_username, 0) == NXS_YES) {
+
+				f = NXS_YES;
+
+				break;
+			}
+		}
+
+		if(f == NXS_NO) {
+
+			return 0;
+		}
 	}
 
-	return NXS_NO;
+	if(nxs_chat_srv_u_db_cache_user_get(cache_ctx, tlgrm_username, user_ctx) == NXS_CHAT_SRV_E_OK) {
+
+		nxs_string_clone(&user_ctx->t_userlang, tlgrm_userlang);
+
+		return tlgrm_user_id;
+	}
+
+	return 0;
 }
 
 static nxs_chat_srv_err_t handler_callback_exec(nxs_chat_srv_m_tlgrm_update_t *update,
                                                 nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                nxs_chat_srv_u_db_users_t *    users_ctx,
-                                                size_t                         tlgrm_user_id,
-                                                nxs_chat_srv_u_queue_cache_t * queue_cache)
+                                                nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                nxs_chat_srv_m_user_ctx_t *    user_ctx)
 {
 	size_t                               i;
 	nxs_chat_srv_m_db_sess_type_t        type;
@@ -254,10 +259,8 @@ static nxs_chat_srv_err_t handler_callback_exec(nxs_chat_srv_m_tlgrm_update_t *u
 
 				if(handlers_callback[i].handler != NULL) {
 
-					nxs_error(rc,
-					          handlers_callback[i].handler(
-					                  &callback, update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache),
-					          error);
+					nxs_error(
+					        rc, handlers_callback[i].handler(&callback, update, sess_ctx, cache_ctx, user_ctx), error);
 				}
 				else {
 
@@ -268,9 +271,7 @@ static nxs_chat_srv_err_t handler_callback_exec(nxs_chat_srv_m_tlgrm_update_t *u
 
 		if(handlers_callback[i].handler != NULL) {
 
-			nxs_error(rc,
-			          handlers_callback[i].handler(&callback, update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache),
-			          error);
+			nxs_error(rc, handlers_callback[i].handler(&callback, update, sess_ctx, cache_ctx, user_ctx), error);
 		}
 	}
 
@@ -282,7 +283,7 @@ error:
 		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_callback_exec' (user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
-		                   tlgrm_user_id,
+		                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 		                   rc);
 	}
 
@@ -291,9 +292,8 @@ error:
 
 static nxs_chat_srv_err_t handler_message_exec(nxs_chat_srv_m_tlgrm_update_t *update,
                                                nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                               nxs_chat_srv_u_db_users_t *    users_ctx,
-                                               size_t                         tlgrm_user_id,
-                                               nxs_chat_srv_u_queue_cache_t * queue_cache)
+                                               nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                               nxs_chat_srv_m_user_ctx_t *    user_ctx)
 {
 	size_t                        i;
 	nxs_chat_srv_m_db_sess_type_t type;
@@ -313,7 +313,7 @@ static nxs_chat_srv_err_t handler_message_exec(nxs_chat_srv_m_tlgrm_update_t *up
 
 			/* user has no sessions, creating new one and starting dialog */
 
-			if(handler_message_sess_type_empty(update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache) != NXS_CHAT_SRV_E_OK) {
+			if(handler_message_sess_type_empty(update, sess_ctx, cache_ctx, user_ctx) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -328,10 +328,7 @@ static nxs_chat_srv_err_t handler_message_exec(nxs_chat_srv_m_tlgrm_update_t *up
 
 					if(handlers_message[i].handler != NULL) {
 
-						nxs_error(rc,
-						          handlers_message[i].handler(
-						                  update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache),
-						          error);
+						nxs_error(rc, handlers_message[i].handler(update, sess_ctx, cache_ctx, user_ctx), error);
 					}
 					else {
 
@@ -342,7 +339,7 @@ static nxs_chat_srv_err_t handler_message_exec(nxs_chat_srv_m_tlgrm_update_t *up
 
 			if(handlers_message[i].handler != NULL) {
 
-				nxs_error(rc, handlers_message[i].handler(update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache), error);
+				nxs_error(rc, handlers_message[i].handler(update, sess_ctx, cache_ctx, user_ctx), error);
 			}
 		}
 	}
@@ -355,7 +352,7 @@ error:
 		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_message_exec' (user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
-		                   tlgrm_user_id,
+		                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 		                   rc);
 	}
 
@@ -365,21 +362,20 @@ error:
 static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
                                                              nxs_chat_srv_m_tlgrm_update_t *       update,
                                                              nxs_chat_srv_u_db_sess_t *            sess_ctx,
-                                                             nxs_chat_srv_u_db_users_t *           users_ctx,
-                                                             size_t                                tlgrm_userid,
-                                                             nxs_chat_srv_u_queue_cache_t *        queue_cache)
+                                                             nxs_chat_srv_u_db_cache_t *           cache_ctx,
+                                                             nxs_chat_srv_m_user_ctx_t *           user_ctx)
 {
-	size_t                    chat_id, message_id, project_id;
-	nxs_chat_srv_m_db_users_t user;
-	nxs_string_t              project_name;
-	nxs_chat_srv_err_t        rc;
+	size_t                                   chat_id, message_id;
+	nxs_chat_srv_err_t                       rc;
+	nxs_chat_srv_m_db_cache_issue_priority_t issue_priority;
+	nxs_array_t                              cache_projects;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	nxs_string_init(&project_name);
-
 	chat_id    = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
 	message_id = nxs_chat_srv_u_db_sess_get_message_id(sess_ctx);
+
+	nxs_array_init2(&cache_projects, nxs_chat_srv_m_db_cache_project_t);
 
 	switch(callback->type) {
 
@@ -387,26 +383,18 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 			/* new issue creation process */
 
-			if(nxs_chat_srv_u_db_users_find_by_tid(users_ctx, tlgrm_userid, &user) != NXS_CHAT_SRV_E_OK) {
+			nxs_chat_srv_u_db_cache_prio_get_default(cache_ctx, &issue_priority);
 
-				nxs_log_write_warn(&process,
-				                   "[%s]: can't find user in users ctx (callback type: %d, "
-				                   "user id: %zu)",
-				                   nxs_proc_get_name(&process),
-				                   callback->type,
-				                   tlgrm_userid,
-				                   rc);
+			nxs_chat_srv_u_db_cache_projects_get(cache_ctx, &cache_projects);
 
-				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
-				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
-
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-			}
-
-			nxs_chat_srv_u_queue_cache_get_user_project_first(queue_cache, user.rdmn_userid, &project_id, &project_name);
-
-			if(nxs_chat_srv_u_db_sess_t_conv_to_new_issue(
-			           sess_ctx, project_id, &project_name, 0, &tmp_priority[1], NULL, NULL, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_sess_t_conv_to_new_issue(sess_ctx,
+			                                              &cache_projects,
+			                                              user_ctx->r_userid,
+			                                              issue_priority.id,
+			                                              issue_priority.name,
+			                                              NULL,
+			                                              NULL,
+			                                              NULL) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
 				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
@@ -464,7 +452,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 			                   "user id: %zu)",
 			                   nxs_proc_get_name(&process),
 			                   callback->type,
-			                   tlgrm_userid,
+			                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 			                   rc);
 
 			nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
@@ -476,7 +464,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 error:
 
-	nxs_string_free(&project_name);
+	nxs_array_free(&cache_projects);
 
 	if(rc != NXS_CHAT_SRV_E_OK) {
 
@@ -485,7 +473,7 @@ error:
 		                   "user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
-		                   tlgrm_userid,
+		                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 		                   rc);
 	}
 
@@ -495,25 +483,15 @@ error:
 static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
                                                                nxs_chat_srv_m_tlgrm_update_t *       update,
                                                                nxs_chat_srv_u_db_sess_t *            sess_ctx,
-                                                               nxs_chat_srv_u_db_users_t *           users_ctx,
-                                                               size_t                                tlgrm_userid,
-                                                               nxs_chat_srv_u_queue_cache_t *        queue_cache)
+                                                               nxs_chat_srv_u_db_cache_t *           cache_ctx,
+                                                               nxs_chat_srv_m_user_ctx_t *           user_ctx)
 {
-	nxs_string_t              callback_str, description, subject, project_name, priority_name, project_name_regex, message;
-	size_t                    priority_id, project_id, chat_id, message_id, projects_count;
-	nxs_array_t               projects;
-	nxs_chat_srv_m_db_users_t user;
-	nxs_chat_srv_err_t        rc;
+	size_t                                   chat_id, message_id, projects_count;
+	nxs_array_t                              projects;
+	nxs_chat_srv_err_t                       rc;
+	nxs_chat_srv_m_db_cache_issue_priority_t issue_priority;
 
-	nxs_string_init(&callback_str);
-	nxs_string_init(&description);
-	nxs_string_init(&subject);
-	nxs_string_init(&project_name);
-	nxs_string_init(&priority_name);
-	nxs_string_init(&project_name_regex);
-	nxs_string_init(&message);
-
-	nxs_array_init2(&projects, nxs_chat_srv_m_queue_cache_project_t);
+	nxs_array_init2(&projects, nxs_chat_srv_m_db_sess_project_t);
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -560,51 +538,16 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 				}
 			}
 
-			if(nxs_chat_srv_u_db_users_find_by_tid(users_ctx, tlgrm_userid, &user) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_sess_t_get_new_issue_projects(
+			           sess_ctx, &projects, callback->object_id, NXS_CHAT_SRV_TLGRM_PROJECTS_LIMIT, &projects_count) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_log_write_warn(&process,
-				                   "[%s]: can't find user in users ctx (callback type: %d, "
+				                   "[%s]: can't find user selected projects from session (callback type: %d, "
 				                   "user id: %zu)",
 				                   nxs_proc_get_name(&process),
 				                   callback->type,
-				                   tlgrm_userid,
-				                   rc);
-
-				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
-				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
-
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-			}
-
-			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx,
-			                                          &project_id,
-			                                          &project_name,
-			                                          &priority_id,
-			                                          &priority_name,
-			                                          &subject,
-			                                          &description,
-			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
-
-				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
-				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
-
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-			}
-
-			if(nxs_chat_srv_u_queue_cache_get_user_projects(queue_cache,
-			                                                user.rdmn_userid,
-			                                                &projects,
-			                                                &project_name_regex,
-			                                                callback->object_id,
-			                                                NXS_CHAT_SRV_TLGRM_PROJECTS_LIMIT,
-			                                                &projects_count) != NXS_CHAT_SRV_E_OK) {
-
-				nxs_log_write_warn(&process,
-				                   "[%s]: can't find user projects in cache (callback type: %d, "
-				                   "user id: %zu)",
-				                   nxs_proc_get_name(&process),
-				                   callback->type,
-				                   tlgrm_userid,
+				                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 				                   rc);
 
 				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
@@ -627,48 +570,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PROJECT:
 
-			if(nxs_chat_srv_u_db_users_find_by_tid(users_ctx, tlgrm_userid, &user) != NXS_CHAT_SRV_E_OK) {
-
-				nxs_log_write_warn(&process,
-				                   "[%s]: can't find user in users ctx (callback type: %d, "
-				                   "user id: %zu)",
-				                   nxs_proc_get_name(&process),
-				                   callback->type,
-				                   tlgrm_userid,
-				                   rc);
-
-				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
-				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
-
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-			}
-
-			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx,
-			                                          &project_id,
-			                                          &project_name,
-			                                          &priority_id,
-			                                          &priority_name,
-			                                          &subject,
-			                                          &description,
-			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
-
-				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
-				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
-
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-			}
-
-			nxs_chat_srv_u_queue_cache_get_user_project_by_id(
-			        queue_cache, user.rdmn_userid, callback->object_id, &project_name);
-
-			if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx,
-			                                          callback->object_id,
-			                                          &project_name,
-			                                          priority_id,
-			                                          &priority_name,
-			                                          &subject,
-			                                          &description,
-			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx, callback->object_id, 0, NULL, NULL, NULL, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
 				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
@@ -689,8 +592,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PRIORITY:
 
-			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(sess_ctx, chat_id, message_id, update, NULL) !=
-			   NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(
+			           sess_ctx, cache_ctx, chat_id, message_id, update, NULL) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
 				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
@@ -702,14 +605,15 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY:
 
-			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx,
-			                                          &project_id,
-			                                          &project_name,
-			                                          &priority_id,
-			                                          &priority_name,
-			                                          &subject,
-			                                          &description,
-			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_cache_prio_get_by_id(cache_ctx, callback->object_id, &issue_priority) != NXS_CHAT_SRV_E_OK) {
+
+				nxs_log_write_warn(&process,
+				                   "[%s]: issue priority id does not exist (issue priority id: %zu, "
+				                   "user id: %zu)",
+				                   nxs_proc_get_name(&process),
+				                   callback->object_id,
+				                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
+				                   rc);
 
 				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
 				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
@@ -717,14 +621,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx,
-			                                          project_id,
-			                                          &project_name,
-			                                          callback->object_id,
-			                                          &tmp_priority[callback->object_id],
-			                                          &subject,
-			                                          &description,
-			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx, 0, issue_priority.id, issue_priority.name, NULL, NULL, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
 				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
@@ -811,7 +709,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 			                   "user id: %zu)",
 			                   nxs_proc_get_name(&process),
 			                   callback->type,
-			                   tlgrm_userid,
+			                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 			                   rc);
 
 			nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
@@ -823,14 +721,6 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 
 error:
 
-	nxs_string_free(&callback_str);
-	nxs_string_free(&description);
-	nxs_string_free(&subject);
-	nxs_string_free(&project_name);
-	nxs_string_free(&priority_name);
-	nxs_string_free(&project_name_regex);
-	nxs_string_free(&message);
-
 	nxs_array_free(&projects);
 
 	if(rc != NXS_CHAT_SRV_E_OK) {
@@ -840,7 +730,7 @@ error:
 		                   "user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
-		                   tlgrm_userid,
+		                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 		                   rc);
 	}
 
@@ -849,9 +739,8 @@ error:
 
 static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_m_tlgrm_update_t *update,
                                                           nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                          nxs_chat_srv_u_db_users_t *    users_ctx,
-                                                          size_t                         tlgrm_userid,
-                                                          nxs_chat_srv_u_queue_cache_t * queue_cache)
+                                                          nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                          nxs_chat_srv_m_user_ctx_t *    user_ctx)
 {
 	nxs_chat_srv_m_tlgrm_message_t response_message;
 	nxs_bool_t                     response_status;
@@ -913,7 +802,7 @@ error:
 		                   "user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
-		                   tlgrm_userid,
+		                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 		                   rc);
 	}
 
@@ -922,9 +811,8 @@ error:
 
 static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_m_tlgrm_update_t *update,
                                                             nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                            nxs_chat_srv_u_db_users_t *    users_ctx,
-                                                            size_t                         tlgrm_userid,
-                                                            nxs_chat_srv_u_queue_cache_t * queue_cache)
+                                                            nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                            nxs_chat_srv_m_user_ctx_t *    user_ctx)
 {
 	nxs_chat_srv_err_t rc;
 
@@ -951,7 +839,7 @@ error:
 		                   "user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
-		                   tlgrm_userid,
+		                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 		                   rc);
 	}
 
@@ -961,27 +849,21 @@ error:
 /* TODO: сейчас происходит двойное получение информации данных из сессии в этой функции и функциях comment_*, необходимо это устранить */
 static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlgrm_update_t *update,
                                                               nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                              nxs_chat_srv_u_db_users_t *    users_ctx,
-                                                              size_t                         tlgrm_userid,
-                                                              nxs_chat_srv_u_queue_cache_t * queue_cache)
+                                                              nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                              nxs_chat_srv_m_user_ctx_t *    user_ctx)
 {
-	nxs_string_t              callback_str, description, subject, project_name, priority_name, project_name_regex, message;
-	size_t                    priority_id, project_id, chat_id, message_id, projects_count;
-	nxs_chat_srv_m_db_users_t user;
-	nxs_array_t               projects;
-	nxs_chat_srv_err_t        rc;
+	nxs_string_t       description, subject, project_name_regex;
+	size_t             chat_id, message_id, projects_count;
+	nxs_array_t        projects;
+	nxs_chat_srv_err_t rc;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	nxs_string_init(&callback_str);
 	nxs_string_init(&description);
 	nxs_string_init(&subject);
-	nxs_string_init(&project_name);
-	nxs_string_init(&priority_name);
 	nxs_string_init(&project_name_regex);
-	nxs_string_init(&message);
 
-	nxs_array_init2(&projects, nxs_chat_srv_m_queue_cache_project_t);
+	nxs_array_init2(&projects, nxs_chat_srv_m_db_sess_project_t);
 
 	chat_id    = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
 	message_id = nxs_chat_srv_u_db_sess_get_message_id(sess_ctx);
@@ -992,14 +874,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 			/* set subject process */
 
-			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx,
-			                                          &project_id,
-			                                          &project_name,
-			                                          &priority_id,
-			                                          &priority_name,
-			                                          &subject,
-			                                          &description,
-			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, NULL, NULL, NULL, &subject, NULL, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
@@ -1017,14 +893,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 				/* if subject is changed */
 
-				if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx,
-				                                          project_id,
-				                                          &project_name,
-				                                          priority_id,
-				                                          &priority_name,
-				                                          &update->message.text,
-				                                          &description,
-				                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
+				if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx, 0, 0, NULL, &update->message.text, NULL, NULL) !=
+				   NXS_CHAT_SRV_E_OK) {
 
 					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
@@ -1056,14 +926,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 			/* set description process */
 
-			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx,
-			                                          &project_id,
-			                                          &project_name,
-			                                          &priority_id,
-			                                          &priority_name,
-			                                          &subject,
-			                                          &description,
-			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, NULL, NULL, NULL, NULL, &description, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
@@ -1081,14 +945,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 				/* if description is changed */
 
-				if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx,
-				                                          project_id,
-				                                          &project_name,
-				                                          priority_id,
-				                                          &priority_name,
-				                                          &subject,
-				                                          &update->message.text,
-				                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
+				if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx, 0, 0, NULL, NULL, &update->message.text, NULL) !=
+				   NXS_CHAT_SRV_E_OK) {
 
 					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
@@ -1118,14 +976,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 			/* set description process */
 
-			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx,
-			                                          &project_id,
-			                                          &project_name,
-			                                          &priority_id,
-			                                          &priority_name,
-			                                          &subject,
-			                                          &description,
-			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, NULL, NULL, NULL, NULL, NULL, &project_name_regex) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
@@ -1136,48 +988,23 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 				/* if project name regex is changed */
 
-				if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx,
-				                                          project_id,
-				                                          &project_name,
-				                                          priority_id,
-				                                          &priority_name,
-				                                          &subject,
-				                                          &description,
-				                                          &update->message.text) != NXS_CHAT_SRV_E_OK) {
+				if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx, 0, 0, NULL, NULL, NULL, &update->message.text) !=
+				   NXS_CHAT_SRV_E_OK) {
 
 					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
 
-				if(nxs_chat_srv_u_db_users_find_by_tid(users_ctx, tlgrm_userid, &user) != NXS_CHAT_SRV_E_OK) {
-
-					nxs_log_write_warn(&process,
-					                   "[%s]: can't find user in users ctx ("
-					                   "user id: %zu)",
-					                   nxs_proc_get_name(&process),
-					                   tlgrm_userid,
-					                   rc);
-
-					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
-					        sess_ctx, update->callback_query.message.chat.id, update, NULL);
-
-					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-				}
-
-				if(nxs_chat_srv_u_queue_cache_get_user_projects(queue_cache,
-				                                                user.rdmn_userid,
-				                                                &projects,
-				                                                &update->message.text,
-				                                                0,
-				                                                NXS_CHAT_SRV_TLGRM_PROJECTS_LIMIT,
-				                                                &projects_count) != NXS_CHAT_SRV_E_OK) {
+				if(nxs_chat_srv_u_db_sess_t_get_new_issue_projects(
+				           sess_ctx, &projects, 0, NXS_CHAT_SRV_TLGRM_PROJECTS_LIMIT, &projects_count) !=
+				   NXS_CHAT_SRV_E_OK) {
 
 					nxs_log_write_warn(&process,
 					                   "[%s]: can't find user projects in cache ("
 					                   "user id: %zu)",
 					                   nxs_proc_get_name(&process),
-					                   tlgrm_userid,
+					                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 					                   rc);
 
 					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
@@ -1218,19 +1045,15 @@ error:
 		                   "user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
-		                   tlgrm_userid,
+		                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
 		                   rc);
 	}
 
 	nxs_array_free(&projects);
 
-	nxs_string_free(&callback_str);
 	nxs_string_free(&description);
 	nxs_string_free(&subject);
-	nxs_string_free(&project_name);
-	nxs_string_free(&priority_name);
 	nxs_string_free(&project_name_regex);
-	nxs_string_free(&message);
 
 	return rc;
 }

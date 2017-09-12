@@ -21,6 +21,7 @@ extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 typedef struct
 {
 	pid_t			queue_worker_pid;
+	pid_t			cache_worker_pid;
 	pid_t			rest_api_pid;
 } nxs_chat_srv_p_bootstrap_ctx_t;
 
@@ -67,6 +68,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap(void)
 	}
 
 	p_ctx.queue_worker_pid = 0;
+	p_ctx.cache_worker_pid = 0;
 	p_ctx.rest_api_pid     = 0;
 
 	nxs_proc_signal_set(
@@ -78,11 +80,11 @@ nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap(void)
 	nxs_proc_signal_set(
 	        &process, SIGUSR1, NXS_PROCESS_SA_FLAG_EMPTY, &nxs_chat_srv_p_bootstrap_sighandler_usr1, &p_ctx, NXS_PROCESS_FORCE_NO);
 
+	nxs_proc_signal_block(&process, SIGINT, SIGTERM, SIGCHLD, SIGUSR1, NXS_PROCESS_SIG_END_ARGS);
+
 	/*
 	 * Starting queue worker
 	 */
-
-	nxs_proc_signal_block(&process, SIGINT, SIGTERM, SIGCHLD, SIGUSR1, NXS_PROCESS_SIG_END_ARGS);
 
 	if((p_ctx.queue_worker_pid = nxs_proc_fork(&process, NXS_PROCESS_CHLD_SIG_CLEAR, (u_char *)"queue-worker")) ==
 	   NXS_PROCESS_FORK_ERR) {
@@ -96,6 +98,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap(void)
 		if(p_ctx.queue_worker_pid == NXS_PROCESS_FORK_CHILD) {
 
 			p_ctx.queue_worker_pid = 0;
+			p_ctx.cache_worker_pid = 0;
 			p_ctx.rest_api_pid     = 0;
 
 			return nxs_chat_srv_p_queue_worker_runtime();
@@ -103,6 +106,32 @@ nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap(void)
 
 		nxs_log_write_debug(
 		        &process, "[%s]: started queue worker process (pid: %d)", nxs_proc_get_name(&process), p_ctx.queue_worker_pid);
+	}
+
+	/*
+	 * Starting cache worker
+	 */
+
+	if((p_ctx.cache_worker_pid = nxs_proc_fork(&process, NXS_PROCESS_CHLD_SIG_CLEAR, (u_char *)"cache-worker")) ==
+	   NXS_PROCESS_FORK_ERR) {
+
+		nxs_chat_srv_p_bootstrap_term(&p_ctx);
+
+		return NXS_CHAT_SRV_E_ERR;
+	}
+	else {
+
+		if(p_ctx.cache_worker_pid == NXS_PROCESS_FORK_CHILD) {
+
+			p_ctx.queue_worker_pid = 0;
+			p_ctx.cache_worker_pid = 0;
+			p_ctx.rest_api_pid     = 0;
+
+			return nxs_chat_srv_p_cache_worker_runtime();
+		}
+
+		nxs_log_write_debug(
+		        &process, "[%s]: started cache worker process (pid: %d)", nxs_proc_get_name(&process), p_ctx.cache_worker_pid);
 	}
 
 	/*
@@ -120,6 +149,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap(void)
 		if(p_ctx.rest_api_pid == NXS_PROCESS_FORK_CHILD) {
 
 			p_ctx.queue_worker_pid = 0;
+			p_ctx.cache_worker_pid = 0;
 			p_ctx.rest_api_pid     = 0;
 
 			return nxs_chat_srv_p_rest_api_runtime();
@@ -308,11 +338,25 @@ static void nxs_chat_srv_p_bootstrap_sighandler_child(int sig, void *data)
 			}
 			else {
 
-				nxs_log_write_warn(&process,
-				                   "[%s]: unknown process was finished (pid: %d, status: %d)",
-				                   nxs_proc_get_name(&process),
-				                   cpid,
-				                   WEXITSTATUS(chld_status));
+				if(cpid == p_ctx->cache_worker_pid) {
+
+					nxs_log_write_error(&process,
+					                    "[%s]: cache worker was finished unexpectedly, program will terminate (pid: "
+					                    "%d, status: %d)",
+					                    nxs_proc_get_name(&process),
+					                    cpid,
+					                    WEXITSTATUS(chld_status));
+
+					p_ctx->cache_worker_pid = 0;
+				}
+				else {
+
+					nxs_log_write_warn(&process,
+					                   "[%s]: unknown process was finished (pid: %d, status: %d)",
+					                   nxs_proc_get_name(&process),
+					                   cpid,
+					                   WEXITSTATUS(chld_status));
+				}
 			}
 		}
 	}
@@ -347,6 +391,10 @@ static void nxs_chat_srv_p_bootstrap_sighandler_usr1(int sig, void *data)
 	nxs_proc_kill(p_ctx->queue_worker_pid, SIGUSR1);
 
 	nxs_log_write_debug(
+	        &process, "[%s]: sending SIGUSR1 to cache worker (pid: %d)", nxs_proc_get_name(&process), p_ctx->cache_worker_pid);
+	nxs_proc_kill(p_ctx->cache_worker_pid, SIGUSR1);
+
+	nxs_log_write_debug(
 	        &process, "[%s]: sending SIGUSR1 to rest-api process (pid: %d)", nxs_proc_get_name(&process), p_ctx->rest_api_pid);
 	nxs_proc_kill(p_ctx->rest_api_pid, SIGUSR1);
 
@@ -367,6 +415,11 @@ static void nxs_chat_srv_p_bootstrap_term(nxs_chat_srv_p_bootstrap_ctx_t *p_ctx)
 	if(p_ctx->queue_worker_pid > 0) {
 
 		nxs_proc_term_pid(p_ctx->queue_worker_pid, 1000, &chld_status);
+	}
+
+	if(p_ctx->cache_worker_pid > 0) {
+
+		nxs_proc_term_pid(p_ctx->cache_worker_pid, 1000, &chld_status);
 	}
 
 	if(nxs_fs_unlink(&nxs_chat_srv_cfg.proc.pid_file) == -1) {

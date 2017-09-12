@@ -51,10 +51,9 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
                                                                           nxs_buf_t *                    response_buf)
 {
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
-	nxs_string_t       callback_str, description, subject, project_name, priority_name, project_name_regex, message;
-	size_t             priority_id, project_id;
-	nxs_buf_t *        b;
-	nxs_chat_srv_err_t rc;
+	nxs_string_t                            callback_str, description, subject, project_name, priority_name, message;
+	nxs_buf_t *                             b;
+	nxs_chat_srv_err_t                      rc;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -63,7 +62,6 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 	nxs_string_init(&subject);
 	nxs_string_init(&project_name);
 	nxs_string_init(&priority_name);
-	nxs_string_init(&project_name_regex);
 	nxs_string_init(&message);
 
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
@@ -76,8 +74,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 
 		/* update existing comment */
 
-		nxs_chat_srv_u_db_sess_t_get_new_issue(
-		        sess_ctx, &project_id, &project_name, &priority_id, &priority_name, &subject, &description, &project_name_regex);
+		nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, &project_name, NULL, &priority_name, &subject, &description, NULL);
 
 		nxs_string_printf(&message,
 		                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE,
@@ -148,7 +145,6 @@ error:
 	nxs_string_free(&subject);
 	nxs_string_free(&project_name);
 	nxs_string_free(&priority_name);
-	nxs_string_free(&project_name_regex);
 	nxs_string_free(&message);
 
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);

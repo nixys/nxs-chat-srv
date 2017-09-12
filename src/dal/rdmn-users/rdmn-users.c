@@ -20,7 +20,7 @@
 
 
 /* Project globals */
-extern		nxs_process_t				process;
+extern		nxs_process_t			process;
 extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module typedefs */
@@ -64,6 +64,8 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_users_get(size_t           user_id,
 	}
 
 	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_buf_clear(out_buf);
 
 	nxs_curl_init(&curl);
 

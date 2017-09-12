@@ -12,6 +12,8 @@
 
 #define NXS_CHAT_SRV_REST_API_MAX_HEADER_SIZE			1048576		/* 1 MB */
 
+#define NXS_CHAT_SRV_RDMN_QUERY_LIMIT				100
+
 #define NXS_CHAT_SRV_TLGRM_PROJECTS_LIMIT			5
 
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE			"*Создание новой задачи*\n\n" \
@@ -144,6 +146,15 @@ typedef struct
 
 typedef struct
 {
+	size_t					rdmn_cf_telegram;
+	time_t					projects_ttl;
+	time_t					users_ttl;
+	time_t					issue_priorities_ttl;
+	nxs_string_t				lock_file;
+} nxs_chat_srv_cfg_cache_t;
+
+typedef struct
+{
 	nxs_chat_srv_cfg_proc_t			proc;
 	nxs_chat_srv_cfg_log_t			log;
 	nxs_chat_srv_cfg_bind_t			bind;
@@ -152,6 +163,8 @@ typedef struct
 	nxs_chat_srv_cfg_redis_t		redis;
 	nxs_chat_srv_cfg_rdmn_t			rdmn;
 	nxs_chat_srv_cfg_queue_worker_t		queue_worker;
+	nxs_chat_srv_cfg_cache_t		cache;
+	nxs_array_t				dev_accounts;
 } nxs_chat_srv_cfg_t;
 
 /* Project includes */

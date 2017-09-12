@@ -38,31 +38,24 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 static nxs_string_t	_s_msg_empty_subject		= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT);
 
-/* TODO: replace this by real redmine projects array (used by dev purposes) */
-static nxs_string_t tmp_priority[] =
-{
-	nxs_string("Низкий"),
-	nxs_string("Нормальный"),
-	nxs_string("Высокий"),
-
-	nxs_string("")
-};
-
 /* Module global functions */
 
 // clang-format on
 
 nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                                                nxs_chat_srv_u_db_cache_t *    cache_ctx,
                                                                                 size_t                         chat_id,
                                                                                 size_t                         message_id,
                                                                                 nxs_chat_srv_m_tlgrm_update_t *update,
                                                                                 nxs_buf_t *                    response_buf)
 {
-	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
-	nxs_string_t       callback_str, description, subject, project_name, priority_name, project_name_regex, message;
-	size_t             priority_id, project_id;
-	nxs_buf_t *        b;
-	nxs_chat_srv_err_t rc;
+	nxs_chat_srv_u_tlgrm_editmessagetext_t *  tlgrm_editmessagetext_ctx;
+	nxs_string_t                              callback_str, description, subject, project_name, priority_name, message;
+	nxs_buf_t *                               b;
+	nxs_chat_srv_err_t                        rc;
+	nxs_chat_srv_m_db_cache_issue_priority_t *issue_priority;
+	nxs_array_t                               priorities;
+	size_t                                    i;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -71,8 +64,9 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(
 	nxs_string_init(&subject);
 	nxs_string_init(&project_name);
 	nxs_string_init(&priority_name);
-	nxs_string_init(&project_name_regex);
 	nxs_string_init(&message);
+
+	nxs_array_init2(&priorities, nxs_chat_srv_m_db_cache_issue_priority_t);
 
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
 
@@ -84,8 +78,9 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(
 
 		/* update existing comment */
 
-		nxs_chat_srv_u_db_sess_t_get_new_issue(
-		        sess_ctx, &project_id, &project_name, &priority_id, &priority_name, &subject, &description, &project_name_regex);
+		nxs_chat_srv_u_db_cache_prio_get(cache_ctx, &priorities);
+
+		nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, &project_name, NULL, &priority_name, &subject, &description, NULL);
 
 		nxs_string_printf(&message,
 		                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE,
@@ -99,29 +94,18 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(
 		nxs_chat_srv_u_tlgrm_editmessagetext_add(
 		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
 
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx,
-		        0,
-		        0,
-		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,
-		        0,
-		        nxs_string_str(&tmp_priority[0]));
+		for(i = 0; i < nxs_array_count(&priorities); i++) {
 
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx,
-		        1,
-		        0,
-		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,
-		        1,
-		        nxs_string_str(&tmp_priority[1]));
+			issue_priority = nxs_array_get(&priorities, i);
 
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx,
-		        2,
-		        0,
-		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,
-		        2,
-		        nxs_string_str(&tmp_priority[2]));
+			nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
+			        tlgrm_editmessagetext_ctx,
+			        i,
+			        0,
+			        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,
+			        issue_priority->id,
+			        nxs_string_str(issue_priority->name));
+		}
 
 		if(nxs_chat_srv_u_tlgrm_editmessagetext_push(tlgrm_editmessagetext_ctx) != NXS_CHAT_SRV_E_OK) {
 
@@ -143,8 +127,9 @@ error:
 	nxs_string_free(&subject);
 	nxs_string_free(&project_name);
 	nxs_string_free(&priority_name);
-	nxs_string_free(&project_name_regex);
 	nxs_string_free(&message);
+
+	nxs_array_free(&priorities);
 
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);
 

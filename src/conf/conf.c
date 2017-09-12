@@ -119,6 +119,9 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_path);
 	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_user);
 	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_group);
+	nxs_string_init(&nxs_chat_srv_cfg.cache.lock_file);
+
+	nxs_array_init2(&nxs_chat_srv_cfg.dev_accounts, nxs_string_t);
 
 	nxs_chat_srv_cfg.proc.queue_worker_term_timeout = 10;
 	nxs_chat_srv_cfg.proc.rest_api_term_timeout     = 10;
@@ -129,6 +132,10 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_chat_srv_cfg.redis.port                     = 0;
 	nxs_chat_srv_cfg.queue_worker.sock_mode         = 0;
 	nxs_chat_srv_cfg.queue_worker.sock_max_conn     = 0;
+	nxs_chat_srv_cfg.cache.rdmn_cf_telegram         = 0;
+	nxs_chat_srv_cfg.cache.projects_ttl             = 0;
+	nxs_chat_srv_cfg.cache.users_ttl                = 0;
+	nxs_chat_srv_cfg.cache.issue_priorities_ttl     = 0;
 
 	/* Init cfg context values */
 

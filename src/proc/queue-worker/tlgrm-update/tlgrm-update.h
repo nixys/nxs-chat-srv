@@ -3,6 +3,6 @@
 
 // clang-format off
 
-nxs_chat_srv_err_t		nxs_chat_srv_p_queue_worker_tlgrm_update_runtime	(nxs_chat_srv_m_queue_com_types_t type, nxs_string_t *data, nxs_chat_srv_u_queue_cache_t *queue_cache);
+nxs_chat_srv_err_t		nxs_chat_srv_p_queue_worker_tlgrm_update_runtime	(nxs_chat_srv_m_queue_com_types_t type, nxs_string_t *data);
 
 #endif /* _INCLUDE_NXS_CHAT_SRV_P_QUEUE_WORKER_TLGRM_UPDATE_H */

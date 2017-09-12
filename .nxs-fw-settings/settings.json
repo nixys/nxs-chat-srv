@@ -5,7 +5,6 @@
 		"nxs-cfg-json",
 		"nxs-curl",
 		"nxs-json",
-		"nxs-mysql",
 		"nxs-rest-api"
 	]
 }

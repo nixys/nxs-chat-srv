@@ -52,12 +52,12 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(n
                                                                                nxs_buf_t *                    response_buf)
 {
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
-	nxs_string_t                          callback_str, description, subject, project_name, priority_name, project_name_regex, message;
-	size_t                                priority_id, project_id;
-	nxs_buf_t *                           b;
-	nxs_chat_srv_m_queue_cache_project_t *p;
-	size_t                                i;
-	nxs_chat_srv_err_t                    rc;
+	nxs_string_t                      callback_str, description, subject, project_name, priority_name, project_name_regex, message;
+	size_t                            priority_id, project_id;
+	nxs_buf_t *                       b;
+	nxs_chat_srv_m_db_sess_project_t *p;
+	size_t                            i;
+	nxs_chat_srv_err_t                rc;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
