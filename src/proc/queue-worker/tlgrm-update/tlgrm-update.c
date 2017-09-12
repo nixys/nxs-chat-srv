@@ -14,26 +14,7 @@
 
 /* Definitions */
 
-#define PROJECTS_LIMIT	5
 
-#define MESSAGE_ISSUE	"*Создание новой задачи*\n\n" \
-			"*Проект:* %r\n" \
-			"*Приоритет:* %r\n" \
-			"*Тема:* %r\n" \
-			"*Описание:* %r\n---------\n" \
-			"_Ниже Вы можете изменить параметры новой задачи_"
-
-
-#define BUTTON_ADD_LAST_ACTIVE		(u_char *)"Добавить в последнюю активную"
-#define BUTTON_NEW_ISSUE		(u_char *)"Создать новую задачу"
-#define BUTTON_ADD_ADD_TO_ISSUE		(u_char *)"Добавить в #%zu - %s"
-#define BUTTON_PROJECT			(u_char *)"Проект"
-#define BUTTON_PRIORITY			(u_char *)"Приоритет"
-#define BUTTON_DESCRIPTION		(u_char *)"Описание"
-#define BUTTON_CREATE_ISSUE		(u_char *)"Создать задачу %s"
-#define BUTTON_BACK			(u_char *)"<< Назад"
-#define BUTTON_FORWARD			(u_char *)"Вперёд >>"
-#define BUTTON_DESTROY_SESSION		(u_char *)"Начать диалог заново"
 
 /* Project globals */
 extern		nxs_process_t			process;
@@ -49,13 +30,13 @@ typedef struct
 {
 	nxs_chat_srv_m_db_sess_type_t		type;
 	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback, nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_u_db_users_t *users_ctx, size_t tlgrm_userid, nxs_chat_srv_u_queue_cache_t *queue_cache);
-} callback_handlers_t;
+} handlers_callback_t;
 
 typedef struct
 {
 	nxs_chat_srv_m_db_sess_type_t		type;
 	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_u_db_users_t *users_ctx, size_t tlgrm_userid, nxs_chat_srv_u_queue_cache_t *queue_cache);
-} message_handlers_t;
+} handlers_message_t;
 
 /* Module internal (static) functions prototypes */
 
@@ -66,132 +47,64 @@ static nxs_bool_t check_user(nxs_chat_srv_u_db_sess_t *     sess_ctx,
                              nxs_chat_srv_m_tlgrm_update_t *update,
                              size_t *                       tlgrm_user_id);
 
-static nxs_chat_srv_err_t callback_handler_exec(nxs_chat_srv_m_tlgrm_update_t *update,
+static nxs_chat_srv_err_t handler_callback_exec(nxs_chat_srv_m_tlgrm_update_t *update,
                                                 nxs_chat_srv_u_db_sess_t *     sess_ctx,
                                                 nxs_chat_srv_u_db_users_t *    users_ctx,
                                                 size_t                         tlgrm_user_id,
                                                 nxs_chat_srv_u_queue_cache_t * queue_cache);
 
-static nxs_chat_srv_err_t message_handler_exec(nxs_chat_srv_m_tlgrm_update_t *update,
+static nxs_chat_srv_err_t handler_message_exec(nxs_chat_srv_m_tlgrm_update_t *update,
                                                nxs_chat_srv_u_db_sess_t *     sess_ctx,
                                                nxs_chat_srv_u_db_users_t *    users_ctx,
                                                size_t                         tlgrm_user_id,
                                                nxs_chat_srv_u_queue_cache_t * queue_cache);
 
-static nxs_chat_srv_err_t callback_handler_sess_type_message(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
+static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
                                                              nxs_chat_srv_m_tlgrm_update_t *       update,
                                                              nxs_chat_srv_u_db_sess_t *            sess_ctx,
                                                              nxs_chat_srv_u_db_users_t *           users_ctx,
                                                              size_t                                tlgrm_userid,
                                                              nxs_chat_srv_u_queue_cache_t *        queue_cache);
-static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
+static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
                                                                nxs_chat_srv_m_tlgrm_update_t *       update,
                                                                nxs_chat_srv_u_db_sess_t *            sess_ctx,
                                                                nxs_chat_srv_u_db_users_t *           users_ctx,
                                                                size_t                                tlgrm_userid,
                                                                nxs_chat_srv_u_queue_cache_t *        queue_cache);
 
-static nxs_chat_srv_err_t message_handler_sess_type_message(nxs_chat_srv_m_tlgrm_update_t *update,
+static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_m_tlgrm_update_t *update,
+                                                          nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                          nxs_chat_srv_u_db_users_t *    users_ctx,
+                                                          size_t                         tlgrm_userid,
+                                                          nxs_chat_srv_u_queue_cache_t * queue_cache);
+
+static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_m_tlgrm_update_t *update,
                                                             nxs_chat_srv_u_db_sess_t *     sess_ctx,
                                                             nxs_chat_srv_u_db_users_t *    users_ctx,
                                                             size_t                         tlgrm_userid,
                                                             nxs_chat_srv_u_queue_cache_t * queue_cache);
-static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlgrm_update_t *update,
+static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlgrm_update_t *update,
                                                               nxs_chat_srv_u_db_sess_t *     sess_ctx,
                                                               nxs_chat_srv_u_db_users_t *    users_ctx,
                                                               size_t                         tlgrm_userid,
                                                               nxs_chat_srv_u_queue_cache_t * queue_cache);
 
-static nxs_chat_srv_err_t comment_begin(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                        size_t                         chat_id,
-                                        size_t                         message_id,
-                                        nxs_chat_srv_m_tlgrm_update_t *update,
-                                        nxs_buf_t *                    response_buf);
-static nxs_chat_srv_err_t comment_new_issue(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                            size_t                         chat_id,
-                                            size_t                         message_id,
-                                            nxs_chat_srv_m_tlgrm_update_t *update,
-                                            nxs_buf_t *                    response_buf);
-static nxs_chat_srv_err_t comment_select_project(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                 size_t                         chat_id,
-                                                 size_t                         message_id,
-                                                 nxs_chat_srv_m_tlgrm_update_t *update,
-                                                 nxs_array_t *                  projects,
-                                                 size_t                         offset,
-                                                 size_t                         projects_count,
-                                                 nxs_buf_t *                    response_buf);
-static nxs_chat_srv_err_t comment_select_priority(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                  size_t                         chat_id,
-                                                  size_t                         message_id,
-                                                  nxs_chat_srv_m_tlgrm_update_t *update,
-                                                  nxs_buf_t *                    response_buf);
-static nxs_chat_srv_err_t comment_enter_subject(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                size_t                         chat_id,
-                                                size_t                         message_id,
-                                                nxs_chat_srv_m_tlgrm_update_t *update,
-                                                nxs_buf_t *                    response_buf);
-static nxs_chat_srv_err_t comment_enter_description(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                    size_t                         chat_id,
-                                                    size_t                         message_id,
-                                                    nxs_chat_srv_m_tlgrm_update_t *update,
-                                                    nxs_buf_t *                    response_buf);
-static nxs_chat_srv_err_t comment_issue_created(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                size_t                         chat_id,
-                                                size_t                         message_id,
-                                                nxs_chat_srv_m_tlgrm_update_t *update,
-                                                nxs_buf_t *                    response_buf);
-static nxs_chat_srv_err_t comment_to_issue(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                           size_t                         chat_id,
-                                           size_t                         message_id,
-                                           nxs_chat_srv_m_tlgrm_update_t *update,
-                                           nxs_buf_t *                    response_buf,
-                                           size_t                         issue_id);
-static nxs_chat_srv_err_t
-        comment_error(nxs_chat_srv_u_db_sess_t *sess_ctx, size_t chat_id, nxs_chat_srv_m_tlgrm_update_t *update, nxs_buf_t *response_buf);
-static nxs_chat_srv_err_t comment_wrong_action(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                               size_t                         chat_id,
-                                               nxs_chat_srv_m_tlgrm_update_t *update,
-                                               nxs_buf_t *                    response_buf);
-static nxs_chat_srv_err_t comment_session_destroyed(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                    size_t                         chat_id,
-                                                    nxs_chat_srv_m_tlgrm_update_t *update,
-                                                    nxs_buf_t *                    response_buf);
-static nxs_chat_srv_err_t comment_description_changed(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                      size_t                         chat_id,
-                                                      nxs_chat_srv_m_tlgrm_update_t *update,
-                                                      nxs_buf_t *                    response_buf);
-
 // clang-format off
 
 /* Module initializations */
 
-static u_char		_s_no_entry_sign[]		= {0xE2, 0x9C, 0x85, 0x0};
-static u_char		_s_exclamation[]		= {0xE2, 0x9D, 0x97, 0x0};
-
-static nxs_string_t	_s_msg_begin			= nxs_string("Как поступить с Вашим комментарием? Добавить в последнюю активную задачу, в другую существующую или создать новую?\n---------\nПоследняя активная задача: #44938 - *Установка и "
-									"настройка SpamAssassin*");
-static nxs_string_t	_s_msg_specify_subject		= nxs_string("Как назвать задачу?");
-static nxs_string_t	_s_msg_error			= nxs_string("%s Произошла внутрення ошибка сервера, мы уже получили уведомление об этом и работаем над решением проблемы. Пожалуйста, [воспользуйтесь web-версией системы задач](https://task.nixys.ru/) или повторите свой запрос позже.");
-static nxs_string_t	_s_msg_wrong_action		= nxs_string("Не верное действие. Вам необходимо либо следовать указаниям мастера, либо Вы можете отменить текущий диалог.");
-static nxs_string_t	_s_msg_session_destroyed	= nxs_string("Предыдущий диалог завершён.");
-static nxs_string_t	_s_msg_description_changed	= nxs_string("Описание изменено.");
-static nxs_string_t	_s_msg_specify_description	= nxs_string("Как изменить описание задачи?");
-static nxs_string_t	_s_msg_issue_created		= nxs_string("Новая задача [#47983](https://task.nixys.ru/issues/47983) создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!");
-static nxs_string_t	_s_msg_added_to_issue		= nxs_string("Ваш комментарий отправлен в задачу [#%zu](https://task.nixys.ru/issues/%zu). Благодарим за обращение!");
-static nxs_string_t	_s_msg_empty_subject		= nxs_string("_Будет задана при создании задачи_");
-
-static callback_handlers_t callback_handlers[] =
+static handlers_callback_t handlers_callback[] =
 {
-	{NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE,		&callback_handler_sess_type_message},
-	{NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE,		&callback_handler_sess_type_new_issue},
+	{NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE,		&handler_callback_sess_type_message},
+	{NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE,		&handler_callback_sess_type_new_issue},
 
 	{NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE,		NULL}
 };
 
-static message_handlers_t message_handlers[] =
+static handlers_message_t handlers_message[] =
 {
-	{NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE,		&message_handler_sess_type_message},
-	{NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE,		&message_handler_sess_type_new_issue},
+	{NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE,		&handler_message_sess_type_message},
+	{NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE,		&handler_message_sess_type_new_issue},
 
 	{NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE,		NULL}
 };
@@ -260,11 +173,11 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 
 		nxs_chat_srv_u_tlgrm_answercallbackquery_push(&update.callback_query.id, NULL, 0);
 
-		nxs_error(rc, callback_handler_exec(&update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache), error);
+		nxs_error(rc, handler_callback_exec(&update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache), error);
 	}
 	else {
 
-		nxs_error(rc, message_handler_exec(&update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache), error);
+		nxs_error(rc, handler_message_exec(&update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache), error);
 	}
 
 error:
@@ -307,7 +220,7 @@ static nxs_bool_t check_user(nxs_chat_srv_u_db_sess_t *     sess_ctx,
 	return NXS_NO;
 }
 
-static nxs_chat_srv_err_t callback_handler_exec(nxs_chat_srv_m_tlgrm_update_t *update,
+static nxs_chat_srv_err_t handler_callback_exec(nxs_chat_srv_m_tlgrm_update_t *update,
                                                 nxs_chat_srv_u_db_sess_t *     sess_ctx,
                                                 nxs_chat_srv_u_db_users_t *    users_ctx,
                                                 size_t                         tlgrm_user_id,
@@ -328,21 +241,21 @@ static nxs_chat_srv_err_t callback_handler_exec(nxs_chat_srv_m_tlgrm_update_t *u
 
 		if(nxs_chat_srv_c_tlgrm_bttn_callback_deserialize(&callback, &update->callback_query.data)) {
 
-			comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+			nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
 
 		type = nxs_chat_srv_u_db_sess_get_type(sess_ctx);
 
-		for(i = 0; callback_handlers[i].type != NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE; i++) {
+		for(i = 0; handlers_callback[i].type != NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE; i++) {
 
-			if(callback_handlers[i].type == type) {
+			if(handlers_callback[i].type == type) {
 
-				if(callback_handlers[i].handler != NULL) {
+				if(handlers_callback[i].handler != NULL) {
 
 					nxs_error(rc,
-					          callback_handlers[i].handler(
+					          handlers_callback[i].handler(
 					                  &callback, update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache),
 					          error);
 				}
@@ -353,10 +266,10 @@ static nxs_chat_srv_err_t callback_handler_exec(nxs_chat_srv_m_tlgrm_update_t *u
 			}
 		}
 
-		if(callback_handlers[i].handler != NULL) {
+		if(handlers_callback[i].handler != NULL) {
 
 			nxs_error(rc,
-			          callback_handlers[i].handler(&callback, update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache),
+			          handlers_callback[i].handler(&callback, update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache),
 			          error);
 		}
 	}
@@ -366,7 +279,7 @@ error:
 	if(rc != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_warn(&process,
-		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.callback_handler_exec' (user id: %zu, "
+		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_callback_exec' (user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
 		                   tlgrm_user_id,
@@ -376,23 +289,17 @@ error:
 	return rc;
 }
 
-static nxs_chat_srv_err_t message_handler_exec(nxs_chat_srv_m_tlgrm_update_t *update,
+static nxs_chat_srv_err_t handler_message_exec(nxs_chat_srv_m_tlgrm_update_t *update,
                                                nxs_chat_srv_u_db_sess_t *     sess_ctx,
                                                nxs_chat_srv_u_db_users_t *    users_ctx,
                                                size_t                         tlgrm_user_id,
                                                nxs_chat_srv_u_queue_cache_t * queue_cache)
 {
-	size_t                         i;
-	nxs_chat_srv_m_db_sess_type_t  type;
-	nxs_chat_srv_m_tlgrm_message_t response_message;
-	nxs_bool_t                     response_status;
-	nxs_buf_t                      response_buf;
-	nxs_chat_srv_err_t             rc;
+	size_t                        i;
+	nxs_chat_srv_m_db_sess_type_t type;
+	nxs_chat_srv_err_t            rc;
 
 	rc = NXS_CHAT_SRV_E_OK;
-
-	nxs_chat_srv_c_tlgrm_message_init(&response_message);
-	nxs_buf_init(&response_buf, 1);
 
 	if(update->message.reply_to_message != NULL) {
 
@@ -406,41 +313,7 @@ static nxs_chat_srv_err_t message_handler_exec(nxs_chat_srv_m_tlgrm_update_t *up
 
 			/* user has no sessions, creating new one and starting dialog */
 
-			if(nxs_chat_srv_u_db_sess_start(
-			           sess_ctx, 0, 0, NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE, NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) !=
-			   NXS_CHAT_SRV_E_OK) {
-
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
-
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-			}
-
-			if(nxs_chat_srv_u_db_sess_t_set_message(sess_ctx, &update->message.text) != NXS_CHAT_SRV_E_OK) {
-
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
-
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-			}
-
-			if(comment_begin(sess_ctx, update->message.chat.id, 0, update, &response_buf) != NXS_CHAT_SRV_E_OK) {
-
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
-
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-			}
-
-			if(nxs_chat_srv_c_tlgrm_message_result_pull_json(&response_message, &response_status, &response_buf) !=
-			   NXS_CHAT_SRV_E_OK) {
-
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
-
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-			}
-
-			if(nxs_chat_srv_u_db_sess_set_ids(sess_ctx, response_message.chat.id, response_message.message_id) !=
-			   NXS_CHAT_SRV_E_OK) {
-
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
+			if(handler_message_sess_type_empty(update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -449,14 +322,14 @@ static nxs_chat_srv_err_t message_handler_exec(nxs_chat_srv_m_tlgrm_update_t *up
 
 			type = nxs_chat_srv_u_db_sess_get_type(sess_ctx);
 
-			for(i = 0; message_handlers[i].type != NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE; i++) {
+			for(i = 0; handlers_message[i].type != NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE; i++) {
 
-				if(message_handlers[i].type == type) {
+				if(handlers_message[i].type == type) {
 
-					if(message_handlers[i].handler != NULL) {
+					if(handlers_message[i].handler != NULL) {
 
 						nxs_error(rc,
-						          message_handlers[i].handler(
+						          handlers_message[i].handler(
 						                  update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache),
 						          error);
 					}
@@ -467,23 +340,19 @@ static nxs_chat_srv_err_t message_handler_exec(nxs_chat_srv_m_tlgrm_update_t *up
 				}
 			}
 
-			if(message_handlers[i].handler != NULL) {
+			if(handlers_message[i].handler != NULL) {
 
-				nxs_error(rc, message_handlers[i].handler(update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache), error);
+				nxs_error(rc, handlers_message[i].handler(update, sess_ctx, users_ctx, tlgrm_user_id, queue_cache), error);
 			}
 		}
 	}
 
 error:
 
-	nxs_buf_free(&response_buf);
-
-	nxs_chat_srv_c_tlgrm_message_free(&response_message);
-
 	if(rc != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_warn(&process,
-		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.message_handler_exec' (user id: %zu, "
+		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_message_exec' (user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
 		                   tlgrm_user_id,
@@ -493,7 +362,7 @@ error:
 	return rc;
 }
 
-static nxs_chat_srv_err_t callback_handler_sess_type_message(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
+static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
                                                              nxs_chat_srv_m_tlgrm_update_t *       update,
                                                              nxs_chat_srv_u_db_sess_t *            sess_ctx,
                                                              nxs_chat_srv_u_db_users_t *           users_ctx,
@@ -528,7 +397,8 @@ static nxs_chat_srv_err_t callback_handler_sess_type_message(nxs_chat_srv_m_tlgr
 				                   tlgrm_userid,
 				                   rc);
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -538,14 +408,17 @@ static nxs_chat_srv_err_t callback_handler_sess_type_message(nxs_chat_srv_m_tlgr
 			if(nxs_chat_srv_u_db_sess_t_conv_to_new_issue(
 			           sess_ctx, project_id, &project_name, 0, &tmp_priority[1], NULL, NULL, NULL) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(comment_new_issue(sess_ctx, chat_id, message_id, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(sess_ctx, chat_id, message_id, update, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -556,9 +429,11 @@ static nxs_chat_srv_err_t callback_handler_sess_type_message(nxs_chat_srv_m_tlgr
 
 			/* add comment to selected issue process */
 
-			if(comment_to_issue(sess_ctx, chat_id, 0, update, NULL, callback->object_id) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(
+			           sess_ctx, chat_id, 0, update, NULL, callback->object_id) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -571,9 +446,11 @@ static nxs_chat_srv_err_t callback_handler_sess_type_message(nxs_chat_srv_m_tlgr
 
 			nxs_chat_srv_u_db_sess_destroy(sess_ctx);
 
-			if(comment_session_destroyed(sess_ctx, update->callback_query.message.chat.id, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_session_destroyed(
+			           sess_ctx, update->callback_query.message.chat.id, update, NULL) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -590,7 +467,7 @@ static nxs_chat_srv_err_t callback_handler_sess_type_message(nxs_chat_srv_m_tlgr
 			                   tlgrm_userid,
 			                   rc);
 
-			comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+			nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 
@@ -604,7 +481,7 @@ error:
 	if(rc != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_warn(&process,
-		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.callback_handler_sess_type_message' ("
+		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_callback_sess_type_message' ("
 		                   "user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
@@ -615,7 +492,7 @@ error:
 	return rc;
 }
 
-static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
+static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
                                                                nxs_chat_srv_m_tlgrm_update_t *       update,
                                                                nxs_chat_srv_u_db_sess_t *            sess_ctx,
                                                                nxs_chat_srv_u_db_users_t *           users_ctx,
@@ -650,14 +527,17 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 			if(nxs_chat_srv_u_db_sess_set_wait_for(sess_ctx, NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_ISSUE_SUBJECT) !=
 			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(comment_enter_subject(sess_ctx, chat_id, 0, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_enter_subject(sess_ctx, chat_id, 0, update, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -673,7 +553,8 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 				if(nxs_chat_srv_u_db_sess_set_wait_for(sess_ctx, NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_PROJECTNAME_REGEX) !=
 				   NXS_CHAT_SRV_E_OK) {
 
-					comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+					        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
@@ -689,7 +570,8 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 				                   tlgrm_userid,
 				                   rc);
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -703,7 +585,8 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 			                                          &description,
 			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -713,7 +596,7 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 			                                                &projects,
 			                                                &project_name_regex,
 			                                                callback->object_id,
-			                                                PROJECTS_LIMIT,
+			                                                NXS_CHAT_SRV_TLGRM_PROJECTS_LIMIT,
 			                                                &projects_count) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_log_write_warn(&process,
@@ -724,16 +607,18 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 				                   tlgrm_userid,
 				                   rc);
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(comment_select_project(
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(
 			           sess_ctx, chat_id, message_id, update, &projects, callback->object_id, projects_count, NULL) !=
 			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -752,7 +637,8 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 				                   tlgrm_userid,
 				                   rc);
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -766,7 +652,8 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 			                                          &description,
 			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -783,14 +670,17 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 			                                          &description,
 			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(comment_new_issue(sess_ctx, chat_id, message_id, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(sess_ctx, chat_id, message_id, update, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -799,9 +689,11 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PRIORITY:
 
-			if(comment_select_priority(sess_ctx, chat_id, message_id, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(sess_ctx, chat_id, message_id, update, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -819,7 +711,8 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 			                                          &description,
 			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -833,14 +726,17 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 			                                          &description,
 			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(comment_new_issue(sess_ctx, chat_id, message_id, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(sess_ctx, chat_id, message_id, update, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -852,14 +748,17 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 			if(nxs_chat_srv_u_db_sess_set_wait_for(sess_ctx, NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_ISSUE_DESCRIPTION) !=
 			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(comment_enter_description(sess_ctx, chat_id, 0, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_enter_description(sess_ctx, chat_id, 0, update, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -870,9 +769,11 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 
 			nxs_chat_srv_u_db_sess_destroy(sess_ctx);
 
-			if(comment_session_destroyed(sess_ctx, update->callback_query.message.chat.id, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_session_destroyed(
+			           sess_ctx, update->callback_query.message.chat.id, update, NULL) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -886,14 +787,17 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 
 			if(nxs_chat_srv_u_db_sess_t_conv_to_message(sess_ctx, NULL) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(comment_begin(sess_ctx, chat_id, message_id, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(sess_ctx, chat_id, message_id, update, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+				        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -910,7 +814,7 @@ static nxs_chat_srv_err_t callback_handler_sess_type_new_issue(nxs_chat_srv_m_tl
 			                   tlgrm_userid,
 			                   rc);
 
-			comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+			nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 
@@ -932,7 +836,7 @@ error:
 	if(rc != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_warn(&process,
-		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.callback_handler_sess_type_new_issue' ("
+		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_callback_sess_type_new_issue' ("
 		                   "user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
@@ -943,7 +847,80 @@ error:
 	return rc;
 }
 
-static nxs_chat_srv_err_t message_handler_sess_type_message(nxs_chat_srv_m_tlgrm_update_t *update,
+static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_m_tlgrm_update_t *update,
+                                                          nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                          nxs_chat_srv_u_db_users_t *    users_ctx,
+                                                          size_t                         tlgrm_userid,
+                                                          nxs_chat_srv_u_queue_cache_t * queue_cache)
+{
+	nxs_chat_srv_m_tlgrm_message_t response_message;
+	nxs_bool_t                     response_status;
+	nxs_buf_t                      response_buf;
+	nxs_chat_srv_err_t             rc;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_chat_srv_c_tlgrm_message_init(&response_message);
+	nxs_buf_init(&response_buf, 1);
+
+	if(nxs_chat_srv_u_db_sess_start(sess_ctx, 0, 0, NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE, NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) !=
+	   NXS_CHAT_SRV_E_OK) {
+
+		nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_u_db_sess_t_set_message(sess_ctx, &update->message.text) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(sess_ctx, update->message.chat.id, 0, update, &response_buf) !=
+	   NXS_CHAT_SRV_E_OK) {
+
+		nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_c_tlgrm_message_result_pull_json(&response_message, &response_status, &response_buf) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_u_db_sess_set_ids(sess_ctx, response_message.chat.id, response_message.message_id) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+error:
+
+	nxs_buf_free(&response_buf);
+
+	nxs_chat_srv_c_tlgrm_message_free(&response_message);
+
+	if(rc != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_warn(&process,
+		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_message_sess_type_empty' ("
+		                   "user id: %zu, "
+		                   "error code: %d)",
+		                   nxs_proc_get_name(&process),
+		                   tlgrm_userid,
+		                   rc);
+	}
+
+	return rc;
+}
+
+static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_m_tlgrm_update_t *update,
                                                             nxs_chat_srv_u_db_sess_t *     sess_ctx,
                                                             nxs_chat_srv_u_db_users_t *    users_ctx,
                                                             size_t                         tlgrm_userid,
@@ -957,7 +934,10 @@ static nxs_chat_srv_err_t message_handler_sess_type_message(nxs_chat_srv_m_tlgrm
 
 		default:
 
-			nxs_error(rc, comment_wrong_action(sess_ctx, update->message.chat.id, update, NULL), error);
+			nxs_error(
+			        rc,
+			        nxs_chat_srv_p_queue_worker_tlgrm_update_win_wrong_action(sess_ctx, update->message.chat.id, update, NULL),
+			        error);
 
 			break;
 	}
@@ -967,7 +947,7 @@ error:
 	if(rc != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_warn(&process,
-		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.message_handler_sess_type_message' ("
+		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_message_sess_type_message' ("
 		                   "user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
@@ -979,7 +959,7 @@ error:
 }
 
 /* TODO: сейчас происходит двойное получение информации данных из сессии в этой функции и функциях comment_*, необходимо это устранить */
-static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlgrm_update_t *update,
+static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlgrm_update_t *update,
                                                               nxs_chat_srv_u_db_sess_t *     sess_ctx,
                                                               nxs_chat_srv_u_db_users_t *    users_ctx,
                                                               size_t                         tlgrm_userid,
@@ -1021,14 +1001,14 @@ static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlg
 			                                          &description,
 			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
 			if(nxs_chat_srv_u_db_sess_set_wait_for(sess_ctx, NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -1046,22 +1026,24 @@ static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlg
 				                                          &description,
 				                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
-					comment_error(sess_ctx, update->message.chat.id, update, NULL);
+					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
 
-				if(comment_new_issue(sess_ctx, chat_id, message_id, update, NULL) != NXS_CHAT_SRV_E_OK) {
+				if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(sess_ctx, chat_id, message_id, update, NULL) !=
+				   NXS_CHAT_SRV_E_OK) {
 
-					comment_error(sess_ctx, update->message.chat.id, update, NULL);
+					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
 			}
 
-			if(comment_issue_created(sess_ctx, chat_id, 0, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(sess_ctx, chat_id, 0, update, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -1083,14 +1065,14 @@ static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlg
 			                                          &description,
 			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
 			if(nxs_chat_srv_u_db_sess_set_wait_for(sess_ctx, NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -1108,22 +1090,24 @@ static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlg
 				                                          &update->message.text,
 				                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
-					comment_error(sess_ctx, update->message.chat.id, update, NULL);
+					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
 
-				if(comment_new_issue(sess_ctx, chat_id, message_id, update, NULL) != NXS_CHAT_SRV_E_OK) {
+				if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(sess_ctx, chat_id, message_id, update, NULL) !=
+				   NXS_CHAT_SRV_E_OK) {
 
-					comment_error(sess_ctx, update->message.chat.id, update, NULL);
+					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
 			}
 
-			if(comment_description_changed(sess_ctx, chat_id, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_description_changed(sess_ctx, chat_id, update, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -1143,7 +1127,7 @@ static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlg
 			                                          &description,
 			                                          &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
-				comment_error(sess_ctx, update->message.chat.id, update, NULL);
+				nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -1161,7 +1145,7 @@ static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlg
 				                                          &description,
 				                                          &update->message.text) != NXS_CHAT_SRV_E_OK) {
 
-					comment_error(sess_ctx, update->message.chat.id, update, NULL);
+					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, update->message.chat.id, update, NULL);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
@@ -1175,7 +1159,8 @@ static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlg
 					                   tlgrm_userid,
 					                   rc);
 
-					comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+					        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
@@ -1185,7 +1170,7 @@ static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlg
 				                                                &projects,
 				                                                &update->message.text,
 				                                                0,
-				                                                PROJECTS_LIMIT,
+				                                                NXS_CHAT_SRV_TLGRM_PROJECTS_LIMIT,
 				                                                &projects_count) != NXS_CHAT_SRV_E_OK) {
 
 					nxs_log_write_warn(&process,
@@ -1195,15 +1180,18 @@ static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlg
 					                   tlgrm_userid,
 					                   rc);
 
-					comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+					        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
 
-				if(comment_select_project(sess_ctx, chat_id, message_id, update, &projects, 0, projects_count, NULL) !=
+				if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(
+				           sess_ctx, chat_id, message_id, update, &projects, 0, projects_count, NULL) !=
 				   NXS_CHAT_SRV_E_OK) {
 
-					comment_error(sess_ctx, update->callback_query.message.chat.id, update, NULL);
+					nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(
+					        sess_ctx, update->callback_query.message.chat.id, update, NULL);
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
@@ -1213,7 +1201,10 @@ static nxs_chat_srv_err_t message_handler_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 		default:
 
-			nxs_error(rc, comment_wrong_action(sess_ctx, update->message.chat.id, update, NULL), error);
+			nxs_error(
+			        rc,
+			        nxs_chat_srv_p_queue_worker_tlgrm_update_win_wrong_action(sess_ctx, update->message.chat.id, update, NULL),
+			        error);
 
 			break;
 	}
@@ -1223,7 +1214,7 @@ error:
 	if(rc != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_warn(&process,
-		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.message_handler_sess_type_new_issue' ("
+		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_message_sess_type_new_issue' ("
 		                   "user id: %zu, "
 		                   "error code: %d)",
 		                   nxs_proc_get_name(&process),
@@ -1240,775 +1231,6 @@ error:
 	nxs_string_free(&priority_name);
 	nxs_string_free(&project_name_regex);
 	nxs_string_free(&message);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_begin(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                        size_t                         chat_id,
-                                        size_t                         message_id,
-                                        nxs_chat_srv_m_tlgrm_update_t *update,
-                                        nxs_buf_t *                    response_buf)
-{
-	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
-	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
-	nxs_string_t                            callback_str;
-	nxs_buf_t *                             b;
-	nxs_chat_srv_err_t                      rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	nxs_string_init(&callback_str);
-
-	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_init();
-	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
-
-	if(message_id == 0) {
-
-		/* create new comment */
-
-		nxs_chat_srv_u_tlgrm_sendmessage_add(
-		        tlgrm_sendmessage_ctx, chat_id, &_s_msg_begin, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-		nxs_chat_srv_u_tlgrm_sendmessage_inline_keybutton_callback_add(
-		        tlgrm_sendmessage_ctx, 0, 0, NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE, 44938, BUTTON_ADD_LAST_ACTIVE);
-
-		nxs_chat_srv_u_tlgrm_sendmessage_inline_keybutton_callback_add(
-		        tlgrm_sendmessage_ctx, 0, 1, NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_NEW_ISSUE, 0, BUTTON_NEW_ISSUE);
-
-		nxs_chat_srv_u_tlgrm_sendmessage_inline_keybutton_callback_add(
-		        tlgrm_sendmessage_ctx,
-		        1,
-		        0,
-		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE,
-		        46470,
-		        BUTTON_ADD_ADD_TO_ISSUE,
-		        46470,
-		        "Подключение услуг к серверу 148.251.68.145 в соответствии с выбранным тарифным планом Nixys Standard Plus");
-
-		nxs_chat_srv_u_tlgrm_sendmessage_inline_keybutton_callback_add(
-		        tlgrm_sendmessage_ctx,
-		        2,
-		        0,
-		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE,
-		        46653,
-		        BUTTON_ADD_ADD_TO_ISSUE,
-		        46653,
-		        "Monitoring Alert: Spamassassin is not running on Seolinks-s1");
-
-		// nxs_chat_srv_u_tlgrm_sendmessage_force_reply_set(tlgrm_sendmessage_ctx, 0);
-
-		if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
-
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
-
-		if(response_buf != NULL) {
-
-			b = nxs_chat_srv_u_tlgrm_sendmessage_get_response_buf(tlgrm_sendmessage_ctx);
-
-			nxs_buf_clone(response_buf, b);
-		}
-	}
-	else {
-
-		/* update existing comment */
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, &_s_msg_begin, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx, 0, 0, NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE, 44938, BUTTON_ADD_LAST_ACTIVE);
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx, 0, 1, NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_NEW_ISSUE, 0, BUTTON_NEW_ISSUE);
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx,
-		        1,
-		        0,
-		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE,
-		        46470,
-		        BUTTON_ADD_ADD_TO_ISSUE,
-		        46470,
-		        "Подключение услуг к серверу 148.251.68.145 в соответствии с выбранным тарифным планом Nixys Standard Plus");
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx,
-		        2,
-		        0,
-		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE,
-		        46653,
-		        BUTTON_ADD_ADD_TO_ISSUE,
-		        46653,
-		        "Monitoring Alert: Spamassassin is not running on Seolinks-s1");
-
-		if(nxs_chat_srv_u_tlgrm_editmessagetext_push(tlgrm_editmessagetext_ctx) != NXS_CHAT_SRV_E_OK) {
-
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
-
-		if(response_buf != NULL) {
-
-			b = nxs_chat_srv_u_tlgrm_editmessagetext_get_response_buf(tlgrm_editmessagetext_ctx);
-
-			nxs_buf_clone(response_buf, b);
-		}
-	}
-
-error:
-
-	nxs_string_free(&callback_str);
-
-	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
-	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_new_issue(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                            size_t                         chat_id,
-                                            size_t                         message_id,
-                                            nxs_chat_srv_m_tlgrm_update_t *update,
-                                            nxs_buf_t *                    response_buf)
-{
-	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
-	nxs_string_t       callback_str, description, subject, project_name, priority_name, project_name_regex, message;
-	size_t             priority_id, project_id;
-	nxs_buf_t *        b;
-	nxs_chat_srv_err_t rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	nxs_string_init(&callback_str);
-	nxs_string_init(&description);
-	nxs_string_init(&subject);
-	nxs_string_init(&project_name);
-	nxs_string_init(&priority_name);
-	nxs_string_init(&project_name_regex);
-	nxs_string_init(&message);
-
-	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
-
-	if(message_id == 0) {
-
-		/* create new comment */
-	}
-	else {
-
-		/* update existing comment */
-
-		nxs_chat_srv_u_db_sess_t_get_new_issue(
-		        sess_ctx, &project_id, &project_name, &priority_id, &priority_name, &subject, &description, &project_name_regex);
-
-		nxs_string_printf(&message,
-		                  MESSAGE_ISSUE,
-		                  &project_name,
-		                  &priority_name,
-		                  nxs_string_len(&subject) > 0 ? &subject : &_s_msg_empty_subject,
-		                  &description);
-
-		tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx, 0, 0, NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PROJECT, 0, BUTTON_PROJECT);
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx, 0, 1, NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PRIORITY, 0, BUTTON_PRIORITY);
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx, 0, 2, NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CHANGE_DESCRIPTION, 0, BUTTON_DESCRIPTION);
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(tlgrm_editmessagetext_ctx,
-		                                                                   1,
-		                                                                   0,
-		                                                                   NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CREATE_ISSUE,
-		                                                                   0,
-		                                                                   BUTTON_CREATE_ISSUE,
-		                                                                   _s_no_entry_sign);
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx, 2, 0, NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK, 0, BUTTON_BACK);
-
-		if(nxs_chat_srv_u_tlgrm_editmessagetext_push(tlgrm_editmessagetext_ctx) != NXS_CHAT_SRV_E_OK) {
-
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
-
-		if(response_buf != NULL) {
-
-			b = nxs_chat_srv_u_tlgrm_editmessagetext_get_response_buf(tlgrm_editmessagetext_ctx);
-
-			nxs_buf_clone(response_buf, b);
-		}
-	}
-
-error:
-
-	nxs_string_free(&callback_str);
-	nxs_string_free(&description);
-	nxs_string_free(&subject);
-	nxs_string_free(&project_name);
-	nxs_string_free(&priority_name);
-	nxs_string_free(&project_name_regex);
-	nxs_string_free(&message);
-
-	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_select_project(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                 size_t                         chat_id,
-                                                 size_t                         message_id,
-                                                 nxs_chat_srv_m_tlgrm_update_t *update,
-                                                 nxs_array_t *                  projects,
-                                                 size_t                         offset,
-                                                 size_t                         projects_count,
-                                                 nxs_buf_t *                    response_buf)
-{
-	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
-	nxs_string_t                          callback_str, description, subject, project_name, priority_name, project_name_regex, message;
-	size_t                                priority_id, project_id;
-	nxs_buf_t *                           b;
-	nxs_chat_srv_m_queue_cache_project_t *p;
-	size_t                                i;
-	nxs_chat_srv_err_t                    rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	nxs_string_init(&callback_str);
-	nxs_string_init(&description);
-	nxs_string_init(&subject);
-	nxs_string_init(&project_name);
-	nxs_string_init(&priority_name);
-	nxs_string_init(&project_name_regex);
-	nxs_string_init(&message);
-
-	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
-
-	if(message_id == 0) {
-
-		/* create new comment */
-	}
-	else {
-
-		/* update existing comment */
-
-		nxs_chat_srv_u_db_sess_t_get_new_issue(
-		        sess_ctx, &project_id, &project_name, &priority_id, &priority_name, &subject, &description, &project_name_regex);
-
-		nxs_string_printf(&message,
-		                  MESSAGE_ISSUE,
-		                  &project_name,
-		                  &priority_name,
-		                  nxs_string_len(&subject) > 0 ? &subject : &_s_msg_empty_subject,
-		                  &description);
-
-		tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-		for(i = 0; i < nxs_array_count(projects); i++) {
-
-			p = nxs_array_get(projects, i);
-
-			nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-			        tlgrm_editmessagetext_ctx,
-			        i,
-			        0,
-			        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PROJECT,
-			        p->id,
-			        nxs_string_str(p->name));
-		}
-
-		if(offset > 0) {
-
-			nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-			        tlgrm_editmessagetext_ctx,
-			        i,
-			        0,
-			        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PROJECT,
-			        offset - PROJECTS_LIMIT,
-			        BUTTON_BACK);
-		}
-
-		if(projects_count > offset + PROJECTS_LIMIT) {
-
-			nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-			        tlgrm_editmessagetext_ctx,
-			        i,
-			        1,
-			        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PROJECT,
-			        offset + PROJECTS_LIMIT,
-			        BUTTON_FORWARD);
-		}
-
-		if(nxs_chat_srv_u_tlgrm_editmessagetext_push(tlgrm_editmessagetext_ctx) != NXS_CHAT_SRV_E_OK) {
-
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
-
-		if(response_buf != NULL) {
-
-			b = nxs_chat_srv_u_tlgrm_editmessagetext_get_response_buf(tlgrm_editmessagetext_ctx);
-
-			nxs_buf_clone(response_buf, b);
-		}
-	}
-
-error:
-
-	nxs_string_free(&callback_str);
-	nxs_string_free(&description);
-	nxs_string_free(&subject);
-	nxs_string_free(&project_name);
-	nxs_string_free(&priority_name);
-	nxs_string_free(&project_name_regex);
-	nxs_string_free(&message);
-
-	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_select_priority(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                  size_t                         chat_id,
-                                                  size_t                         message_id,
-                                                  nxs_chat_srv_m_tlgrm_update_t *update,
-                                                  nxs_buf_t *                    response_buf)
-{
-	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
-	nxs_string_t       callback_str, description, subject, project_name, priority_name, project_name_regex, message;
-	size_t             priority_id, project_id;
-	nxs_buf_t *        b;
-	nxs_chat_srv_err_t rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	nxs_string_init(&callback_str);
-	nxs_string_init(&description);
-	nxs_string_init(&subject);
-	nxs_string_init(&project_name);
-	nxs_string_init(&priority_name);
-	nxs_string_init(&project_name_regex);
-	nxs_string_init(&message);
-
-	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
-
-	if(message_id == 0) {
-
-		/* create new comment */
-	}
-	else {
-
-		/* update existing comment */
-
-		nxs_chat_srv_u_db_sess_t_get_new_issue(
-		        sess_ctx, &project_id, &project_name, &priority_id, &priority_name, &subject, &description, &project_name_regex);
-
-		nxs_string_printf(&message,
-		                  MESSAGE_ISSUE,
-		                  &project_name,
-		                  &priority_name,
-		                  nxs_string_len(&subject) > 0 ? &subject : &_s_msg_empty_subject,
-		                  &description);
-
-		tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx,
-		        0,
-		        0,
-		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,
-		        0,
-		        nxs_string_str(&tmp_priority[0]));
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx,
-		        1,
-		        0,
-		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,
-		        1,
-		        nxs_string_str(&tmp_priority[1]));
-
-		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-		        tlgrm_editmessagetext_ctx,
-		        2,
-		        0,
-		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,
-		        2,
-		        nxs_string_str(&tmp_priority[2]));
-
-		if(nxs_chat_srv_u_tlgrm_editmessagetext_push(tlgrm_editmessagetext_ctx) != NXS_CHAT_SRV_E_OK) {
-
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
-
-		if(response_buf != NULL) {
-
-			b = nxs_chat_srv_u_tlgrm_editmessagetext_get_response_buf(tlgrm_editmessagetext_ctx);
-
-			nxs_buf_clone(response_buf, b);
-		}
-	}
-
-error:
-
-	nxs_string_free(&callback_str);
-	nxs_string_free(&description);
-	nxs_string_free(&subject);
-	nxs_string_free(&project_name);
-	nxs_string_free(&priority_name);
-	nxs_string_free(&project_name_regex);
-	nxs_string_free(&message);
-
-	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_enter_subject(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                size_t                         chat_id,
-                                                size_t                         message_id,
-                                                nxs_chat_srv_m_tlgrm_update_t *update,
-                                                nxs_buf_t *                    response_buf)
-{
-	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_buf_t *                         b;
-
-	nxs_chat_srv_err_t rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
-
-	if(message_id == 0) {
-
-		/* create new comment */
-
-		nxs_chat_srv_u_tlgrm_sendmessage_add(
-		        tlgrm_sendmessage_ctx, chat_id, &_s_msg_specify_subject, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-		if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
-
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
-
-		if(response_buf != NULL) {
-
-			b = nxs_chat_srv_u_tlgrm_sendmessage_get_response_buf(tlgrm_sendmessage_ctx);
-
-			nxs_buf_clone(response_buf, b);
-		}
-	}
-	else {
-
-		/* update existing comment */
-	}
-
-error:
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_enter_description(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                    size_t                         chat_id,
-                                                    size_t                         message_id,
-                                                    nxs_chat_srv_m_tlgrm_update_t *update,
-                                                    nxs_buf_t *                    response_buf)
-{
-	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_buf_t *                         b;
-
-	nxs_chat_srv_err_t rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
-
-	if(message_id == 0) {
-
-		/* create new comment */
-
-		nxs_chat_srv_u_tlgrm_sendmessage_add(
-		        tlgrm_sendmessage_ctx, chat_id, &_s_msg_specify_description, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-		if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
-
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
-
-		if(response_buf != NULL) {
-
-			b = nxs_chat_srv_u_tlgrm_sendmessage_get_response_buf(tlgrm_sendmessage_ctx);
-
-			nxs_buf_clone(response_buf, b);
-		}
-	}
-	else {
-
-		/* update existing comment */
-	}
-
-error:
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_issue_created(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                size_t                         chat_id,
-                                                size_t                         message_id,
-                                                nxs_chat_srv_m_tlgrm_update_t *update,
-                                                nxs_buf_t *                    response_buf)
-{
-	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_buf_t *                         b;
-
-	nxs_chat_srv_err_t rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
-
-	if(message_id == 0) {
-
-		/* create new comment */
-
-		nxs_chat_srv_u_tlgrm_sendmessage_add(
-		        tlgrm_sendmessage_ctx, chat_id, &_s_msg_issue_created, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-		if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
-
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
-
-		if(response_buf != NULL) {
-
-			b = nxs_chat_srv_u_tlgrm_sendmessage_get_response_buf(tlgrm_sendmessage_ctx);
-
-			nxs_buf_clone(response_buf, b);
-		}
-	}
-	else {
-
-		/* update existing comment */
-	}
-
-error:
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_to_issue(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                           size_t                         chat_id,
-                                           size_t                         message_id,
-                                           nxs_chat_srv_m_tlgrm_update_t *update,
-                                           nxs_buf_t *                    response_buf,
-                                           size_t                         issue_id)
-{
-	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_string_t                        msg;
-	nxs_buf_t *                         b;
-
-	nxs_chat_srv_err_t rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	nxs_string_init(&msg);
-
-	nxs_string_printf(&msg, (char *)nxs_string_str(&_s_msg_added_to_issue), issue_id);
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
-
-	if(message_id == 0) {
-
-		/* create new comment */
-
-		nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &msg, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-		if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
-
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
-
-		if(response_buf != NULL) {
-
-			b = nxs_chat_srv_u_tlgrm_sendmessage_get_response_buf(tlgrm_sendmessage_ctx);
-
-			nxs_buf_clone(response_buf, b);
-		}
-	}
-	else {
-
-		/* update existing comment */
-	}
-
-error:
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
-
-	nxs_string_free(&msg);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t
-        comment_error(nxs_chat_srv_u_db_sess_t *sess_ctx, size_t chat_id, nxs_chat_srv_m_tlgrm_update_t *update, nxs_buf_t *response_buf)
-{
-	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_buf_t *                         b;
-	nxs_string_t                        s;
-
-	nxs_chat_srv_err_t rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	nxs_string_init(&s);
-
-	nxs_string_printf(&s, (const char *)nxs_string_str(&_s_msg_error), _s_exclamation);
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
-
-	nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &s, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-	if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
-
-		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-	}
-
-	if(response_buf != NULL) {
-
-		b = nxs_chat_srv_u_tlgrm_sendmessage_get_response_buf(tlgrm_sendmessage_ctx);
-
-		nxs_buf_clone(response_buf, b);
-	}
-error:
-
-	nxs_string_free(&s);
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_wrong_action(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                               size_t                         chat_id,
-                                               nxs_chat_srv_m_tlgrm_update_t *update,
-                                               nxs_buf_t *                    response_buf)
-{
-	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_buf_t *                         b;
-
-	nxs_chat_srv_err_t rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
-
-	nxs_chat_srv_u_tlgrm_sendmessage_add(
-	        tlgrm_sendmessage_ctx, chat_id, &_s_msg_wrong_action, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-	nxs_chat_srv_u_tlgrm_sendmessage_inline_keybutton_callback_add(
-	        tlgrm_sendmessage_ctx, 0, 0, NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SESSION_DESTROY, 0, BUTTON_DESTROY_SESSION);
-
-	if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
-
-		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-	}
-
-	if(response_buf != NULL) {
-
-		b = nxs_chat_srv_u_tlgrm_sendmessage_get_response_buf(tlgrm_sendmessage_ctx);
-
-		nxs_buf_clone(response_buf, b);
-	}
-error:
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_session_destroyed(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                    size_t                         chat_id,
-                                                    nxs_chat_srv_m_tlgrm_update_t *update,
-                                                    nxs_buf_t *                    response_buf)
-{
-	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_buf_t *                         b;
-
-	nxs_chat_srv_err_t rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
-
-	nxs_chat_srv_u_tlgrm_sendmessage_add(
-	        tlgrm_sendmessage_ctx, chat_id, &_s_msg_session_destroyed, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-	if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
-
-		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-	}
-
-	if(response_buf != NULL) {
-
-		b = nxs_chat_srv_u_tlgrm_sendmessage_get_response_buf(tlgrm_sendmessage_ctx);
-
-		nxs_buf_clone(response_buf, b);
-	}
-error:
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t comment_description_changed(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                      size_t                         chat_id,
-                                                      nxs_chat_srv_m_tlgrm_update_t *update,
-                                                      nxs_buf_t *                    response_buf)
-{
-	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_buf_t *                         b;
-
-	nxs_chat_srv_err_t rc;
-
-	rc = NXS_CHAT_SRV_E_OK;
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
-
-	nxs_chat_srv_u_tlgrm_sendmessage_add(
-	        tlgrm_sendmessage_ctx, chat_id, &_s_msg_description_changed, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
-
-	if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
-
-		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-	}
-
-	if(response_buf != NULL) {
-
-		b = nxs_chat_srv_u_tlgrm_sendmessage_get_response_buf(tlgrm_sendmessage_ctx);
-
-		nxs_buf_clone(response_buf, b);
-	}
-error:
-
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
 
 	return rc;
 }
