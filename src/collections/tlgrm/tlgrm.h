@@ -39,4 +39,7 @@ void					nxs_chat_srv_c_tlgrm_force_reply_free		(nxs_chat_srv_m_tlgrm_force_repl
 void					nxs_chat_srv_c_tlgrm_force_reply_set		(nxs_chat_srv_m_tlgrm_force_reply_t *force_reply);
 void					nxs_chat_srv_c_tlgrm_force_reply_serialize	(nxs_chat_srv_m_tlgrm_force_reply_t *force_reply, nxs_string_t *out_str);
 
+void					nxs_chat_srv_c_tlgrm_bttn_callback_serialize	(nxs_chat_srv_m_tlgrm_bttn_callback_t callback, nxs_string_t *callback_str);
+nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_bttn_callback_deserialize	(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback, nxs_string_t *callback_str);
+
 #endif /* _INCLUDE_NXS_CHAT_SRV_C_TLGRM_H */

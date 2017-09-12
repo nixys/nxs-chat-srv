@@ -77,6 +77,8 @@ static nxs_string_t	_s_par_chat_instance	= nxs_string("chat_instance");
 static nxs_string_t	_s_par_data		= nxs_string("data");
 static nxs_string_t	_s_par_result		= nxs_string("result");
 static nxs_string_t	_s_par_ok		= nxs_string("ok");
+static nxs_string_t	_s_par_t		= nxs_string("t");
+static nxs_string_t	_s_par_o_id		= nxs_string("o_id");
 
 static nxs_chat_srv_c_tlgrm_types_t chat_types[] =
 {
@@ -602,6 +604,58 @@ void nxs_chat_srv_c_tlgrm_force_reply_serialize(nxs_chat_srv_m_tlgrm_force_reply
 
 		nxs_string_printf2_cat(out_str, ",\"reply_markup\": {\"force_reply\":true}");
 	}
+}
+
+void nxs_chat_srv_c_tlgrm_bttn_callback_serialize(nxs_chat_srv_m_tlgrm_bttn_callback_t callback, nxs_string_t *callback_str)
+{
+
+	if(callback_str == NULL) {
+
+		return;
+	}
+
+	nxs_string_printf(callback_str, "{\"%r\":%d,\"%r\":%zu}", &_s_par_t, callback.type, &_s_par_o_id, callback.object_id);
+
+	nxs_string_escape(callback_str, NULL, NXS_STRING_ESCAPE_TYPE_JSON);
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_bttn_callback_deserialize(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
+                                                                  nxs_string_t *                        callback_str)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_cfg_json_t     cfg_json;
+	nxs_array_t        cfg_arr;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	callback->type      = NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_NONE;
+	callback->object_id = 0;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_t,	&callback->type,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_o_id,	&callback->object_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_buf(&process, cfg_json, (nxs_buf_t *)callback_str) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_error(
+		        &process, "[%s]: tlgrm update rest api error: parse callback_bttn data error", nxs_proc_get_name(&process));
+
+		rc = NXS_CHAT_SRV_E_ERR;
+	}
+
+	nxs_cfg_json_free(&cfg_json);
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
 }
 
 /* Module internal (static) functions */

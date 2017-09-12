@@ -218,6 +218,60 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_add(nxs
 	return NXS_CHAT_SRV_E_OK;
 }
 
+nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(nxs_chat_srv_u_tlgrm_editmessagetext_t *  u_ctx,
+                                                                                      size_t                                    pos_y,
+                                                                                      size_t                                    pos_x,
+                                                                                      nxs_chat_srv_m_tlgrm_bttn_callback_type_t type,
+                                                                                      size_t                                    object_id,
+                                                                                      const u_char *                            text,
+                                                                                      ...)
+{
+	va_list                              va_text;
+	nxs_string_t                         b, callback_str;
+	nxs_chat_srv_m_tlgrm_bttn_callback_t callback;
+	nxs_chat_srv_err_t                   rc;
+
+	if(u_ctx == NULL || text == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if(u_ctx->reply_markup.type != NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_NONE &&
+	   u_ctx->reply_markup.type != NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_IKM) {
+
+		return NXS_CHAT_SRV_E_TYPE;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_string_init(&b);
+	nxs_string_init(&callback_str);
+
+	va_start(va_text, text);
+	nxs_string_vprintf(&b, (const char *)text, va_text);
+	va_end(va_text);
+
+	callback.type      = type;
+	callback.object_id = object_id;
+
+	nxs_chat_srv_c_tlgrm_bttn_callback_serialize(callback, &callback_str);
+
+	if(nxs_chat_srv_c_tlgrm_inl_keyboard_add_button(&u_ctx->reply_markup.ikms, pos_y, pos_x, &b, NULL, &callback_str) !=
+	   NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	u_ctx->reply_markup.type = NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_IKM;
+
+error:
+
+	nxs_string_free(&b);
+	nxs_string_free(&callback_str);
+
+	return rc;
+}
+
 nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_editmessagetext_force_reply_set(nxs_chat_srv_u_tlgrm_editmessagetext_t *u_ctx)
 {
 
