@@ -8,6 +8,7 @@
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage-typedefs.h>
 #include <units/tlgrm-editmessagetext/tlgrm-editmessagetext-typedefs.h>
 #include <units/rdmn-issues/rdmn-issues-typedefs.h>
+#include <units/db-ids/db-ids-typedefs.h>
 #include <units/db-sess/db-sess-typedefs.h>
 #include <units/db-cache/db-cache-typedefs.h>
 /*%%_NXS_TPL_HEADERS_TYPEDEF_END_%%*/
@@ -17,6 +18,7 @@
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage.h>
 #include <units/tlgrm-editmessagetext/tlgrm-editmessagetext.h>
 #include <units/rdmn-issues/rdmn-issues.h>
+#include <units/db-ids/db-ids.h>
 #include <units/db-sess/db-sess.h>
 #include <units/db-cache/db-cache.h>
 /*%%_NXS_TPL_HEADERS_END_%%*/

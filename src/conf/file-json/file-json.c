@@ -99,6 +99,7 @@ static nxs_string_t _s_par_dev_accounts			= nxs_string("dev_accounts");
 static nxs_string_t _s_par_projects_ttl			= nxs_string("projects_ttl");
 static nxs_string_t _s_par_users_ttl			= nxs_string("users_ttl");
 static nxs_string_t _s_par_issue_priorities_ttl		= nxs_string("issue_priorities_ttl");
+static nxs_string_t _s_par_ssl_verifyhost		= nxs_string("ssl_verifyhost");
 
 /* Module global functions */
 
@@ -460,6 +461,7 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_host,		&var->host,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_api_key,	&var->api_key,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_auth_token,	&var->auth_token,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ssl_verifyhost,	&var->ssl_verifyhost,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 

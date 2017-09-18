@@ -44,6 +44,7 @@ struct nxs_chat_srv_u_tlgrm_sendmessage_s
 	nxs_string_t						text;
 	nxs_chat_srv_m_tlgrm_parse_mode_t			parse_mode;
 	nxs_chat_srv_u_tlgrm_sendmessage_reply_markup_t		reply_markup;
+	nxs_bool_t						disable_web_page_preview;
 
 	nxs_buf_t						response_buf;
 };
@@ -73,8 +74,9 @@ nxs_chat_srv_u_tlgrm_sendmessage_t *nxs_chat_srv_u_tlgrm_sendmessage_init(void)
 
 	u_ctx = (nxs_chat_srv_u_tlgrm_sendmessage_t *)nxs_malloc(NULL, sizeof(nxs_chat_srv_u_tlgrm_sendmessage_t));
 
-	u_ctx->chat_id    = 0;
-	u_ctx->parse_mode = NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE;
+	u_ctx->chat_id                  = 0;
+	u_ctx->parse_mode               = NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE;
+	u_ctx->disable_web_page_preview = NXS_NO;
 
 	nxs_string_init_empty(&u_ctx->text);
 
@@ -93,8 +95,9 @@ nxs_chat_srv_u_tlgrm_sendmessage_t *nxs_chat_srv_u_tlgrm_sendmessage_free(nxs_ch
 		return NULL;
 	}
 
-	u_ctx->chat_id    = 0;
-	u_ctx->parse_mode = NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE;
+	u_ctx->chat_id                  = 0;
+	u_ctx->parse_mode               = NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE;
+	u_ctx->disable_web_page_preview = NXS_NO;
 
 	nxs_string_free(&u_ctx->text);
 
@@ -124,9 +127,10 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_sendmessage_push(nxs_chat_srv_u_tlgrm_se
 	nxs_chat_srv_u_tlgrm_sendmessage_rmarkaup_serialize(&u_ctx->reply_markup, &reply_markup_str);
 
 	nxs_string_printf(&message,
-	                  "{\"chat_id\":%zu,\"parse_mode\":\"%r\",\"text\":\"%r\"%r}",
+	                  "{\"chat_id\":%zu,\"parse_mode\":\"%r\",\"disable_web_page_preview\":%s,\"text\":\"%r\"%r}",
 	                  u_ctx->chat_id,
 	                  nxs_chat_srv_c_tlgrm_parse_mode_map(u_ctx->parse_mode),
+	                  u_ctx->disable_web_page_preview == NXS_YES ? "true" : "false",
 	                  &u_ctx->text,
 	                  &reply_markup_str);
 
@@ -266,6 +270,7 @@ error:
 
 nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_sendmessage_force_reply_set(nxs_chat_srv_u_tlgrm_sendmessage_t *u_ctx)
 {
+
 	if(u_ctx == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
@@ -280,6 +285,19 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_sendmessage_force_reply_set(nxs_chat_srv
 	u_ctx->reply_markup.type = NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_FR;
 
 	nxs_chat_srv_c_tlgrm_force_reply_set(&u_ctx->reply_markup.fr);
+
+	return NXS_CHAT_SRV_E_OK;
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(nxs_chat_srv_u_tlgrm_sendmessage_t *u_ctx)
+{
+
+	if(u_ctx == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	u_ctx->disable_web_page_preview = NXS_YES;
 
 	return NXS_CHAT_SRV_E_OK;
 }

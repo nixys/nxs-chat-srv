@@ -8,6 +8,7 @@
 #include <meta/user-ctx.h>
 #include <meta/db-sess.h>
 #include <meta/db-cache.h>
+#include <meta/rdmn.h>
 #include <meta/queue-com.h>
 /*%%_NXS_TPL_HEADERS_END_%%*/
 

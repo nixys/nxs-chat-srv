@@ -109,6 +109,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 	nxs_chat_srv_m_tlgrm_update_t update;
 	nxs_chat_srv_u_db_sess_t *    sess_ctx;
 	nxs_chat_srv_u_db_cache_t *   cache_ctx;
+	nxs_chat_srv_u_db_ids_t *     ids_ctx;
 	nxs_chat_srv_m_user_ctx_t     user_ctx;
 	nxs_chat_srv_err_t            rc;
 	size_t                        tlgrm_user_id;
@@ -121,6 +122,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 
 	sess_ctx  = nxs_chat_srv_u_db_sess_init();
 	cache_ctx = nxs_chat_srv_u_db_cache_init();
+	ids_ctx   = nxs_chat_srv_u_db_ids_init();
 
 	nxs_chat_srv_c_user_ctx_init(&user_ctx);
 
@@ -139,6 +141,11 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 	if((tlgrm_user_id = check_user(cache_ctx, &user_ctx, &update)) == 0) {
 
 		/* User not found */
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_u_db_ids_set(ids_ctx, user_ctx.r_userid, tlgrm_user_id) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -171,6 +178,7 @@ error:
 
 	sess_ctx  = nxs_chat_srv_u_db_sess_free(sess_ctx);
 	cache_ctx = nxs_chat_srv_u_db_cache_free(cache_ctx);
+	ids_ctx   = nxs_chat_srv_u_db_ids_free(ids_ctx);
 
 	return rc;
 }

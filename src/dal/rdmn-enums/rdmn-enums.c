@@ -71,6 +71,8 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_enums_issue_priorities_get(nxs_string_t *
 	nxs_curl_add_header(&curl, &api_key_header);
 	nxs_curl_add_header(&curl, &_s_content_type);
 
+	nxs_curl_set_ssl_verivyhost(&curl, nxs_chat_srv_cfg.rdmn.ssl_verifyhost);
+
 	if((ec = nxs_curl_query(&process,
 	                        &curl,
 	                        NXS_REST_API_COMMON_CMD_GET,

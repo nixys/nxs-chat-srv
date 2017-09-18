@@ -48,8 +48,9 @@ static void nxs_chat_srv_p_queue_worker_sighandler_usr1(int sig, void *data);
 nxs_chat_srv_p_queue_worker_type_handler_t type_handlers[] =
 {
 	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_UPDATE,	&nxs_chat_srv_p_queue_worker_tlgrm_update_runtime},
+	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_RDMN_UPDATE,	&nxs_chat_srv_p_queue_worker_rdmn_update_runtime},
 
-	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_NONE,	NULL}
+	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_NONE,	NULL}
 };
 
 /* Module global functions */
@@ -139,7 +140,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_que
 
 	nxs_chat_srv_c_queue_com_deserialize(&data, &com_type, &body);
 
-	for(f = NXS_NO, i = 0; type_handlers[i].type != NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_NONE; i++) {
+	for(f = NXS_NO, i = 0; type_handlers[i].type != NXS_CHAT_SRV_M_QUEUE_COM_TYPE_NONE; i++) {
 
 		if(type_handlers[i].type == com_type) {
 

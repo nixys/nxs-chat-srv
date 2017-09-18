@@ -7,7 +7,7 @@ ifeq ($(shell getconf LONG_BIT),32)
 CFLAGS32					=	-D_FILE_OFFSET_BITS=64
 endif
 
-NXS_FW_VERSION					=	1.10
+NXS_FW_VERSION					=	dev
 
 NXS_FW_CORE_INCLUDES_PATH			=	/usr/include/nxs-fw-libs
 NXS_FW_CORE_LIBS_PATH				=	/usr/lib/nxs-fw-libs

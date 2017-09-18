@@ -74,6 +74,8 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 	nxs_curl_add_header(&curl, &api_key);
 	nxs_curl_add_header(&curl, &_s_content_type);
 
+	nxs_curl_set_ssl_verivyhost(&curl, nxs_chat_srv_cfg.rdmn.ssl_verifyhost);
+
 	nxs_string_escape(&note_escaped, note, NXS_STRING_ESCAPE_TYPE_JSON);
 
 	nxs_string_printf(&data, "{\"issue\":{\"notes\":\"%r\"}}", &note_escaped);

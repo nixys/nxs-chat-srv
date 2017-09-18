@@ -33,6 +33,9 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED		"Новая задача [#47983](https://task.nixys.ru/issues/47983) создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE		"Ваш комментарий отправлен в задачу [#%zu](https://task.nixys.ru/issues/%zu). Благодарим за обращение!"
 
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED			"[#%zu - %r](%r/issues/%zu)\n\n*Автор:* %r\n*Статус:* %r\n*Приоритет:* %r\n*Назначена:* %r\n\n*Описание*:\n---\n%r"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED			"[#%zu - %r](%r/issues/%zu)\n\n*Автор:* %r\n*Статус:* %r\n*Приоритет:* %r\n*Назначена:* %r\n\n%r писал(а):\n---\n%r"
+
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_ADD_LAST_ACTIVE	(u_char *)"Добавить в последнюю активную"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_NEW_ISSUE		(u_char *)"Создать новую задачу"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_ADD_ADD_TO_ISSUE	(u_char *)"Добавить в #%zu - %s"
@@ -133,6 +136,7 @@ typedef struct
 	nxs_string_t				host;
 	nxs_string_t				api_key;
 	nxs_string_t				auth_token;
+	nxs_bool_t				ssl_verifyhost;
 } nxs_chat_srv_cfg_rdmn_t;
 
 typedef struct

@@ -76,6 +76,8 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_users_get(size_t           user_id,
 	nxs_curl_add_header(&curl, &api_key_header);
 	nxs_curl_add_header(&curl, &_s_content_type);
 
+	nxs_curl_set_ssl_verivyhost(&curl, nxs_chat_srv_cfg.rdmn.ssl_verifyhost);
+
 	if(user_id == 0) {
 
 		if((ec = nxs_curl_query(&process,
