@@ -14,19 +14,20 @@ nxs_chat_srv_u_db_sess_t			*nxs_chat_srv_u_db_sess_free			(nxs_chat_srv_u_db_ses
 
 nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_pull			(nxs_chat_srv_u_db_sess_t *u_ctx, size_t tlgrm_userid);
 
-nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_start			(nxs_chat_srv_u_db_sess_t *u_ctx, size_t chat_id, size_t message_id, nxs_chat_srv_m_db_sess_type_t type, nxs_chat_srv_m_db_sess_wait_for_type_t wait_for);
+nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_start			(nxs_chat_srv_u_db_sess_t *u_ctx, size_t chat_id, size_t usr_message_id, size_t bot_message_id, nxs_chat_srv_m_db_sess_type_t type, nxs_chat_srv_m_db_sess_wait_for_type_t wait_for);
 nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_destroy			(nxs_chat_srv_u_db_sess_t *u_ctx);
 
 nxs_bool_t					nxs_chat_srv_u_db_sess_check_exist		(nxs_chat_srv_u_db_sess_t *u_ctx);
 
 size_t						nxs_chat_srv_u_db_sess_get_tlgrm_userid		(nxs_chat_srv_u_db_sess_t *u_ctx);
 size_t						nxs_chat_srv_u_db_sess_get_chat_id		(nxs_chat_srv_u_db_sess_t *u_ctx);
-size_t						nxs_chat_srv_u_db_sess_get_message_id		(nxs_chat_srv_u_db_sess_t *u_ctx);
+size_t						nxs_chat_srv_u_db_sess_get_usr_message_id	(nxs_chat_srv_u_db_sess_t *u_ctx);
+size_t						nxs_chat_srv_u_db_sess_get_bot_message_id	(nxs_chat_srv_u_db_sess_t *u_ctx);
 nxs_chat_srv_m_db_sess_type_t			nxs_chat_srv_u_db_sess_get_type			(nxs_chat_srv_u_db_sess_t *u_ctx);
 nxs_chat_srv_m_db_sess_wait_for_type_t		nxs_chat_srv_u_db_sess_get_wait_for		(nxs_chat_srv_u_db_sess_t *u_ctx);
 
 nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_set_wait_for		(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_chat_srv_m_db_sess_wait_for_type_t wait_for);
-nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_set_ids			(nxs_chat_srv_u_db_sess_t *u_ctx, size_t chat_id, size_t message_id);
+nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_set_ids			(nxs_chat_srv_u_db_sess_t *u_ctx, size_t chat_id, size_t usr_message_id, size_t bot_message_id);
 
 nxs_string_t 					*nxs_chat_srv_u_db_sess_t_get_message		(nxs_chat_srv_u_db_sess_t *u_ctx);
 nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_t_set_message		(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_string_t *message);
