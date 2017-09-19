@@ -406,7 +406,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_NEW_ISSUE:
 
-			/* new issue creation process */
+			/* new issue creation processing */
 
 			nxs_chat_srv_u_db_cache_prio_get_default(cache_ctx, &issue_priority);
 
@@ -440,7 +440,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE:
 
-			/* add comment to selected issue process */
+			/* add comment to selected issue processing */
 
 			if(nxs_chat_srv_u_rdmn_user_pull(rdmn_user_ctx, user_ctx->r_userid) != NXS_CHAT_SRV_E_OK) {
 
@@ -945,7 +945,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 		case NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_ISSUE_SUBJECT:
 
-			/* set subject process */
+			/* set subject processing */
 
 			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, NULL, NULL, NULL, &subject, NULL, NULL) !=
 			   NXS_CHAT_SRV_E_OK) {
@@ -997,7 +997,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 		case NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_ISSUE_DESCRIPTION:
 
-			/* set description process */
+			/* set description processing */
 
 			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, NULL, NULL, NULL, NULL, &description, NULL) !=
 			   NXS_CHAT_SRV_E_OK) {
@@ -1047,7 +1047,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 		case NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_PROJECTNAME_REGEX:
 
-			/* set description process */
+			/* set description processing */
 
 			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, NULL, NULL, NULL, NULL, NULL, &project_name_regex) !=
 			   NXS_CHAT_SRV_E_OK) {
