@@ -22,6 +22,9 @@ void				nxs_chat_srv_c_rdmn_priority_free		(nxs_chat_srv_m_rdmn_priority_t *prio
 void				nxs_chat_srv_c_rdmn_user_init			(nxs_chat_srv_m_rdmn_user_t *user);
 void				nxs_chat_srv_c_rdmn_user_free			(nxs_chat_srv_m_rdmn_user_t *user);
 
+void				nxs_chat_srv_c_rdmn_detail_init			(nxs_chat_srv_m_rdmn_detail_t *detail);
+void				nxs_chat_srv_c_rdmn_detail_free			(nxs_chat_srv_m_rdmn_detail_t *detail);
+
 void				nxs_chat_srv_c_rdmn_journal_init		(nxs_chat_srv_m_rdmn_journal_t *journal);
 void				nxs_chat_srv_c_rdmn_journal_free		(nxs_chat_srv_m_rdmn_journal_t *journal);
 

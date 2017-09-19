@@ -46,6 +46,11 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_journals(nxs_proces
                                                                       nxs_json_t *        json,
                                                                       nxs_cfg_json_par_t *cfg_json_par_el,
                                                                       nxs_array_t *       cfg_arr);
+
+static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_details(nxs_process_t *     proc,
+                                                                     nxs_json_t *        json,
+                                                                     nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                     nxs_array_t *       cfg_arr);
 static nxs_cfg_json_state_t
         nxs_chat_srv_c_rdmn_extract_json_priority(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
@@ -79,6 +84,9 @@ static nxs_string_t	_s_par_journals		= nxs_string("journals");
 static nxs_string_t	_s_par_user		= nxs_string("user");
 static nxs_string_t	_s_par_notes		= nxs_string("notes");
 static nxs_string_t	_s_par_assigned_to	= nxs_string("assigned_to");
+static nxs_string_t	_s_par_details		= nxs_string("details");
+static nxs_string_t	_s_par_property		= nxs_string("property");
+static nxs_string_t	_s_par_attr		= nxs_string("attr");
 
 /* Module global functions */
 
@@ -234,6 +242,34 @@ void nxs_chat_srv_c_rdmn_user_free(nxs_chat_srv_m_rdmn_user_t *user)
 	nxs_string_free(&user->name);
 }
 
+void nxs_chat_srv_c_rdmn_detail_init(nxs_chat_srv_m_rdmn_detail_t *detail)
+{
+
+	if(detail == NULL) {
+
+		return;
+	}
+	
+	detail->_is_used = NXS_NO;
+
+	nxs_string_init_empty(&detail->property);
+	nxs_string_init_empty(&detail->name);
+}
+
+void nxs_chat_srv_c_rdmn_detail_free(nxs_chat_srv_m_rdmn_detail_t *detail)
+{
+
+	if(detail == NULL) {
+
+		return;
+	}
+	
+	detail->_is_used = NXS_NO;
+
+	nxs_string_free(&detail->property);
+	nxs_string_free(&detail->name);
+}
+
 void nxs_chat_srv_c_rdmn_journal_init(nxs_chat_srv_m_rdmn_journal_t *journal)
 {
 
@@ -249,10 +285,14 @@ void nxs_chat_srv_c_rdmn_journal_init(nxs_chat_srv_m_rdmn_journal_t *journal)
 	nxs_string_init_empty(&journal->notes);
 
 	nxs_chat_srv_c_rdmn_user_init(&journal->user);
+
+	nxs_array_init2(&journal->details, nxs_chat_srv_m_rdmn_detail_t);
 }
 
 void nxs_chat_srv_c_rdmn_journal_free(nxs_chat_srv_m_rdmn_journal_t *journal)
 {
+	nxs_chat_srv_m_rdmn_detail_t *d;
+	size_t                        i;
 
 	if(journal == NULL) {
 
@@ -266,6 +306,15 @@ void nxs_chat_srv_c_rdmn_journal_free(nxs_chat_srv_m_rdmn_journal_t *journal)
 	nxs_string_free(&journal->notes);
 
 	nxs_chat_srv_c_rdmn_user_free(&journal->user);
+
+	for(i = 0; i < nxs_array_count(&journal->details); i++) {
+
+		d = nxs_array_get(&journal->details, i);
+
+		nxs_chat_srv_c_rdmn_detail_free(d);
+	}
+
+	nxs_array_free(&journal->details);
 }
 
 void nxs_chat_srv_c_rdmn_issue_init(nxs_chat_srv_m_rdmn_issue_t *issue)
@@ -614,11 +663,81 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_journals(nxs_proces
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&j->id,		NULL,					NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_notes,		&j->notes,	NULL,					NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_user,		&j->user,	&nxs_chat_srv_c_rdmn_extract_json_user,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&j->id,		NULL,					NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_notes,		&j->notes,	NULL,					NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_user,		&j->user,	&nxs_chat_srv_c_rdmn_extract_json_user,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_details,	&j->details,	NULL,					&nxs_chat_srv_c_rdmn_extract_json_details,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
+
+	return NXS_CFG_JSON_CONF_OK;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_details(nxs_process_t *     proc,
+                                                                     nxs_json_t *        json,
+                                                                     nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                     nxs_array_t *       cfg_arr)
+{
+	nxs_array_t *                 details = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_chat_srv_m_rdmn_detail_t *d;
+	nxs_json_t *                  j;
+	nxs_string_t *                p, *n;
+
+	if((j = nxs_json_child_get_by_key(json, nxs_string_str(&_s_par_property))) == NULL) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: rdmn json read error: parse rdmn details error, missing filed \"%r\"",
+		                    nxs_proc_get_name(&process),
+		                    &_s_par_property);
+
+		return NXS_CFG_JSON_CONF_ERROR;
+	}
+
+	if(nxs_json_type_get(j) != NXS_JSON_TYPE_STRING) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: rdmn json read error: parse rdmn details error, expected string type for filed \"%r\"",
+		                    nxs_proc_get_name(&process),
+		                    &_s_par_property);
+
+		return NXS_CFG_JSON_CONF_ERROR;
+	}
+
+	p = nxs_json_string_val(j);
+
+	if(nxs_string_cmp(p, 0, &_s_par_attr, 0) == NXS_YES) {
+
+		if((j = nxs_json_child_get_by_key(json, nxs_string_str(&_s_par_name))) == NULL) {
+
+			nxs_log_write_error(&process,
+			                    "[%s]: rdmn json read error: parse rdmn details error, missing filed \"%r\"",
+			                    nxs_proc_get_name(&process),
+			                    &_s_par_name);
+
+			return NXS_CFG_JSON_CONF_ERROR;
+		}
+
+		if(nxs_json_type_get(j) != NXS_JSON_TYPE_STRING) {
+
+			nxs_log_write_error(&process,
+			                    "[%s]: rdmn json read error: parse rdmn details error, expected string type for filed \"%r\"",
+			                    nxs_proc_get_name(&process),
+			                    &_s_par_name);
+
+			return NXS_CFG_JSON_CONF_ERROR;
+		}
+
+		n = nxs_json_string_val(j);
+
+		d = nxs_array_add(details);
+
+		nxs_chat_srv_c_rdmn_detail_init(d);
+
+		d->_is_used = NXS_YES;
+
+		nxs_string_clone(&d->property, p);
+		nxs_string_clone(&d->name, n);
+	}
 
 	return NXS_CFG_JSON_CONF_OK;
 }
