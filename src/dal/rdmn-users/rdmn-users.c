@@ -46,6 +46,7 @@ static nxs_string_t		_s_content_type		= nxs_string("Content-Type: application/js
 // clang-format on
 
 nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_users_get(size_t           user_id,
+                                                 nxs_bool_t       include_memberships,
                                                  nxs_string_t *   api_key,
                                                  nxs_buf_t *      out_buf,
                                                  nxs_http_code_t *http_code,
@@ -98,9 +99,10 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_users_get(size_t           user_id,
 		if((ec = nxs_curl_query(&process,
 		                        &curl,
 		                        NXS_REST_API_COMMON_CMD_GET,
-		                        (u_char *)"%r/users/%zu.json?include=memberships",
+		                        (u_char *)"%r/users/%zu.json%s",
 		                        &nxs_chat_srv_cfg.rdmn.host,
-		                        user_id)) != NXS_CURL_E_OK) {
+		                        user_id,
+		                        include_memberships == NXS_YES ? "?include=memberships" : "")) != NXS_CURL_E_OK) {
 
 			nxs_log_write_warn(&process, "[%s]: rdmn users get error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
 

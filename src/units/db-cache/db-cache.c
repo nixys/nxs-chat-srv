@@ -368,7 +368,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_update_users(nxs_chat_srv_u_db_cache_
 	do {
 
 		if(nxs_chat_srv_d_rdmn_users_get(
-		           0, &nxs_chat_srv_cfg.rdmn.api_key, &out_buf, NULL, offset, NXS_CHAT_SRV_RDMN_QUERY_LIMIT) != NXS_CHAT_SRV_E_OK) {
+		           0, NXS_NO, &nxs_chat_srv_cfg.rdmn.api_key, &out_buf, NULL, offset, NXS_CHAT_SRV_RDMN_QUERY_LIMIT) !=
+		   NXS_CHAT_SRV_E_OK) {
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
