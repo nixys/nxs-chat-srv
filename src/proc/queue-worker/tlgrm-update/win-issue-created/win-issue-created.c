@@ -36,7 +36,7 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module initializations */
 
-static nxs_string_t	_s_msg_issue_created	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED);
+
 
 /* Module global functions */
 
@@ -46,25 +46,37 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nx
                                                                               size_t                         chat_id,
                                                                               size_t                         message_id,
                                                                               nxs_chat_srv_m_tlgrm_update_t *update,
+                                                                              size_t                         new_issue_id,
                                                                               nxs_buf_t *                    response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
 	nxs_buf_t *                             b;
-
-	nxs_chat_srv_err_t rc;
+	nxs_string_t                            subject, message;
+	nxs_chat_srv_err_t                      rc;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
 
+	nxs_string_init(&subject);
+	nxs_string_init(&message);
+
+	if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, NULL, NULL, NULL, &subject, NULL, NULL) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	nxs_string_printf(
+	        &message, NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED, new_issue_id, &subject, &nxs_chat_srv_cfg.rdmn.host, new_issue_id);
+
 	if(message_id == 0) {
 
 		/* create new comment */
 
 		nxs_chat_srv_u_tlgrm_sendmessage_add(
-		        tlgrm_sendmessage_ctx, chat_id, &_s_msg_issue_created, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		        tlgrm_sendmessage_ctx, chat_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
 
 		nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(tlgrm_sendmessage_ctx);
 
@@ -84,11 +96,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nx
 
 		/* update existing comment */
 
-		nxs_chat_srv_u_tlgrm_editmessagetext_add(tlgrm_editmessagetext_ctx,
-		                                         chat_id,
-		                                         message_id,
-		                                         &_s_msg_issue_created,
-		                                         NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		nxs_chat_srv_u_tlgrm_editmessagetext_add(
+		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_disable_web_page_preview(tlgrm_editmessagetext_ctx);
 
@@ -109,6 +118,9 @@ error:
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);
+
+	nxs_string_free(&subject);
+	nxs_string_free(&message);
 
 	return rc;
 }

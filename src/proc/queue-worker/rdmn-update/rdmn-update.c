@@ -114,9 +114,8 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 
 		u = nxs_array_get(&update->data.issue.watchers, i);
 
+		/* not send message to author of the issue */
 		if(u->id == update->data.issue.author.id) {
-
-			/* not send message to author of the issue */
 
 			continue;
 		}
@@ -173,9 +172,8 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 
 		u = nxs_array_get(&update->data.issue.watchers, i);
 
+		/* not send message to author of the comment */
 		if(u->id == journal->user.id) {
-
-			/* not send message to author of the comment */
 
 			continue;
 		}

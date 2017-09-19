@@ -31,7 +31,7 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SESSION_DESTROYED		"Предыдущий диалог завершён."
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_DESCRIPTION_CHANGED		"Описание изменено."
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_DESCRIPTION		"Как изменить описание задачи?"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED		"Новая задача [#47983](https://task.nixys.ru/issues/47983) создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED		"Новая задача [#%zu - %r](%r/issues/%zu) создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE		"Ваш комментарий отправлен в задачу [#%zu](%r/issues/%zu). Благодарим за обращение!"
 
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED			"[#%zu - %r](%r/issues/%zu)\n\n*Автор:* %r\n*Статус:* %r\n*Приоритет:* %r\n*Назначена:* %r\n\n*Описание*:\n---\n%r"
