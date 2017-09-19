@@ -36,7 +36,7 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module initializations */
 
-static nxs_string_t	_s_msg_added_to_issue		= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE);
+
 
 /* Module global functions */
 
@@ -49,9 +49,10 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(n
                                                                                nxs_buf_t *                    response_buf,
                                                                                size_t                         issue_id)
 {
-	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_string_t                        msg;
-	nxs_buf_t *                         b;
+	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
+	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
+	nxs_string_t                            msg;
+	nxs_buf_t *                             b;
 
 	nxs_chat_srv_err_t rc;
 
@@ -59,15 +60,18 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(n
 
 	nxs_string_init(&msg);
 
-	nxs_string_printf(&msg, (char *)nxs_string_str(&_s_msg_added_to_issue), issue_id);
+	nxs_string_printf(&msg, NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE, issue_id, &nxs_chat_srv_cfg.rdmn.host, issue_id);
 
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
+	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_init();
+	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
 
 	if(message_id == 0) {
 
 		/* create new comment */
 
 		nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &msg, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+
+		nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(tlgrm_sendmessage_ctx);
 
 		if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
 
@@ -84,11 +88,29 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(n
 	else {
 
 		/* update existing comment */
+
+		nxs_chat_srv_u_tlgrm_editmessagetext_add(
+		        tlgrm_editmessagetext_ctx, chat_id, message_id, &msg, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+
+		nxs_chat_srv_u_tlgrm_editmessagetext_disable_web_page_preview(tlgrm_editmessagetext_ctx);
+
+		if(nxs_chat_srv_u_tlgrm_editmessagetext_push(tlgrm_editmessagetext_ctx) != NXS_CHAT_SRV_E_OK) {
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
+
+		if(response_buf != NULL) {
+
+			b = nxs_chat_srv_u_tlgrm_editmessagetext_get_response_buf(tlgrm_editmessagetext_ctx);
+
+			nxs_buf_clone(response_buf, b);
+		}
 	}
 
 error:
 
-	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
+	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
+	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);
 
 	nxs_string_free(&msg);
 
