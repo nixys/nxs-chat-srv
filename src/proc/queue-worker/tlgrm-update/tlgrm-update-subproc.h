@@ -8,6 +8,7 @@
 #include <proc/queue-worker/tlgrm-update/win-error/win-error.h>
 #include <proc/queue-worker/tlgrm-update/win-enter-description/win-enter-description.h>
 #include <proc/queue-worker/tlgrm-update/win-enter-subject/win-enter-subject.h>
+#include <proc/queue-worker/tlgrm-update/win-wrong-reply/win-wrong-reply.h>
 #include <proc/queue-worker/tlgrm-update/win-new-issue/win-new-issue.h>
 #include <proc/queue-worker/tlgrm-update/win-wrong-action/win-wrong-action.h>
 #include <proc/queue-worker/tlgrm-update/win-issue-created/win-issue-created.h>

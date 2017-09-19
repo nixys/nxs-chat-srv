@@ -1,0 +1,8 @@
+#ifndef _INCLUDE_NXS_CHAT_SRV_P_QUEUE_WORKER_TLGRM_UPDATE_WIN_WRONG_REPLY_H
+#define _INCLUDE_NXS_CHAT_SRV_P_QUEUE_WORKER_TLGRM_UPDATE_WIN_WRONG_REPLY_H
+
+// clang-format off
+
+nxs_chat_srv_err_t		nxs_chat_srv_p_queue_worker_tlgrm_update_win_wrong_reply_runtime		(size_t chat_id, nxs_buf_t *response_buf);
+
+#endif /* _INCLUDE_NXS_CHAT_SRV_P_QUEUE_WORKER_TLGRM_UPDATE_WIN_WRONG_REPLY_H */
