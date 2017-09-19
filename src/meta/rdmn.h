@@ -8,6 +8,7 @@ typedef struct			nxs_chat_srv_m_rdmn_tracker_s		nxs_chat_srv_m_rdmn_tracker_t;
 typedef struct			nxs_chat_srv_m_rdmn_status_s		nxs_chat_srv_m_rdmn_status_t;
 typedef struct			nxs_chat_srv_m_rdmn_priority_s		nxs_chat_srv_m_rdmn_priority_t;
 typedef struct			nxs_chat_srv_m_rdmn_user_s		nxs_chat_srv_m_rdmn_user_t;
+typedef struct			nxs_chat_srv_m_rdmn_detail_s		nxs_chat_srv_m_rdmn_detail_t;
 typedef struct			nxs_chat_srv_m_rdmn_journal_s		nxs_chat_srv_m_rdmn_journal_t;
 typedef struct			nxs_chat_srv_m_rdmn_issue_s		nxs_chat_srv_m_rdmn_issue_t;
 typedef struct			nxs_chat_srv_m_rdmn_data_s		nxs_chat_srv_m_rdmn_data_t;
@@ -53,6 +54,14 @@ struct nxs_chat_srv_m_rdmn_user_s
 	nxs_string_t				name;
 };
 
+struct nxs_chat_srv_m_rdmn_detail_s
+{
+	nxs_bool_t				_is_used;
+
+	nxs_string_t				property;
+	nxs_string_t				name;
+};
+
 struct nxs_chat_srv_m_rdmn_journal_s
 {
 	nxs_bool_t				_is_used;
@@ -61,6 +70,8 @@ struct nxs_chat_srv_m_rdmn_journal_s
 	nxs_string_t				notes;
 
 	nxs_chat_srv_m_rdmn_user_t		user;
+
+	nxs_array_t				details;		/* type: nxs_chat_srv_m_rdmn_detail_t. */
 };
 
 struct nxs_chat_srv_m_rdmn_issue_s
