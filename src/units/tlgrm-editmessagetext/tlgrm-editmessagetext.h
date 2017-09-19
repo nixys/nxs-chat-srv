@@ -21,5 +21,6 @@ void						nxs_chat_srv_u_tlgrm_editmessagetext_add				(nxs_chat_srv_u_tlgrm_edit
 nxs_chat_srv_err_t				nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_add		(nxs_chat_srv_u_tlgrm_editmessagetext_t *u_ctx, size_t pos_y, size_t pos_x, nxs_string_t *text, nxs_string_t *url, nxs_string_t *callback_data);
 nxs_chat_srv_err_t				nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add	(nxs_chat_srv_u_tlgrm_editmessagetext_t *  u_ctx, size_t pos_y, size_t pos_x, nxs_chat_srv_m_tlgrm_bttn_callback_type_t type, size_t object_id, const u_char *text, ...);
 nxs_chat_srv_err_t				nxs_chat_srv_u_tlgrm_editmessagetext_force_reply_set			(nxs_chat_srv_u_tlgrm_editmessagetext_t *u_ctx);
+nxs_chat_srv_err_t				nxs_chat_srv_u_tlgrm_editmessagetext_disable_web_page_preview		(nxs_chat_srv_u_tlgrm_editmessagetext_t *u_ctx);
 
 #endif /* _INCLUDE_NXS_CHAT_SRV_U_TLGRM_EDITMESSAGETEXT_H */
