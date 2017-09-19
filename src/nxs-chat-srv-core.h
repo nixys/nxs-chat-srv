@@ -22,7 +22,7 @@
 								"*Тема:* %r\n" \
 								"*Описание:* %r\n---------\n" \
 								"_Ниже Вы можете изменить параметры новой задачи_"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN			"Как поступить с Вашим комментарием? Добавить в последнюю активную задачу, в другую существующую или создать новую?\n---------\nПоследняя активная задача: #44938 - *Установка и настройка SpamAssassin*"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN			"Как поступить с Вашим комментарием? Добавить в последнюю активную задачу, в другую существующую или создать новую?\n---------\nПоследняя активная задача: [#%zu - %r](%r/issues/%zu)"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_SUBJECT		"Как назвать задачу?"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT		"_Будет задана при создании задачи_"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR			"%s Произошла внутрення ошибка сервера, мы уже получили уведомление об этом и работаем над решением проблемы. Пожалуйста, [воспользуйтесь web-версией системы задач](https://task.nixys.ru/) или повторите свой запрос позже."
@@ -32,7 +32,7 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_DESCRIPTION_CHANGED		"Описание изменено."
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_DESCRIPTION		"Как изменить описание задачи?"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED		"Новая задача [#47983](https://task.nixys.ru/issues/47983) создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE		"Ваш комментарий отправлен в задачу [#%zu](https://task.nixys.ru/issues/%zu). Благодарим за обращение!"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE		"Ваш комментарий отправлен в задачу [#%zu](%r/issues/%zu). Благодарим за обращение!"
 
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED			"[#%zu - %r](%r/issues/%zu)\n\n*Автор:* %r\n*Статус:* %r\n*Приоритет:* %r\n*Назначена:* %r\n\n*Описание*:\n---\n%r"
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED			"[#%zu - %r](%r/issues/%zu)\n\n%r%r писал(а):\n---\n%r"
@@ -44,6 +44,7 @@
 
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_ADD_LAST_ACTIVE	(u_char *)"Добавить в последнюю активную"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_NEW_ISSUE		(u_char *)"Создать новую задачу"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_CHOOSE_ISSUE		(u_char *)"Выбрать задачу для ответа"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_ADD_ADD_TO_ISSUE	(u_char *)"Добавить в #%zu - %s"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_PROJECT		(u_char *)"Проект"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_PRIORITY		(u_char *)"Приоритет"

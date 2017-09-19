@@ -7,6 +7,7 @@
 #include <units/tlgrm-answercallbackquery/tlgrm-answercallbackquery-typedefs.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage-typedefs.h>
 #include <units/tlgrm-editmessagetext/tlgrm-editmessagetext-typedefs.h>
+#include <units/rdmn-last-issue/rdmn-last-issue-typedefs.h>
 #include <units/rdmn-issues/rdmn-issues-typedefs.h>
 #include <units/db-ids/db-ids-typedefs.h>
 #include <units/db-issues/db-issues-typedefs.h>
@@ -19,6 +20,7 @@
 #include <units/tlgrm-answercallbackquery/tlgrm-answercallbackquery.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage.h>
 #include <units/tlgrm-editmessagetext/tlgrm-editmessagetext.h>
+#include <units/rdmn-last-issue/rdmn-last-issue.h>
 #include <units/rdmn-issues/rdmn-issues.h>
 #include <units/db-ids/db-ids.h>
 #include <units/db-issues/db-issues.h>
