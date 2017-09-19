@@ -284,11 +284,6 @@ size_t nxs_chat_srv_u_db_sess_get_tlgrm_userid(nxs_chat_srv_u_db_sess_t *u_ctx)
 		return 0;
 	}
 
-	if(nxs_chat_srv_u_db_sess_check_exist(u_ctx) == NXS_NO) {
-
-		return 0;
-	}
-
 	return u_ctx->tlgrm_userid;
 }
 
