@@ -45,19 +45,18 @@
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_PRIORITY	"*Приоритет:* %r\n"
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_ASSIGNED_TO	"*Назначена:* %r\n"
 
-/* TODO: Fix "CAPTON" */
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_ADD_LAST_ACTIVE	(u_char *)"Добавить в последнюю активную"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_NEW_ISSUE		(u_char *)"Создать новую задачу"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_CHOOSE_ISSUE		(u_char *)"Выбрать задачу для ответа"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_ADD_ADD_TO_ISSUE	(u_char *)"Добавить в #%zu - %s"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_PROJECT		(u_char *)"Проект"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_PRIORITY		(u_char *)"Приоритет"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_DESCRIPTION		(u_char *)"Описание"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_CREATE_ISSUE		(u_char *)"Создать задачу %s"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_BACK			(u_char *)"<< Назад"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_FORWARD		(u_char *)"Вперёд >>"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_DESTROY_SESSION	(u_char *)"Начать диалог заново"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_CANCEL			(u_char *)"Отмена"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_ADD_LAST_ACTIVE	(u_char *)"Добавить в последнюю активную"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_NEW_ISSUE		(u_char *)"Создать новую задачу"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_SELECT_ISSUE		(u_char *)"Выбрать задачу для ответа"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_ADD_ADD_TO_ISSUE	(u_char *)"Добавить в #%zu - %s"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_PROJECT		(u_char *)"Проект"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_PRIORITY		(u_char *)"Приоритет"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESCRIPTION		(u_char *)"Описание"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_CREATE_ISSUE		(u_char *)"Создать задачу %s"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_BACK			(u_char *)"<< Назад"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_FORWARD		(u_char *)"Вперёд >>"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESTROY_SESSION	(u_char *)"Начать диалог заново"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_CANCEL		(u_char *)"Отмена"
 
 /* Project global typedefs */
 

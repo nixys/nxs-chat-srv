@@ -111,7 +111,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_issue(nxs
 			        0,
 			        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_ISSUE,
 			        offset - NXS_CHAT_SRV_TLGRM_ISSUES_LIMIT,
-			        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_BACK);
+			        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_BACK);
 		}
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(tlgrm_editmessagetext_ctx,
@@ -119,7 +119,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_issue(nxs
 		                                                                   1,
 		                                                                   NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK,
 		                                                                   0,
-		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_CANCEL);
+		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_CANCEL);
 
 		if(issues_count > offset + NXS_CHAT_SRV_TLGRM_ISSUES_LIMIT) {
 
@@ -129,7 +129,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_issue(nxs
 			        2,
 			        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_ISSUE,
 			        offset + NXS_CHAT_SRV_TLGRM_PROJECTS_LIMIT,
-			        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_FORWARD);
+			        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_FORWARD);
 		}
 
 		if(nxs_chat_srv_u_tlgrm_editmessagetext_push(tlgrm_editmessagetext_ctx) != NXS_CHAT_SRV_E_OK) {

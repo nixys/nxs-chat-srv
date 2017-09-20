@@ -93,14 +93,14 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 		                                                                   0,
 		                                                                   NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PROJECT,
 		                                                                   0,
-		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_PROJECT);
+		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_PROJECT);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(tlgrm_editmessagetext_ctx,
 		                                                                   0,
 		                                                                   1,
 		                                                                   NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PRIORITY,
 		                                                                   0,
-		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_PRIORITY);
+		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_PRIORITY);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
 		        tlgrm_editmessagetext_ctx,
@@ -108,14 +108,14 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 		        2,
 		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CHANGE_DESCRIPTION,
 		        0,
-		        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_DESCRIPTION);
+		        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESCRIPTION);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(tlgrm_editmessagetext_ctx,
 		                                                                   1,
 		                                                                   0,
 		                                                                   NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CREATE_ISSUE,
 		                                                                   0,
-		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_CREATE_ISSUE,
+		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_CREATE_ISSUE,
 		                                                                   _s_no_entry_sign);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(tlgrm_editmessagetext_ctx,
@@ -123,7 +123,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 		                                                                   0,
 		                                                                   NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK,
 		                                                                   0,
-		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_BACK);
+		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_BACK);
 
 		if(nxs_chat_srv_u_tlgrm_editmessagetext_push(tlgrm_editmessagetext_ctx) != NXS_CHAT_SRV_E_OK) {
 

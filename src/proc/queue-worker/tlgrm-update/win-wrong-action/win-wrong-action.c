@@ -64,7 +64,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_wrong_action(nxs
 	                                                               0,
 	                                                               NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SESSION_DESTROY,
 	                                                               0,
-	                                                               NXS_CHAT_SRV_TLGRM_BUTTON_CAPTON_DESTROY_SESSION);
+	                                                               NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESTROY_SESSION);
 
 	if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
 
