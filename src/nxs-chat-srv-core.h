@@ -17,6 +17,7 @@
 #define NXS_CHAT_SRV_TLGRM_PROJECTS_LIMIT			5
 #define NXS_CHAT_SRV_TLGRM_ISSUES_LIMIT				5
 
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_HELLO			"%r, добро пожаловать в чат поддержки Nixys!\nТут будет краткая инструкция по использованию ..."
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE			"*Создание новой задачи*\n\n" \
 								"*Проект:* %r\n" \
 								"*Приоритет:* %r\n" \
