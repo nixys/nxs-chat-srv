@@ -137,6 +137,7 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_chat_srv_cfg.cache.users_ttl                = 0;
 	nxs_chat_srv_cfg.cache.issue_priorities_ttl     = 0;
 	nxs_chat_srv_cfg.rdmn.ssl_verifyhost            = NXS_YES;
+	nxs_chat_srv_cfg.rdmn.issue_list_query_id       = 0;
 
 	/* Init cfg context values */
 

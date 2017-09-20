@@ -15,6 +15,7 @@
 #define NXS_CHAT_SRV_RDMN_QUERY_LIMIT				100
 
 #define NXS_CHAT_SRV_TLGRM_PROJECTS_LIMIT			5
+#define NXS_CHAT_SRV_TLGRM_ISSUES_LIMIT				5
 
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE			"*Создание новой задачи*\n\n" \
 								"*Проект:* %r\n" \
@@ -33,6 +34,7 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_DESCRIPTION		"Как изменить описание задачи?"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED		"Новая задача [#%zu - %r](%r/issues/%zu) создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE		"Ваш комментарий отправлен в задачу [#%zu](%r/issues/%zu). Благодарим за обращение!"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE			"Пожалуйста, выберите задачу в которую необходимо отправить Ваш комментарий"
 
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED			"[#%zu - %r](%r/issues/%zu)\n\n*Автор:* %r\n*Статус:* %r\n*Приоритет:* %r\n*Назначена:* %r\n\n*Описание*:\n---\n%r"
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED			"[#%zu - %r](%r/issues/%zu)\n\n%r%r писал(а):\n---\n%r"
@@ -143,6 +145,7 @@ typedef struct
 	nxs_string_t				host;
 	nxs_string_t				api_key;
 	nxs_string_t				auth_token;
+	size_t					issue_list_query_id;
 	nxs_bool_t				ssl_verifyhost;
 } nxs_chat_srv_cfg_rdmn_t;
 
