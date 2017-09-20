@@ -51,8 +51,8 @@ typedef struct
 	nxs_string_t					subject;		/* redmine issue subject */
 	nxs_string_t					description;		/* redmine issue description */
 	nxs_string_t					project_name_regex;	/* regex to filter redmine projects name */
-	nxs_list_t					available_projects;	/* type: project_t. All available active projects for user */
-	nxs_array_t					selected_projects;	/* type: project_t. Selected projects (by specified regex) for user */
+	nxs_list_t					available_projects;	/* type: nxs_chat_srv_u_db_sess_project_t. All available active projects for user */
+	nxs_array_t					selected_projects;	/* type: nxs_chat_srv_u_db_sess_project_t. Selected projects (by specified regex) for user */
 } nxs_chat_srv_u_db_sess_t_new_issue_t;
 
 /*
@@ -65,6 +65,7 @@ typedef struct
 
 typedef struct
 {
+	nxs_string_t					rdmn_api_key;		/* user api key in Redmine */
 	size_t						chat_id;		/* chat id where session was started */
 	size_t						usr_message_id;		/* user message id where session was started */
 	size_t						bot_message_id;		/* bot message id where session was started */
@@ -142,6 +143,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize_proje
 
 /* Module initializations */
 
+static nxs_string_t _s_par_rdmn_api_key		= nxs_string("rdmn_api_key");
 static nxs_string_t _s_par_chat_id		= nxs_string("chat_id");
 static nxs_string_t _s_par_bot_message_id	= nxs_string("bot_message_id");
 static nxs_string_t _s_par_usr_message_id	= nxs_string("usr_message_id");
@@ -230,6 +232,7 @@ error:
 }
 
 nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_start(nxs_chat_srv_u_db_sess_t *             u_ctx,
+                                                nxs_string_t *                         rdmn_api_key,
                                                 size_t                                 chat_id,
                                                 size_t                                 usr_message_id,
                                                 size_t                                 bot_message_id,
@@ -237,7 +240,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_start(nxs_chat_srv_u_db_sess_t *      
                                                 nxs_chat_srv_m_db_sess_wait_for_type_t wait_for)
 {
 
-	if(u_ctx == NULL) {
+	if(u_ctx == NULL || rdmn_api_key == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
@@ -247,6 +250,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_start(nxs_chat_srv_u_db_sess_t *      
 	u_ctx->value.bot_message_id = bot_message_id;
 	u_ctx->value.type           = type;
 	u_ctx->value.wait_for       = wait_for;
+
+	nxs_string_clone(&u_ctx->value.rdmn_api_key, rdmn_api_key);
 
 	return nxs_chat_srv_u_db_sess_s_value_put(u_ctx);
 }
@@ -289,6 +294,22 @@ size_t nxs_chat_srv_u_db_sess_get_tlgrm_userid(nxs_chat_srv_u_db_sess_t *u_ctx)
 	}
 
 	return u_ctx->tlgrm_userid;
+}
+
+nxs_string_t *nxs_chat_srv_u_db_sess_get_rdmn_api_key(nxs_chat_srv_u_db_sess_t *u_ctx)
+{
+
+	if(u_ctx == NULL) {
+
+		return 0;
+	}
+
+	if(nxs_chat_srv_u_db_sess_check_exist(u_ctx) == NXS_NO) {
+
+		return 0;
+	}
+
+	return &u_ctx->value.rdmn_api_key;
 }
 
 size_t nxs_chat_srv_u_db_sess_get_chat_id(nxs_chat_srv_u_db_sess_t *u_ctx)
@@ -1054,6 +1075,8 @@ static void nxs_chat_srv_u_db_sess_s_value_init(nxs_chat_srv_u_db_sess_t_value_t
 	value->type           = NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE;
 	value->wait_for       = NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE;
 
+	nxs_string_init_empty(&value->rdmn_api_key);
+
 	nxs_chat_srv_u_db_sess_s_message_init(&value->message);
 	nxs_chat_srv_u_db_sess_s_new_issue_init(&value->new_issue);
 }
@@ -1073,6 +1096,8 @@ static void nxs_chat_srv_u_db_sess_s_value_free(nxs_chat_srv_u_db_sess_t_value_t
 	value->type           = NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE;
 	value->wait_for       = NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE;
 
+	nxs_string_free(&value->rdmn_api_key);
+
 	nxs_chat_srv_u_db_sess_s_message_free(&value->message);
 	nxs_chat_srv_u_db_sess_s_new_issue_free(&value->new_issue);
 }
@@ -1091,6 +1116,8 @@ static void nxs_chat_srv_u_db_sess_s_value_clear(nxs_chat_srv_u_db_sess_t_value_
 	value->updated_at     = 0;
 	value->type           = NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE;
 	value->wait_for       = NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE;
+
+	nxs_string_clear(&value->rdmn_api_key);
 
 	nxs_chat_srv_u_db_sess_s_message_clear(&value->message);
 	nxs_chat_srv_u_db_sess_s_new_issue_clear(&value->new_issue);
@@ -1214,6 +1241,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_serialize(nxs_string_t 
 
 	nxs_string_printf(value_str,
 	                  "{"
+	                  "\"rdmn_api_key\":\"%r\","
 	                  "\"chat_id\":%zu,"
 	                  "\"usr_message_id\":%zu,"
 	                  "\"bot_message_id\":%zu,"
@@ -1222,6 +1250,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_serialize(nxs_string_t 
 	                  "\"wait_for\":%d,"
 	                  "\"data\":%r"
 	                  "}",
+	                  &value->rdmn_api_key,
 	                  value->chat_id,
 	                  value->usr_message_id,
 	                  value->bot_message_id,
@@ -1266,6 +1295,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_deserialize(nxs_string_
 
 	// clang-format off
 
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_rdmn_api_key,	&value->rdmn_api_key,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_chat_id,	&value->chat_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_usr_message_id,	&value->usr_message_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bot_message_id,	&value->bot_message_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
