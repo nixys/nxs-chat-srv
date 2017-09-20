@@ -12,6 +12,7 @@ typedef enum			nxs_chat_srv_m_tlgrm_bttn_callback_type_e	nxs_chat_srv_m_tlgrm_bt
 
 typedef struct			nxs_chat_srv_m_tlgrm_update_s			nxs_chat_srv_m_tlgrm_update_t;
 typedef struct			nxs_chat_srv_m_tlgrm_callback_query_s		nxs_chat_srv_m_tlgrm_callback_query_t;
+typedef struct			nxs_chat_srv_m_tlgrm_message_entity_s		nxs_chat_srv_m_tlgrm_message_entity_t;
 typedef struct			nxs_chat_srv_m_tlgrm_message_s			nxs_chat_srv_m_tlgrm_message_t;
 typedef struct			nxs_chat_srv_m_tlgrm_chat_s			nxs_chat_srv_m_tlgrm_chat_t;
 typedef struct			nxs_chat_srv_m_tlgrm_user_s			nxs_chat_srv_m_tlgrm_user_t;
@@ -55,9 +56,10 @@ enum nxs_chat_srv_m_tlgrm_bttn_callback_type_e
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PROJECT,	/* selected project */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PRIORITY,	/* select priority */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,	/* selected priority */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_ISSUE,		/* select issues to add comment */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CHANGE_DESCRIPTION,	/* change issue description */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SESSION_DESTROY,	/* destroy current session */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK,			/* back to previous 'window' */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK			/* back to previous 'window' */
 };
 
 struct nxs_chat_srv_m_tlgrm_force_reply_s
@@ -103,6 +105,16 @@ struct nxs_chat_srv_m_tlgrm_chat_s
 	nxs_chat_srv_m_tlgrm_chat_type_t	type;
 };
 
+struct nxs_chat_srv_m_tlgrm_message_entity_s
+{
+	nxs_bool_t				_is_used;
+
+	nxs_string_t				type;
+	size_t					offset;
+	size_t					length;
+	nxs_string_t				url;			/* Optional */
+};
+
 struct nxs_chat_srv_m_tlgrm_message_s
 {
 	nxs_bool_t				_is_used;
@@ -112,6 +124,8 @@ struct nxs_chat_srv_m_tlgrm_message_s
 	nxs_chat_srv_m_tlgrm_chat_t		chat;
 	nxs_chat_srv_m_tlgrm_message_t		*reply_to_message;	/* Optional */
 	nxs_string_t				text;			/* Optional */
+
+	nxs_array_t				entities;		/* type: nxs_chat_srv_m_tlgrm_message_entity_t. Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_callback_query_s

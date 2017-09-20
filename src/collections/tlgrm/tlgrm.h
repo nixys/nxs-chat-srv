@@ -12,6 +12,9 @@ nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_update_pull_json		(nxs_chat_srv_m_tlgr
 void					nxs_chat_srv_c_tlgrm_callback_query_init	(nxs_chat_srv_m_tlgrm_callback_query_t *callback_query);
 void					nxs_chat_srv_c_tlgrm_callback_query_free	(nxs_chat_srv_m_tlgrm_callback_query_t *callback_query);
 
+void					nxs_chat_srv_c_tlgrm_message_entity_init	(nxs_chat_srv_m_tlgrm_message_entity_t *entity);
+void					nxs_chat_srv_c_tlgrm_message_entity_free	(nxs_chat_srv_m_tlgrm_message_entity_t *entity);
+
 void					nxs_chat_srv_c_tlgrm_message_init		(nxs_chat_srv_m_tlgrm_message_t *message);
 void					nxs_chat_srv_c_tlgrm_message_free		(nxs_chat_srv_m_tlgrm_message_t *message);
 nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_message_result_pull_json	(nxs_chat_srv_m_tlgrm_message_t *message, nxs_bool_t *status, nxs_buf_t *json_buf);
