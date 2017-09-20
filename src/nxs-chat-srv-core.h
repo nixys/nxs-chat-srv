@@ -18,12 +18,17 @@
 #define NXS_CHAT_SRV_TLGRM_ISSUES_LIMIT				5
 
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_HELLO			"%r, добро пожаловать в чат поддержки Nixys!\nТут будет краткая инструкция по использованию ..."
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE			"*Создание новой задачи*\n\n" \
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_FULL			"*Создание новой задачи*\n\n" \
 								"*Проект:* %r\n" \
 								"*Приоритет:* %r\n" \
 								"*Тема:* %r\n" \
 								"*Описание:* %r\n---------\n" \
 								"_Ниже Вы можете изменить параметры новой задачи_"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_SHORT			"*Создание новой задачи*\n\n" \
+								"*Проект:* %r\n" \
+								"*Приоритет:* %r\n" \
+								"*Тема:* %r\n" \
+								"*Описание:* %r\n"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN			"Как поступить с Вашим комментарием? Добавить в последнюю активную задачу, в другую существующую или создать новую?\n---------\nПоследняя активная задача: [#%zu - %r](%r/issues/%zu)"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_SUBJECT		"Как назвать задачу?"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT		"_Будет задана при создании задачи_"

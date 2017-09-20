@@ -83,7 +83,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(n
 		        sess_ctx, &project_id, &project_name, &priority_id, &priority_name, &subject, &description, &project_name_regex);
 
 		nxs_string_printf(&message,
-		                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE,
+		                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_FULL,
 		                  &project_name,
 		                  &priority_name,
 		                  nxs_string_len(&subject) > 0 ? &subject : &_s_msg_empty_subject,
