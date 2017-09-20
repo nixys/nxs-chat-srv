@@ -5,6 +5,7 @@
 
 /*%%_NXS_TPL_HEADERS_BEGIN_%%*/
 #include <collections/rdmn/rdmn.h>
+#include <collections/rdmn-issues/rdmn-issues.h>
 #include <collections/tlgrm/tlgrm.h>
 #include <collections/unix-sock/unix-sock.h>
 #include <collections/user-ctx/user-ctx.h>
