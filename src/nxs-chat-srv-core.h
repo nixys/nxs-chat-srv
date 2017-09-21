@@ -29,7 +29,7 @@
 								"*Приоритет:* %r\n" \
 								"*Тема:* %r\n" \
 								"*Описание:* %r\n"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN			"Как поступить с Вашим комментарием? Добавить в последнюю активную задачу, в другую существующую или создать новую?\n---------\nПоследняя активная задача: [#%zu - %r](%r/issues/%zu)"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN			"Как поступить с Вашим комментарием? Добавить в последнюю задачу, выбрать задачу из списка или создать новую?\n---------\nПоследняя задача: [#%zu - %r](%r/issues/%zu)"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_SUBJECT		"Как назвать задачу?"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT		"_Будет задана при создании задачи_"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR			"%s Произошла внутрення ошибка сервера, мы уже получили уведомление об этом и работаем над решением проблемы. Пожалуйста, [воспользуйтесь web-версией системы задач](https://task.nixys.ru/) или повторите свой запрос позже."
@@ -50,9 +50,9 @@
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_PRIORITY	"*Приоритет:* %r\n"
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_ASSIGNED_TO	"*Назначена:* %r\n"
 
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_ADD_LAST_ACTIVE	(u_char *)"Добавить в последнюю активную"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_ADD_LAST_ACTIVE	(u_char *)"Добавить в последнюю задачу"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_NEW_ISSUE		(u_char *)"Создать новую задачу"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_SELECT_ISSUE		(u_char *)"Выбрать задачу для ответа"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_SELECT_ISSUE		(u_char *)"Выбрать задачу"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_ADD_ADD_TO_ISSUE	(u_char *)"Добавить в #%zu - %s"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_PROJECT		(u_char *)"Проект"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_PRIORITY		(u_char *)"Приоритет"

@@ -46,12 +46,13 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(nxs_chat_s
                                                                       size_t                         chat_id,
                                                                       size_t                         message_id,
                                                                       size_t                         rdmn_userid,
+                                                                      nxs_string_t *                 user_api_key,
                                                                       nxs_chat_srv_m_tlgrm_update_t *update,
                                                                       nxs_buf_t *                    response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
-	nxs_chat_srv_u_rdmn_last_issue_t *      rdmn_last_issue_ctx;
+	nxs_chat_srv_u_last_issues_t *          last_issue_ctx;
 	nxs_string_t                            callback_str, message, issue_subject;
 	nxs_buf_t *                             b;
 	nxs_chat_srv_err_t                      rc;
@@ -65,14 +66,13 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(nxs_chat_s
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
-	rdmn_last_issue_ctx       = nxs_chat_srv_u_rdmn_last_issue_init();
+	last_issue_ctx            = nxs_chat_srv_u_last_issues_init();
 
-	if(nxs_chat_srv_u_rdmn_last_issue_pull(rdmn_last_issue_ctx, rdmn_userid) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_u_last_issues_get(last_issue_ctx, chat_id, rdmn_userid, user_api_key, &issue_id, &issue_subject) !=
+	   NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
-
-	nxs_chat_srv_u_rdmn_last_issue_get(rdmn_last_issue_ctx, &issue_id, &issue_subject);
 
 	nxs_string_printf(&message, NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN, issue_id, &issue_subject, &nxs_chat_srv_cfg.rdmn.host, issue_id);
 
@@ -169,7 +169,7 @@ error:
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);
-	rdmn_last_issue_ctx       = nxs_chat_srv_u_rdmn_last_issue_free(rdmn_last_issue_ctx);
+	last_issue_ctx            = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 
 	return rc;
 }

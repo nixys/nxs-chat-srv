@@ -101,14 +101,16 @@ error:
 
 static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update_t *update)
 {
-	nxs_chat_srv_u_db_ids_t *   ids_ctx;
-	nxs_chat_srv_m_rdmn_user_t *u;
-	nxs_chat_srv_err_t          rc;
-	size_t                      i, tlgrm_userid;
+	nxs_chat_srv_u_db_ids_t *     ids_ctx;
+	nxs_chat_srv_m_rdmn_user_t *  u;
+	nxs_chat_srv_u_last_issues_t *last_issue_ctx;
+	nxs_chat_srv_err_t            rc;
+	size_t                        i, tlgrm_userid;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	ids_ctx = nxs_chat_srv_u_db_ids_init();
+	ids_ctx        = nxs_chat_srv_u_db_ids_init();
+	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
 	for(i = 0; i < nxs_array_count(&update->data.issue.watchers); i++) {
 
@@ -127,6 +129,9 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 
 		if(tlgrm_userid > 0) {
 
+			/* set issue 'update->data.issue.id' as last for telegram user 'tlgrm_userid' */
+			nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, update->data.issue.id);
+
 			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_runtime(update, tlgrm_userid) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_log_write_error(&process,
@@ -141,7 +146,8 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 
 error:
 
-	ids_ctx = nxs_chat_srv_u_db_ids_free(ids_ctx);
+	ids_ctx        = nxs_chat_srv_u_db_ids_free(ids_ctx);
+	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 
 	return rc;
 }
@@ -151,6 +157,7 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	nxs_chat_srv_u_db_ids_t *      ids_ctx;
 	nxs_chat_srv_m_rdmn_user_t *   u;
 	nxs_chat_srv_m_rdmn_journal_t *journal;
+	nxs_chat_srv_u_last_issues_t * last_issue_ctx;
 	nxs_chat_srv_err_t             rc;
 	size_t                         i, tlgrm_userid;
 
@@ -166,7 +173,8 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	ids_ctx = nxs_chat_srv_u_db_ids_init();
+	ids_ctx        = nxs_chat_srv_u_db_ids_init();
+	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
 	for(i = 0; i < nxs_array_count(&update->data.issue.watchers); i++) {
 
@@ -185,6 +193,9 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 
 		if(tlgrm_userid > 0) {
 
+			/* set issue 'update->data.issue.id' as last for telegram user 'tlgrm_userid' */
+			nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, update->data.issue.id);
+
 			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(update, tlgrm_userid, journal) !=
 			   NXS_CHAT_SRV_E_OK) {
 
@@ -200,7 +211,8 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 
 error:
 
-	ids_ctx = nxs_chat_srv_u_db_ids_free(ids_ctx);
+	ids_ctx        = nxs_chat_srv_u_db_ids_free(ids_ctx);
+	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 
 	return rc;
 }

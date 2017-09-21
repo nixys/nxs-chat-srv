@@ -8,6 +8,7 @@
 #include <dal/rdmn-issues/rdmn-issues-typedefs.h>
 #include <dal/db-ids/db-ids-typedefs.h>
 #include <dal/tlgrm/tlgrm-typedefs.h>
+#include <dal/db-last-issues/db-last-issues-typedefs.h>
 #include <dal/db-issues/db-issues-typedefs.h>
 #include <dal/db-sess/db-sess-typedefs.h>
 #include <dal/rdmn-enums/rdmn-enums-typedefs.h>
@@ -21,6 +22,7 @@
 #include <dal/rdmn-issues/rdmn-issues.h>
 #include <dal/db-ids/db-ids.h>
 #include <dal/tlgrm/tlgrm.h>
+#include <dal/db-last-issues/db-last-issues.h>
 #include <dal/db-issues/db-issues.h>
 #include <dal/db-sess/db-sess.h>
 #include <dal/rdmn-enums/rdmn-enums.h>

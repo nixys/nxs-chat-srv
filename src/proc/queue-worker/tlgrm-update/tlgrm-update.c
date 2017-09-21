@@ -399,13 +399,15 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 	nxs_array_t                              cache_projects;
 	nxs_string_t *                           api_key, *message;
 	nxs_chat_srv_u_db_issues_t *             db_issue_ctx;
+	nxs_chat_srv_u_last_issues_t *           last_issue_ctx;
 	nxs_array_t                              issues;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
 	nxs_chat_srv_c_rdmn_issues_init(&issues);
 
-	db_issue_ctx = nxs_chat_srv_u_db_issues_init();
+	db_issue_ctx   = nxs_chat_srv_u_db_issues_init();
+	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
 	api_key        = nxs_chat_srv_u_db_sess_get_rdmn_api_key(sess_ctx);
 	chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
@@ -459,6 +461,9 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
+
+			/* set issue 'callback->object_id' as last for telegram user 'tlgrm_userid' */
+			nxs_chat_srv_u_last_issues_set(last_issue_ctx, chat_id, callback->object_id);
 
 			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(
 			           sess_ctx, chat_id, bot_message_id, update, NULL, callback->object_id) != NXS_CHAT_SRV_E_OK) {
@@ -514,7 +519,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK:
 
 			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
-			           sess_ctx, chat_id, bot_message_id, user_ctx->r_userid, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			           sess_ctx, chat_id, bot_message_id, user_ctx->r_userid, api_key, update, NULL) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -555,7 +560,8 @@ error:
 
 	nxs_array_free(&cache_projects);
 
-	db_issue_ctx = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
+	db_issue_ctx   = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
+	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 
 	return rc;
 }
@@ -567,6 +573,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
                                                                nxs_chat_srv_m_user_ctx_t *           user_ctx)
 {
 	size_t                                   chat_id, bot_message_id, projects_count;
+	nxs_string_t *                           api_key;
 	nxs_array_t                              projects;
 	nxs_chat_srv_err_t                       rc;
 	nxs_chat_srv_m_db_cache_issue_priority_t issue_priority;
@@ -575,6 +582,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 
 	rc = NXS_CHAT_SRV_E_OK;
 
+	api_key        = nxs_chat_srv_u_db_sess_get_rdmn_api_key(sess_ctx);
 	chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
 	bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
 
@@ -724,7 +732,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 			}
 
 			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
-			           sess_ctx, chat_id, bot_message_id, user_ctx->r_userid, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			           sess_ctx, chat_id, bot_message_id, user_ctx->r_userid, api_key, update, NULL) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -824,7 +832,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_m_tlgrm_u
 	}
 
 	if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
-	           sess_ctx, update->message.chat.id, 0, user_ctx->r_userid, update, &response_buf) != NXS_CHAT_SRV_E_OK) {
+	           sess_ctx, update->message.chat.id, 0, user_ctx->r_userid, rdmn_api_key, update, &response_buf) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -906,11 +914,12 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
                                                               nxs_chat_srv_u_db_cache_t *    cache_ctx,
                                                               nxs_chat_srv_m_user_ctx_t *    user_ctx)
 {
-	nxs_string_t                description, subject, project_name_regex, *api_key;
-	size_t                      chat_id, bot_message_id, usr_message_id, projects_count, project_id, priority_id, new_issue_id;
-	nxs_chat_srv_u_db_issues_t *db_issue_ctx;
-	nxs_array_t                 projects;
-	nxs_chat_srv_err_t          rc;
+	nxs_string_t                  description, subject, project_name_regex, *api_key;
+	size_t                        chat_id, bot_message_id, usr_message_id, projects_count, project_id, priority_id, new_issue_id;
+	nxs_chat_srv_u_db_issues_t *  db_issue_ctx;
+	nxs_chat_srv_u_last_issues_t *last_issue_ctx;
+	nxs_array_t                   projects;
+	nxs_chat_srv_err_t            rc;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -925,7 +934,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 	bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
 	usr_message_id = nxs_chat_srv_u_db_sess_get_usr_message_id(sess_ctx);
 
-	db_issue_ctx = nxs_chat_srv_u_db_issues_init();
+	db_issue_ctx   = nxs_chat_srv_u_db_issues_init();
+	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
 	switch(nxs_chat_srv_u_db_sess_get_wait_for(sess_ctx)) {
 
@@ -968,6 +978,9 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
+
+			/* set issue 'new_issue_id' as last for telegram user 'chat_id' */
+			nxs_chat_srv_u_last_issues_set(last_issue_ctx, chat_id, new_issue_id);
 
 			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(sess_ctx, chat_id, 0, update, new_issue_id, NULL) !=
 			   NXS_CHAT_SRV_E_OK) {
@@ -1091,7 +1104,8 @@ error:
 		                   rc);
 	}
 
-	db_issue_ctx = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
+	db_issue_ctx   = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
+	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 
 	nxs_array_free(&projects);
 
@@ -1105,16 +1119,18 @@ error:
 static nxs_chat_srv_err_t
         handler_message_exec_reply(nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_m_user_ctx_t *user_ctx, size_t tlgrm_userid)
 {
-	nxs_chat_srv_u_db_issues_t *db_issue_ctx;
-	nxs_chat_srv_u_rdmn_user_t *rdmn_user_ctx;
-	nxs_string_t *              api_key;
-	nxs_chat_srv_err_t          rc;
-	size_t                      issue_id;
+	nxs_chat_srv_u_db_issues_t *  db_issue_ctx;
+	nxs_chat_srv_u_rdmn_user_t *  rdmn_user_ctx;
+	nxs_chat_srv_u_last_issues_t *last_issue_ctx;
+	nxs_string_t *                api_key;
+	nxs_chat_srv_err_t            rc;
+	size_t                        issue_id;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	db_issue_ctx  = nxs_chat_srv_u_db_issues_init();
-	rdmn_user_ctx = nxs_chat_srv_u_rdmn_user_init();
+	db_issue_ctx   = nxs_chat_srv_u_db_issues_init();
+	rdmn_user_ctx  = nxs_chat_srv_u_rdmn_user_init();
+	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
 	issue_id = 0;
 
@@ -1175,6 +1191,9 @@ static nxs_chat_srv_err_t
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
+	/* set issue 'issue_id' as last for telegram user 'tlgrm_userid' */
+	nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, issue_id);
+
 	if(nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, update->message.message_id, issue_id) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_warn(&process,
@@ -1186,8 +1205,9 @@ static nxs_chat_srv_err_t
 
 error:
 
-	db_issue_ctx  = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
-	rdmn_user_ctx = nxs_chat_srv_u_rdmn_user_free(rdmn_user_ctx);
+	db_issue_ctx   = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
+	rdmn_user_ctx  = nxs_chat_srv_u_rdmn_user_free(rdmn_user_ctx);
+	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 
 	return rc;
 }
