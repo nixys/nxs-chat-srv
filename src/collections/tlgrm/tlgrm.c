@@ -518,7 +518,7 @@ void nxs_chat_srv_c_tlgrm_inl_keyboard_serialize(nxs_chat_srv_m_tlgrm_inl_keyboa
 {
 	nxs_chat_srv_m_tlgrm_inl_keybutton_t *ikm;
 	nxs_array_t *                         a;
-	nxs_string_t                          p;
+	nxs_string_t                          p, text_serialized, url_serialized, callback_data_serialized;
 	nxs_bool_t                            f;
 	size_t                                i, j;
 
@@ -535,6 +535,9 @@ void nxs_chat_srv_c_tlgrm_inl_keyboard_serialize(nxs_chat_srv_m_tlgrm_inl_keyboa
 	}
 
 	nxs_string_init(&p);
+	nxs_string_init(&text_serialized);
+	nxs_string_init(&url_serialized);
+	nxs_string_init(&callback_data_serialized);
 
 	for(i = 0; i < nxs_array_count(&inl_keyboard->inline_keyboard); i++) {
 
@@ -560,14 +563,22 @@ void nxs_chat_srv_c_tlgrm_inl_keyboard_serialize(nxs_chat_srv_m_tlgrm_inl_keyboa
 
 				f = NXS_YES;
 
+				nxs_string_escape(&text_serialized, &ikm->text, NXS_STRING_ESCAPE_TYPE_JSON);
+
 				if(nxs_string_len(&ikm->url) > 0) {
 
-					nxs_string_printf2_cat(&p, "{\"text\":\"%r\",\"url\":\"%r\"}", &ikm->text, &ikm->url);
+					nxs_string_escape(&url_serialized, &ikm->url, NXS_STRING_ESCAPE_TYPE_JSON);
+
+					nxs_string_printf2_cat(&p, "{\"text\":\"%r\",\"url\":\"%r\"}", &text_serialized, &url_serialized);
 				}
 				else {
 
-					nxs_string_printf2_cat(
-					        &p, "{\"text\":\"%r\",\"callback_data\":\"%r\"}", &ikm->text, &ikm->callback_data);
+					nxs_string_escape(&callback_data_serialized, &ikm->callback_data, NXS_STRING_ESCAPE_TYPE_JSON);
+
+					nxs_string_printf2_cat(&p,
+					                       "{\"text\":\"%r\",\"callback_data\":\"%r\"}",
+					                       &text_serialized,
+					                       &callback_data_serialized);
 				}
 			}
 		}
@@ -578,6 +589,9 @@ void nxs_chat_srv_c_tlgrm_inl_keyboard_serialize(nxs_chat_srv_m_tlgrm_inl_keyboa
 	nxs_string_printf2_cat(out_str, ",\"reply_markup\": {\"inline_keyboard\":[%r]}", &p);
 
 	nxs_string_free(&p);
+	nxs_string_free(&text_serialized);
+	nxs_string_free(&url_serialized);
+	nxs_string_free(&callback_data_serialized);
 }
 
 void nxs_chat_srv_c_tlgrm_inl_keybutton_init(nxs_chat_srv_m_tlgrm_inl_keybutton_t *inl_keybutton)
@@ -671,8 +685,6 @@ void nxs_chat_srv_c_tlgrm_bttn_callback_serialize(nxs_chat_srv_m_tlgrm_bttn_call
 	}
 
 	nxs_string_printf(callback_str, "{\"%r\":%d,\"%r\":%zu}", &_s_par_t, callback.type, &_s_par_o_id, callback.object_id);
-
-	nxs_string_escape(callback_str, NULL, NXS_STRING_ESCAPE_TYPE_JSON);
 }
 
 nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_bttn_callback_deserialize(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,

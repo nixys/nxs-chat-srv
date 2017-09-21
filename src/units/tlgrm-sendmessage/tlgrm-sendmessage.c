@@ -111,7 +111,7 @@ nxs_chat_srv_u_tlgrm_sendmessage_t *nxs_chat_srv_u_tlgrm_sendmessage_free(nxs_ch
 nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_sendmessage_push(nxs_chat_srv_u_tlgrm_sendmessage_t *u_ctx)
 {
 	nxs_chat_srv_err_t rc;
-	nxs_string_t       message, reply_markup_str;
+	nxs_string_t       message, reply_markup_str, text_serialized;
 	nxs_http_code_t    http_code;
 
 	if(u_ctx == NULL) {
@@ -123,15 +123,18 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_sendmessage_push(nxs_chat_srv_u_tlgrm_se
 
 	nxs_string_init(&message);
 	nxs_string_init(&reply_markup_str);
+	nxs_string_init(&text_serialized);
 
 	nxs_chat_srv_u_tlgrm_sendmessage_rmarkaup_serialize(&u_ctx->reply_markup, &reply_markup_str);
+
+	nxs_string_escape(&text_serialized, &u_ctx->text, NXS_STRING_ESCAPE_TYPE_JSON);
 
 	nxs_string_printf(&message,
 	                  "{\"chat_id\":%zu,\"parse_mode\":\"%r\",\"disable_web_page_preview\":%s,\"text\":\"%r\"%r}",
 	                  u_ctx->chat_id,
 	                  nxs_chat_srv_c_tlgrm_parse_mode_map(u_ctx->parse_mode),
 	                  u_ctx->disable_web_page_preview == NXS_YES ? "true" : "false",
-	                  &u_ctx->text,
+	                  &text_serialized,
 	                  &reply_markup_str);
 
 	if(nxs_chat_srv_d_tlgrm_request(NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_MESSAGE, &message, &u_ctx->response_buf, &http_code) !=
@@ -152,6 +155,7 @@ error:
 
 	nxs_string_free(&message);
 	nxs_string_free(&reply_markup_str);
+	nxs_string_free(&text_serialized);
 
 	return rc;
 }

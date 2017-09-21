@@ -52,7 +52,7 @@ struct nxs_chat_srv_u_tlgrm_answercallbackquery_s
 nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_answercallbackquery_push(nxs_string_t *callback_query_id, nxs_string_t *text, size_t cache_time)
 {
 	nxs_chat_srv_err_t rc;
-	nxs_string_t       message;
+	nxs_string_t       message, text_serialized;
 	nxs_http_code_t    http_code;
 
 	if(callback_query_id == NULL) {
@@ -63,13 +63,16 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_answercallbackquery_push(nxs_string_t *c
 	rc = NXS_CHAT_SRV_E_OK;
 
 	nxs_string_init(&message);
+	nxs_string_init(&text_serialized);
 
 	if(text != NULL) {
+
+		nxs_string_escape(&text_serialized, text, NXS_STRING_ESCAPE_TYPE_JSON);
 
 		nxs_string_printf(&message,
 		                  "{\"callback_query_id\":\"%r\",\"text\":\"%r\",\"show_alert\":true,\"cache_time\":%zu}",
 		                  callback_query_id,
-		                  text,
+		                  &text_serialized,
 		                  cache_time);
 	}
 	else {
@@ -96,6 +99,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_answercallbackquery_push(nxs_string_t *c
 error:
 
 	nxs_string_free(&message);
+	nxs_string_free(&text_serialized);
 
 	return rc;
 }
