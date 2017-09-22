@@ -249,7 +249,7 @@ void nxs_chat_srv_c_rdmn_detail_init(nxs_chat_srv_m_rdmn_detail_t *detail)
 
 		return;
 	}
-	
+
 	detail->_is_used = NXS_NO;
 
 	nxs_string_init_empty(&detail->property);
@@ -263,7 +263,7 @@ void nxs_chat_srv_c_rdmn_detail_free(nxs_chat_srv_m_rdmn_detail_t *detail)
 
 		return;
 	}
-	
+
 	detail->_is_used = NXS_NO;
 
 	nxs_string_free(&detail->property);
@@ -550,7 +550,7 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,	&var->is_private,	NULL,						NULL,						NXS_CFG_JSON_TYPE_BOOL,			0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_spent_hours,	&var->spent_hours,	NULL,						NULL,						NXS_CFG_JSON_TYPE_REAL,			0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_journals,	&var->journals,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_journals,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_watchers,	&var->watchers,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_users,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_watchers,	&var->watchers,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_users,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project,	&var->project,		&nxs_chat_srv_c_rdmn_extract_json_project,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_tracker,	&var->tracker,		&nxs_chat_srv_c_rdmn_extract_json_tracker,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status,		&var->status,		&nxs_chat_srv_c_rdmn_extract_json_status,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);

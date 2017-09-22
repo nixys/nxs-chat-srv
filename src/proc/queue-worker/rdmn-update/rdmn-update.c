@@ -105,13 +105,25 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 	nxs_chat_srv_m_rdmn_user_t *  u;
 	nxs_chat_srv_u_last_issues_t *last_issue_ctx;
 	nxs_chat_srv_err_t            rc;
-	size_t                        i, tlgrm_userid;
+	nxs_array_t                   receivers;
+	size_t                        i, tlgrm_userid, *id;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
 	ids_ctx        = nxs_chat_srv_u_db_ids_init();
 	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
+	nxs_array_init2(&receivers, size_t);
+
+	/* add to receivers array assigned to user */
+	if(update->data.issue.author.id != update->data.issue.assigned_to.id) {
+
+		id = nxs_array_add(&receivers);
+
+		*id = update->data.issue.assigned_to.id;
+	}
+
+	/* add to receivers array all watchers excluding author of the comment */
 	for(i = 0; i < nxs_array_count(&update->data.issue.watchers); i++) {
 
 		u = nxs_array_get(&update->data.issue.watchers, i);
@@ -122,7 +134,22 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 			continue;
 		}
 
-		if(nxs_chat_srv_u_db_ids_get(ids_ctx, u->id, &tlgrm_userid) != NXS_CHAT_SRV_E_OK) {
+		/* excluding assigned to user, it will add to array above */
+		if(u->id == update->data.issue.assigned_to.id) {
+
+			continue;
+		}
+
+		id = nxs_array_add(&receivers);
+
+		*id = u->id;
+	}
+
+	for(i = 0; i < nxs_array_count(&receivers); i++) {
+
+		id = nxs_array_get(&receivers, i);
+
+		if(nxs_chat_srv_u_db_ids_get(ids_ctx, *id, &tlgrm_userid) != NXS_CHAT_SRV_E_OK) {
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
@@ -149,6 +176,8 @@ error:
 	ids_ctx        = nxs_chat_srv_u_db_ids_free(ids_ctx);
 	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 
+	nxs_array_free(&receivers);
+
 	return rc;
 }
 
@@ -159,7 +188,8 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	nxs_chat_srv_m_rdmn_journal_t *journal;
 	nxs_chat_srv_u_last_issues_t * last_issue_ctx;
 	nxs_chat_srv_err_t             rc;
-	size_t                         i, tlgrm_userid;
+	nxs_array_t                    receivers;
+	size_t                         i, tlgrm_userid, *id;
 
 	if((journal = nxs_array_get(&update->data.issue.journals, 0)) == NULL) {
 
@@ -173,9 +203,20 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 
 	rc = NXS_CHAT_SRV_E_OK;
 
+	nxs_array_init2(&receivers, size_t);
+
 	ids_ctx        = nxs_chat_srv_u_db_ids_init();
 	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
+	/* add to receivers array assigned to user */
+	if(journal->user.id != update->data.issue.assigned_to.id) {
+
+		id = nxs_array_add(&receivers);
+
+		*id = update->data.issue.assigned_to.id;
+	}
+
+	/* add to receivers array all watchers excluding author of the comment */
 	for(i = 0; i < nxs_array_count(&update->data.issue.watchers); i++) {
 
 		u = nxs_array_get(&update->data.issue.watchers, i);
@@ -186,7 +227,23 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 			continue;
 		}
 
-		if(nxs_chat_srv_u_db_ids_get(ids_ctx, u->id, &tlgrm_userid) != NXS_CHAT_SRV_E_OK) {
+		/* excluding assigned to user, it will add to array above */
+		if(u->id == update->data.issue.assigned_to.id) {
+
+			continue;
+		}
+
+		id = nxs_array_add(&receivers);
+
+		*id = u->id;
+	}
+
+	/* send message to all receivers */
+	for(i = 0; i < nxs_array_count(&receivers); i++) {
+
+		id = nxs_array_get(&receivers, i);
+
+		if(nxs_chat_srv_u_db_ids_get(ids_ctx, *id, &tlgrm_userid) != NXS_CHAT_SRV_E_OK) {
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
@@ -213,6 +270,8 @@ error:
 
 	ids_ctx        = nxs_chat_srv_u_db_ids_free(ids_ctx);
 	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
+
+	nxs_array_free(&receivers);
 
 	return rc;
 }

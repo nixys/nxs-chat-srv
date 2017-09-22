@@ -4,11 +4,11 @@
 // clang-format off
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION					"0.0.1"
+#define NXS_CHAT_SRV_VERSION					"0.0.3"
 
 /* Project basic global definitions */
 
-#define	NXS_CHAT_SRV_CONF_PATH_DEFAULT				"./nxs-chat-srv.conf"
+#define	NXS_CHAT_SRV_CONF_PATH_DEFAULT				"/etc/nxs-chat-srv/nxs-chat-srv.conf"
 
 #define NXS_CHAT_SRV_REST_API_MAX_HEADER_SIZE			1048576		/* 1 MB */
 
