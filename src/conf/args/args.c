@@ -15,6 +15,7 @@
 #define NXS_CHAT_SRV_CONF_ARGS_HELP_MSG			"nxs-chat-srv short description \n" \
 										"Available options:\n" \
 										"\t-v: show program version\n" \
+										"\t-V: show bare program version\n" \
 										"\t-h: show help (this message)\n" \
 										"\t-c CONFIG_PATH: change default config file path (default path: %s )"
 
@@ -39,6 +40,7 @@ static int nxs_chat_srv_conf_args_post(nxs_args_t args, int argc, u_char **argv)
 static int nxs_chat_srv_conf_args_freeargs(nxs_args_t args, int argc, int argind, u_char **argv);
 static int nxs_chat_srv_conf_args_help(nxs_args_t args, u_char arg, u_char *optarg);
 static int nxs_chat_srv_conf_args_version(nxs_args_t args, u_char arg, u_char *optarg);
+static int nxs_chat_srv_conf_args_bare_version(nxs_args_t args, u_char arg, u_char *optarg);
 static int nxs_chat_srv_conf_args_conf(nxs_args_t args, u_char arg, u_char *optarg);
 
 // clang-format off
@@ -49,6 +51,7 @@ nxs_args_shortopt_t shortopts[] =
 {
 	{'h',	NXS_ARGS_HAVE_ARGS_NO,		&nxs_chat_srv_conf_args_help},
 	{'v',	NXS_ARGS_HAVE_ARGS_NO,		&nxs_chat_srv_conf_args_version},
+	{'V',	NXS_ARGS_HAVE_ARGS_NO,		&nxs_chat_srv_conf_args_bare_version},
 	{'c',	NXS_ARGS_HAVE_ARGS_YES,		&nxs_chat_srv_conf_args_conf},
 
 	NXS_ARGS_NULL
@@ -157,6 +160,14 @@ static int nxs_chat_srv_conf_args_version(nxs_args_t args, u_char arg, u_char *o
 {
 
 	nxs_log_write_info(&process, "version: %s (nxs-fw v%s)", NXS_CHAT_SRV_VERSION, NXS_VERSION);
+
+	return NXS_ARGS_CONF_OK_EXIT;
+}
+
+static int nxs_chat_srv_conf_args_bare_version(nxs_args_t args, u_char arg, u_char *optarg)
+{
+
+	nxs_log_write_console(&process, "%s", NXS_CHAT_SRV_VERSION);
 
 	return NXS_ARGS_CONF_OK_EXIT;
 }
