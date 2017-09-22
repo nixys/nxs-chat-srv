@@ -1,0 +1,12 @@
+Source: #PACKAGE#
+Section: devel
+Priority: optional
+Maintainer: Boris Ershov <#EMAIL#>
+Build-Depends: #BUILD_DEPS#
+Standards-Version: #POLICY#
+Homepage: http://www.nixys.ru
+
+Package: #PACKAGE#
+Architecture: amd64
+Depends: ${misc:Depends}, libevent-nxs (>= 2.1.8), libssl1.0.0, libhiredis0.10
+Description: Nixys Chat Server

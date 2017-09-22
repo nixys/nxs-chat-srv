@@ -1,0 +1,2 @@
+./objs/nxs-chat-srv /usr/sbin
+./pkg/etc/nxs-chat-srv /etc

@@ -1,0 +1,81 @@
+#!/bin/bash
+
+if [ $# -eq 0 ];
+then
+
+		command='build'
+else
+
+		command=$1
+fi
+
+echo -n "Input release: "
+read RELEASE
+
+make
+
+P_NAME="nxs-chat-srv"
+VER=`./objs/nxs-chat-srv -V`
+
+function build_package()
+{
+
+	rm -rf /tmp/nxs/${P_NAME}
+	
+	mkdir -p /tmp/nxs
+
+	rsync -av ../${P_NAME} /tmp/nxs \
+		--exclude .git \
+		--exclude .gitignore \
+		--exclude .nxs-fw-settings \
+		--exclude build-pkgs-tpls \
+		--exclude build-pkgs \
+		--exclude tmp \
+		--exclude "objs/*" \
+		--exclude logs \
+		--exclude docs \
+		--exclude .cproject \
+		--exclude .project \
+		--exclude .autotools \
+		--exclude .settings \
+		--exclude ${P_NAME}.conf
+
+	rsync -av ./build-pkgs-tpls/pkg /tmp/nxs/${P_NAME}
+
+	(
+
+		TPL_PATH=`pwd`/build-pkgs-tpls/debian/${RELEASE}
+
+		cd /tmp/nxs/${P_NAME}
+
+		clean_build_files
+
+		dh_make -p ${P_NAME}_${VER} --email hello@nixys.ru --copyright gpl3 --single --templates ${TPL_PATH} --yes --createorig
+
+		dpkg-buildpackage
+	)
+}
+
+function clean_build_files()
+{
+
+	rm ../${P_NAME}_${VER}.orig.tar.xz
+}
+
+case $command in
+
+	build)
+
+		build_package
+		;;
+
+	clean)
+
+		clean_build_files
+		;;
+
+	*)
+
+		echo "Unknown command: $command"
+		;;
+esac
