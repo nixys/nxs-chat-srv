@@ -611,7 +611,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_get_new_issue_projects(nxs_chat_srv_
 {
 	nxs_chat_srv_u_db_sess_project_t *p;
 	nxs_chat_srv_m_db_sess_project_t *project;
-	nxs_chat_srv_err_t                rc;
 	size_t                            i, c;
 
 	if(u_ctx == NULL) {
@@ -637,38 +636,32 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_get_new_issue_projects(nxs_chat_srv_
 		return NXS_CHAT_SRV_E_TYPE;
 	}
 
-	rc = NXS_CHAT_SRV_E_OK;
-
 	c = nxs_array_count(&u_ctx->value.new_issue.selected_projects);
-
-	if(offset >= c) {
-
-		nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
-	}
 
 	if(count != NULL) {
 
 		*count = c;
 	}
 
-	for(i = offset; i < c; i++) {
+	if(offset < c) {
 
-		if(i >= offset + limit) {
+		for(i = offset; i < c; i++) {
 
-			break;
+			if(i >= offset + limit) {
+
+				break;
+			}
+
+			p = nxs_array_get(&u_ctx->value.new_issue.selected_projects, i);
+
+			project = nxs_array_add(projects);
+
+			project->id   = p->id;
+			project->name = &p->name;
 		}
-
-		p = nxs_array_get(&u_ctx->value.new_issue.selected_projects, i);
-
-		project = nxs_array_add(projects);
-
-		project->id   = p->id;
-		project->name = &p->name;
 	}
 
-error:
-
-	return rc;
+	return NXS_CHAT_SRV_E_OK;
 }
 
 nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_set_new_issue(nxs_chat_srv_u_db_sess_t *u_ctx,
