@@ -36,7 +36,9 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module initializations */
 
-static nxs_string_t	_s_msg_empty_subject		= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT);
+static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
+
+static nxs_string_t	_s_msg_empty_subject	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT);
 
 /* Module global functions */
 
@@ -50,11 +52,12 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(
                                                                                 nxs_buf_t *                    response_buf)
 {
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *  tlgrm_editmessagetext_ctx;
-	nxs_string_t                              callback_str, description, subject, project_name, priority_name, message;
+	nxs_string_t                              callback_str, description, subject, project_name, priority_name, message, private_msg;
 	nxs_buf_t *                               b;
 	nxs_chat_srv_err_t                        rc;
 	nxs_chat_srv_m_db_cache_issue_priority_t *issue_priority;
 	nxs_array_t                               priorities;
+	nxs_bool_t                                is_private;
 	size_t                                    i;
 
 	rc = NXS_CHAT_SRV_E_OK;
@@ -65,6 +68,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(
 	nxs_string_init(&project_name);
 	nxs_string_init(&priority_name);
 	nxs_string_init(&message);
+	nxs_string_init_empty(&private_msg);
 
 	nxs_array_init2(&priorities, nxs_chat_srv_m_db_cache_issue_priority_t);
 
@@ -80,13 +84,20 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(
 
 		nxs_chat_srv_u_db_cache_prio_get(cache_ctx, &priorities);
 
-		nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, &project_name, NULL, &priority_name, &subject, &description, NULL);
+		nxs_chat_srv_u_db_sess_t_get_new_issue(
+		        sess_ctx, NULL, &project_name, NULL, &priority_name, &subject, &description, &is_private, NULL);
+
+		if(is_private == NXS_YES) {
+
+			nxs_string_printf(&private_msg, NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_PRIVACY, _s_private_message);
+		}
 
 		nxs_string_printf(&message,
 		                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_FULL,
 		                  &project_name,
 		                  &priority_name,
 		                  nxs_string_len(&subject) > 0 ? &subject : &_s_msg_empty_subject,
+		                  &private_msg,
 		                  &description);
 
 		tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
@@ -128,6 +139,7 @@ error:
 	nxs_string_free(&project_name);
 	nxs_string_free(&priority_name);
 	nxs_string_free(&message);
+	nxs_string_free(&private_msg);
 
 	nxs_array_free(&priorities);
 

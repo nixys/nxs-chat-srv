@@ -38,6 +38,12 @@ typedef struct
 	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_user_ctx_t *user_ctx);
 } handlers_message_t;
 
+typedef struct
+{
+	nxs_string_t				command;
+	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_user_ctx_t *user_ctx);
+} handlers_commands_t;
+
 /* Module internal (static) functions prototypes */
 
 // clang-format on
@@ -82,6 +88,15 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 static nxs_chat_srv_err_t
         handler_message_exec_reply(nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_m_user_ctx_t *user_ctx, size_t tlgrm_userid);
 
+static nxs_chat_srv_err_t handler_command_start(nxs_chat_srv_m_tlgrm_update_t *update,
+                                                nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                nxs_chat_srv_m_user_ctx_t *    user_ctx);
+static nxs_chat_srv_err_t handler_command_dialog_destroy(nxs_chat_srv_m_tlgrm_update_t *update,
+                                                         nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                         nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                         nxs_chat_srv_m_user_ctx_t *    user_ctx);
+
 // clang-format off
 
 /* Module initializations */
@@ -102,6 +117,18 @@ static handlers_message_t handlers_message[] =
 	{NXS_CHAT_SRV_M_DB_SESS_TYPE_NONE,		NULL}
 };
 
+static handlers_commands_t handlers_command[] =
+{
+	{nxs_string("/start"),				&handler_command_start},
+	{nxs_string("/dialog_destroy"),			&handler_command_dialog_destroy},
+	{nxs_string("/help"),				NULL},
+	{nxs_string("/dialog_start"),			NULL},
+	{nxs_string("/issue_create"),			NULL},
+	{nxs_string("/issues_list"),			NULL},
+
+	{NXS_STRING_NULL_STR,				NULL}
+};
+
 /* Module global functions */
 
 // clang-format on
@@ -115,7 +142,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 	nxs_chat_srv_u_db_ids_t *     ids_ctx;
 	nxs_chat_srv_m_user_ctx_t     user_ctx;
 	nxs_chat_srv_err_t            rc;
-	size_t                        tlgrm_user_id;
+	size_t                        tlgrm_user_id, i;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -145,6 +172,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 
 		/* User not found */
 
+		/* TODO: initial dialog with unknown user */
+
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
@@ -167,6 +196,16 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 		nxs_error(rc, handler_callback_exec(&update, sess_ctx, cache_ctx, &user_ctx), error);
 	}
 	else {
+
+		for(i = 0; handlers_command[i].handler != NULL; i++) {
+
+			if(nxs_string_cmp(&handlers_command[i].command, 0, &update.message.text, 0) == NXS_YES) {
+
+				nxs_error(rc, handlers_command[i].handler(&update, sess_ctx, cache_ctx, &user_ctx), error);
+			}
+		}
+
+		/* if command not found */
 
 		nxs_error(rc, handler_message_exec(&update, sess_ctx, cache_ctx, &user_ctx), error);
 	}
@@ -331,14 +370,14 @@ static nxs_chat_srv_err_t handler_message_exec(nxs_chat_srv_m_tlgrm_update_t *up
 	if(nxs_chat_srv_u_db_sess_check_exist(sess_ctx) == NXS_NO) {
 
 		/* TODO: need to create commands handler and relocate this block */
-		if(nxs_string_char_cmp(&update->message.text, 0, (u_char *)"/start") == NXS_YES) {
+		/*if(nxs_string_char_cmp(&update->message.text, 0, (u_char *)"/start") == NXS_YES) {
 
-			printf("/start %s\n", nxs_string_str(&user_ctx->r_userfname));
+		        printf("/start %s\n", nxs_string_str(&user_ctx->r_userfname));
 
-			nxs_chat_srv_p_queue_worker_tlgrm_update_win_hello_runtime(tlgrm_userid, &user_ctx->r_userfname, NULL);
+		        nxs_chat_srv_p_queue_worker_tlgrm_update_win_hello_runtime(tlgrm_userid, &user_ctx->r_userfname, NULL);
 
-			nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
-		}
+		        nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
+		}*/
 
 		/* user has no sessions, creating new one and starting dialog */
 
@@ -401,8 +440,11 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 	nxs_chat_srv_u_db_issues_t *             db_issue_ctx;
 	nxs_chat_srv_u_last_issues_t *           last_issue_ctx;
 	nxs_array_t                              issues;
+	nxs_bool_t                               private_notes;
 
 	rc = NXS_CHAT_SRV_E_OK;
+
+	private_notes = NXS_NO;
 
 	nxs_chat_srv_c_rdmn_issues_init(&issues);
 
@@ -414,6 +456,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 	bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
 	usr_message_id = nxs_chat_srv_u_db_sess_get_usr_message_id(sess_ctx);
 	message        = nxs_chat_srv_u_db_sess_t_get_message(sess_ctx);
+	private_notes  = nxs_chat_srv_u_db_sess_t_get_message_is_private(sess_ctx);
 
 	nxs_array_init2(&cache_projects, nxs_chat_srv_m_db_cache_project_t);
 
@@ -451,7 +494,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 			/* add comment to selected issue processing */
 
-			if(nxs_chat_srv_u_rdmn_issues_add_note(callback->object_id, message, api_key) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_rdmn_issues_add_note(callback->object_id, message, private_notes, api_key) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_log_write_warn(&process,
 				                   "[%s]: can't send user message to Redmine issue: can't add note into Redmine issue ("
@@ -519,7 +562,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK:
 
 			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
-			           sess_ctx, chat_id, bot_message_id, user_ctx->r_userid, api_key, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			           chat_id, bot_message_id, user_ctx->r_userid, api_key, update, private_notes, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -577,6 +621,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 	nxs_array_t                              projects;
 	nxs_chat_srv_err_t                       rc;
 	nxs_chat_srv_m_db_cache_issue_priority_t issue_priority;
+	nxs_bool_t                               private_notes;
 
 	nxs_array_init2(&projects, nxs_chat_srv_m_db_sess_project_t);
 
@@ -731,8 +776,11 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
+			private_notes = nxs_chat_srv_u_db_sess_t_get_message_is_private(sess_ctx);
+
 			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
-			           sess_ctx, chat_id, bot_message_id, user_ctx->r_userid, api_key, update, NULL) != NXS_CHAT_SRV_E_OK) {
+			           chat_id, bot_message_id, user_ctx->r_userid, api_key, update, private_notes, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -785,6 +833,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_m_tlgrm_u
 	nxs_string_t *                 rdmn_api_key;
 	nxs_buf_t                      response_buf;
 	nxs_chat_srv_err_t             rc;
+	nxs_bool_t                     private_message;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -792,7 +841,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_m_tlgrm_u
 
 	nxs_chat_srv_c_tlgrm_message_init(&response_message);
 
-	nxs_buf_init(&response_buf, 1);
+	nxs_buf_init2(&response_buf);
 
 	if(nxs_chat_srv_u_rdmn_user_pull(rdmn_user_ctx, user_ctx->r_userid) != NXS_CHAT_SRV_E_OK) {
 
@@ -831,8 +880,11 @@ static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_m_tlgrm_u
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
+	private_message = nxs_chat_srv_u_db_sess_t_get_message_is_private(sess_ctx);
+
 	if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
-	           sess_ctx, update->message.chat.id, 0, user_ctx->r_userid, rdmn_api_key, update, &response_buf) != NXS_CHAT_SRV_E_OK) {
+	           update->message.chat.id, 0, user_ctx->r_userid, rdmn_api_key, update, private_message, &response_buf) !=
+	   NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -908,18 +960,20 @@ error:
 	return rc;
 }
 
-/* TODO: сейчас происходит двойное получение информации данных из сессии в этой функции и функциях win_*, необходимо это устранить */
 static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlgrm_update_t *update,
                                                               nxs_chat_srv_u_db_sess_t *     sess_ctx,
                                                               nxs_chat_srv_u_db_cache_t *    cache_ctx,
                                                               nxs_chat_srv_m_user_ctx_t *    user_ctx)
 {
-	nxs_string_t                  description, subject, project_name_regex, *api_key;
-	size_t                        chat_id, bot_message_id, usr_message_id, projects_count, project_id, priority_id, new_issue_id;
-	nxs_chat_srv_u_db_issues_t *  db_issue_ctx;
-	nxs_chat_srv_u_last_issues_t *last_issue_ctx;
-	nxs_array_t                   projects;
-	nxs_chat_srv_err_t            rc;
+	nxs_string_t                   description, subject, project_name_regex, *api_key;
+	size_t                         chat_id, bot_message_id, usr_message_id, projects_count, project_id, priority_id, new_issue_id;
+	nxs_chat_srv_u_db_issues_t *   db_issue_ctx;
+	nxs_chat_srv_u_last_issues_t * last_issue_ctx;
+	nxs_chat_srv_m_tlgrm_message_t response_message;
+	nxs_bool_t                     response_status, is_private;
+	nxs_array_t                    projects;
+	nxs_buf_t                      response_buf;
+	nxs_chat_srv_err_t             rc;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -927,7 +981,11 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 	nxs_string_init(&subject);
 	nxs_string_init(&project_name_regex);
 
+	nxs_buf_init2(&response_buf);
+
 	nxs_array_init2(&projects, nxs_chat_srv_m_db_sess_project_t);
+
+	nxs_chat_srv_c_tlgrm_message_init(&response_message);
 
 	api_key        = nxs_chat_srv_u_db_sess_get_rdmn_api_key(sess_ctx);
 	chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
@@ -944,7 +1002,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 			/* set subject processing */
 
 			if(nxs_chat_srv_u_db_sess_t_get_new_issue(
-			           sess_ctx, &project_id, NULL, &priority_id, NULL, &subject, &description, NULL) != NXS_CHAT_SRV_E_OK) {
+			           sess_ctx, &project_id, NULL, &priority_id, NULL, &subject, &description, &is_private, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -973,7 +1032,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 				}
 			}
 
-			if(nxs_chat_srv_u_rdmn_issues_create(project_id, priority_id, &subject, &description, &new_issue_id, api_key) !=
+			if(nxs_chat_srv_u_rdmn_issues_create(
+			           project_id, priority_id, &subject, &description, is_private, &new_issue_id, api_key) !=
 			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -982,7 +1042,13 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 			/* set issue 'new_issue_id' as last for telegram user 'chat_id' */
 			nxs_chat_srv_u_last_issues_set(last_issue_ctx, chat_id, new_issue_id);
 
-			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(sess_ctx, chat_id, 0, update, new_issue_id, NULL) !=
+			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(
+			           sess_ctx, chat_id, 0, update, new_issue_id, &response_buf) != NXS_CHAT_SRV_E_OK) {
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+
+			if(nxs_chat_srv_c_tlgrm_message_result_pull_json(&response_message, &response_status, &response_buf) !=
 			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -990,6 +1056,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 			nxs_chat_srv_u_db_issues_set(db_issue_ctx, chat_id, usr_message_id, new_issue_id);
 			nxs_chat_srv_u_db_issues_set(db_issue_ctx, chat_id, bot_message_id, new_issue_id);
+			nxs_chat_srv_u_db_issues_set(db_issue_ctx, chat_id, response_message.message_id, new_issue_id);
 
 			nxs_chat_srv_u_db_sess_destroy(sess_ctx);
 
@@ -999,8 +1066,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 			/* set description processing */
 
-			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, NULL, NULL, NULL, NULL, &description, NULL) !=
-			   NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_sess_t_get_new_issue(
+			           sess_ctx, NULL, NULL, NULL, NULL, NULL, &description, &is_private, NULL) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -1010,9 +1077,10 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(nxs_string_cmp(&description, 0, &update->message.text, 0) != NXS_YES) {
+			if(nxs_string_cmp(&description, 0, &update->message.text, 0) != NXS_YES ||
+			   is_private != nxs_chat_srv_c_notes_check_private(&update->message.text, NULL)) {
 
-				/* if description is changed */
+				/* if description or its privacy is changed */
 
 				if(nxs_chat_srv_u_db_sess_t_set_new_issue(sess_ctx, 0, 0, NULL, NULL, &update->message.text, NULL) !=
 				   NXS_CHAT_SRV_E_OK) {
@@ -1039,8 +1107,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
 
 			/* set description processing */
 
-			if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, NULL, NULL, NULL, NULL, NULL, &project_name_regex) !=
-			   NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_sess_t_get_new_issue(
+			           sess_ctx, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -1107,7 +1175,11 @@ error:
 	db_issue_ctx   = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
 	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 
+	nxs_chat_srv_c_tlgrm_message_free(&response_message);
+
 	nxs_array_free(&projects);
+
+	nxs_buf_free(&response_buf);
 
 	nxs_string_free(&description);
 	nxs_string_free(&subject);
@@ -1122,8 +1194,9 @@ static nxs_chat_srv_err_t
 	nxs_chat_srv_u_db_issues_t *  db_issue_ctx;
 	nxs_chat_srv_u_rdmn_user_t *  rdmn_user_ctx;
 	nxs_chat_srv_u_last_issues_t *last_issue_ctx;
-	nxs_string_t *                api_key;
+	nxs_string_t *                api_key, m;
 	nxs_chat_srv_err_t            rc;
+	nxs_bool_t                    private_notes;
 	size_t                        issue_id;
 
 	rc = NXS_CHAT_SRV_E_OK;
@@ -1133,6 +1206,8 @@ static nxs_chat_srv_err_t
 	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
 	issue_id = 0;
+
+	nxs_string_init(&m);
 
 	if(nxs_chat_srv_u_db_issues_get(db_issue_ctx, tlgrm_userid, update->message.reply_to_message->message_id, &issue_id) !=
 	   NXS_CHAT_SRV_E_OK) {
@@ -1180,7 +1255,9 @@ static nxs_chat_srv_err_t
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(nxs_chat_srv_u_rdmn_issues_add_note(issue_id, &update->message.text, api_key) != NXS_CHAT_SRV_E_OK) {
+	private_notes = nxs_chat_srv_c_notes_check_private(&update->message.text, &m);
+
+	if(nxs_chat_srv_u_rdmn_issues_add_note(issue_id, &m, private_notes, api_key) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_warn(&process,
 		                   "[%s]: can't send user reply into Redmine: can't add not into Redmine issue ("
@@ -1208,6 +1285,50 @@ error:
 	db_issue_ctx   = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
 	rdmn_user_ctx  = nxs_chat_srv_u_rdmn_user_free(rdmn_user_ctx);
 	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
+
+	nxs_string_free(&m);
+
+	return rc;
+}
+
+static nxs_chat_srv_err_t handler_command_start(nxs_chat_srv_m_tlgrm_update_t *update,
+                                                nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                nxs_chat_srv_m_user_ctx_t *    user_ctx)
+{
+	size_t tlgrm_userid;
+
+	if(update == NULL || sess_ctx == NULL || cache_ctx == NULL || user_ctx == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	tlgrm_userid = nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx);
+
+	return nxs_chat_srv_p_queue_worker_tlgrm_update_win_hello_runtime(tlgrm_userid, &user_ctx->r_userfname, NULL);
+}
+
+static nxs_chat_srv_err_t handler_command_dialog_destroy(nxs_chat_srv_m_tlgrm_update_t *update,
+                                                         nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                         nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                         nxs_chat_srv_m_user_ctx_t *    user_ctx)
+{
+	nxs_chat_srv_err_t rc;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	if(update == NULL || sess_ctx == NULL || cache_ctx == NULL || user_ctx == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	nxs_chat_srv_u_db_sess_destroy(sess_ctx);
+
+	if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_session_destroyed(sess_ctx, update->message.chat.id, update, NULL) !=
+	   NXS_CHAT_SRV_E_OK) {
+
+		rc = NXS_CHAT_SRV_E_ERR;
+	}
 
 	return rc;
 }

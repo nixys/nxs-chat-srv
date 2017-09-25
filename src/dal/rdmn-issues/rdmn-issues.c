@@ -47,6 +47,7 @@ static nxs_string_t		_s_content_type		= nxs_string("Content-Type: application/js
 
 nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue_id,
                                                           nxs_string_t *   note,
+                                                          nxs_bool_t       private_notes,
                                                           nxs_string_t *   user_api_key,
                                                           nxs_buf_t *      out_buf,
                                                           nxs_http_code_t *http_code)
@@ -78,7 +79,8 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 
 	nxs_string_escape(&note_escaped, note, NXS_STRING_ESCAPE_TYPE_JSON);
 
-	nxs_string_printf(&data, "{\"issue\":{\"notes\":\"%r\"}}", &note_escaped);
+	nxs_string_printf(
+	        &data, "{\"issue\":{\"notes\":\"%r\",\"private_notes\":%s}}", &note_escaped, private_notes == NXS_YES ? "true" : "false");
 
 	nxs_curl_set_post(&curl, (nxs_buf_t *)&data);
 
@@ -116,6 +118,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_create(size_t           project_id
                                                      size_t           priority_id,
                                                      nxs_string_t *   subject,
                                                      nxs_string_t *   description,
+                                                     nxs_bool_t       is_private,
                                                      nxs_string_t *   user_api_key,
                                                      nxs_buf_t *      out_buf,
                                                      nxs_http_code_t *http_code)
@@ -155,13 +158,15 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_create(size_t           project_id
 	                  "\"project_id\":%zu,"
 	                  "\"priority_id\":%zu,"
 	                  "\"subject\":\"%r\","
-	                  "\"description\":\"%r\""
+	                  "\"description\":\"%r\","
+	                  "\"is_private\": %s"
 	                  "}"
 	                  "}",
 	                  project_id,
 	                  priority_id,
 	                  &subject_escaped,
-	                  &description_escaped);
+	                  &description_escaped,
+	                  is_private == NXS_YES ? "true" : "false");
 
 	nxs_curl_set_post(&curl, (nxs_buf_t *)&data);
 

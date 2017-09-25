@@ -64,6 +64,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create(size_t        project_id,
                                                      size_t        priority_id,
                                                      nxs_string_t *subject,
                                                      nxs_string_t *description,
+                                                     nxs_bool_t    is_private,
                                                      size_t *      new_issue_id,
                                                      nxs_string_t *api_key)
 {
@@ -80,7 +81,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create(size_t        project_id,
 
 	nxs_buf_init2(&out_buf);
 
-	if(nxs_chat_srv_d_rdmn_issues_create(project_id, priority_id, subject, description, api_key, &out_buf, &http_code) !=
+	if(nxs_chat_srv_d_rdmn_issues_create(project_id, priority_id, subject, description, is_private, api_key, &out_buf, &http_code) !=
 	   NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -98,12 +99,12 @@ error:
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t issue_id, nxs_string_t *note, nxs_string_t *api_key)
+nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t issue_id, nxs_string_t *note, nxs_bool_t private_notes, nxs_string_t *api_key)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_http_code_t    http_code;
 
-	rc = nxs_chat_srv_d_rdmn_issues_add_comment(issue_id, note, api_key, NULL, &http_code);
+	rc = nxs_chat_srv_d_rdmn_issues_add_comment(issue_id, note, private_notes, api_key, NULL, &http_code);
 
 	return rc;
 }

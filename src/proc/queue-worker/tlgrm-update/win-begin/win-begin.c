@@ -36,24 +36,24 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module initializations */
 
-
+static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
 
 /* Module global functions */
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                                      size_t                         chat_id,
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t                         chat_id,
                                                                       size_t                         message_id,
                                                                       size_t                         rdmn_userid,
                                                                       nxs_string_t *                 user_api_key,
                                                                       nxs_chat_srv_m_tlgrm_update_t *update,
+                                                                      nxs_bool_t                     private_notes,
                                                                       nxs_buf_t *                    response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
 	nxs_chat_srv_u_last_issues_t *          last_issue_ctx;
-	nxs_string_t                            callback_str, message, issue_subject;
+	nxs_string_t                            callback_str, message, issue_subject, private_message;
 	nxs_buf_t *                             b;
 	nxs_chat_srv_err_t                      rc;
 	size_t                                  issue_id;
@@ -63,6 +63,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(nxs_chat_s
 	nxs_string_init(&callback_str);
 	nxs_string_init(&message);
 	nxs_string_init(&issue_subject);
+	nxs_string_init_empty(&private_message);
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
@@ -74,7 +75,18 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(nxs_chat_s
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	nxs_string_printf(&message, NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN, issue_id, &issue_subject, &nxs_chat_srv_cfg.rdmn.host, issue_id);
+	if(private_notes == NXS_YES) {
+
+		nxs_string_printf(&private_message, "\n%s", _s_private_message);
+	}
+
+	nxs_string_printf(&message,
+	                  NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN,
+	                  &private_message,
+	                  issue_id,
+	                  &issue_subject,
+	                  &nxs_chat_srv_cfg.rdmn.host,
+	                  issue_id);
 
 	if(message_id == 0) {
 
@@ -166,6 +178,7 @@ error:
 	nxs_string_free(&callback_str);
 	nxs_string_free(&message);
 	nxs_string_free(&issue_subject);
+	nxs_string_free(&private_message);
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);

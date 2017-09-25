@@ -50,6 +50,7 @@ typedef struct
 	nxs_string_t					priority_name;		/* redmine priority name */
 	nxs_string_t					subject;		/* redmine issue subject */
 	nxs_string_t					description;		/* redmine issue description */
+	nxs_bool_t					is_private;		/* if new issue is private */
 	nxs_string_t					project_name_regex;	/* regex to filter redmine projects name */
 	nxs_list_t					available_projects;	/* type: nxs_chat_srv_u_db_sess_project_t. All available active projects for user */
 	nxs_array_t					selected_projects;	/* type: nxs_chat_srv_u_db_sess_project_t. Selected projects (by specified regex) for user */
@@ -61,6 +62,7 @@ typedef struct
 typedef struct
 {
 	nxs_string_t					message;		/* message to append into redmine issue */
+	nxs_bool_t					is_private;		/* if message is private */
 } nxs_chat_srv_u_db_sess_t_message_t;
 
 typedef struct
@@ -166,6 +168,7 @@ static nxs_string_t _s_par_name			= nxs_string("name");
 static nxs_string_t _s_par_user			= nxs_string("user");
 static nxs_string_t _s_par_memberships		= nxs_string("memberships");
 static nxs_string_t _s_par_project		= nxs_string("project");
+static nxs_string_t _s_par_is_private		= nxs_string("is_private");
 
 /* Module global functions */
 
@@ -501,6 +504,35 @@ nxs_string_t *nxs_chat_srv_u_db_sess_t_get_message(nxs_chat_srv_u_db_sess_t *u_c
 	return &u_ctx->value.message.message;
 }
 
+nxs_bool_t nxs_chat_srv_u_db_sess_t_get_message_is_private(nxs_chat_srv_u_db_sess_t *u_ctx)
+{
+
+	if(u_ctx == NULL) {
+
+		return NXS_NO;
+	}
+
+	if(nxs_chat_srv_u_db_sess_check_exist(u_ctx) == NXS_NO) {
+
+		return NXS_NO;
+	}
+
+	if(u_ctx->value.type != NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE) {
+
+		nxs_log_write_warn(&process,
+		                   "[%s]: can't get session message is private: session type incorrect (tlgrm user id: %zu, session type: "
+		                   "%d, expected type: %d)",
+		                   nxs_proc_get_name(&process),
+		                   u_ctx->tlgrm_userid,
+		                   u_ctx->value.type,
+		                   NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE);
+
+		return NXS_NO;
+	}
+
+	return u_ctx->value.message.is_private;
+}
+
 nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_set_message(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_string_t *message)
 {
 
@@ -527,7 +559,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_set_message(nxs_chat_srv_u_db_sess_t
 		return NXS_CHAT_SRV_E_TYPE;
 	}
 
-	nxs_string_clone(&u_ctx->value.message.message, message);
+	u_ctx->value.message.is_private = nxs_chat_srv_c_notes_check_private(message, &u_ctx->value.message.message);
 
 	return nxs_chat_srv_u_db_sess_s_value_put(u_ctx);
 }
@@ -539,6 +571,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_get_new_issue(nxs_chat_srv_u_db_sess
                                                           nxs_string_t *            priority_name,
                                                           nxs_string_t *            subject,
                                                           nxs_string_t *            description,
+                                                          nxs_bool_t *              is_private,
                                                           nxs_string_t *            project_name_regex)
 {
 
@@ -593,6 +626,11 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_get_new_issue(nxs_chat_srv_u_db_sess
 	if(description != NULL) {
 
 		nxs_string_clone(description, &u_ctx->value.new_issue.description);
+	}
+
+	if(is_private != NULL) {
+
+		*is_private = u_ctx->value.new_issue.is_private;
 	}
 
 	if(project_name_regex != NULL) {
@@ -727,7 +765,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_set_new_issue(nxs_chat_srv_u_db_sess
 
 	if(description != NULL) {
 
-		nxs_string_clone(&u_ctx->value.new_issue.description, description);
+		u_ctx->value.new_issue.is_private = nxs_chat_srv_c_notes_check_private(description, &u_ctx->value.new_issue.description);
 	}
 
 	if(project_name_regex != NULL) {
@@ -777,6 +815,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_new_issue(nxs_chat_srv_u_db_
 			u_ctx->value.wait_for = NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE;
 
 			u_ctx->value.new_issue.priority_id = priority_id;
+
+			u_ctx->value.new_issue.is_private = u_ctx->value.message.is_private;
 
 			nxs_string_clone(&u_ctx->value.new_issue.priority_name, priority_name);
 			nxs_string_clone(&u_ctx->value.new_issue.subject, subject);
@@ -830,6 +870,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_message(nxs_chat_srv_u_db_se
 
 			u_ctx->value.type     = NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE;
 			u_ctx->value.wait_for = NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE;
+
+			u_ctx->value.message.is_private = u_ctx->value.new_issue.is_private;
 
 			nxs_string_clone(&u_ctx->value.message.message, &u_ctx->value.new_issue.description);
 
@@ -1368,6 +1410,8 @@ static void nxs_chat_srv_u_db_sess_s_message_init(nxs_chat_srv_u_db_sess_t_messa
 		return;
 	}
 
+	message->is_private = NXS_NO;
+
 	nxs_string_init_empty(&message->message);
 }
 
@@ -1379,6 +1423,8 @@ static void nxs_chat_srv_u_db_sess_s_message_free(nxs_chat_srv_u_db_sess_t_messa
 		return;
 	}
 
+	message->is_private = NXS_NO;
+
 	nxs_string_free(&message->message);
 }
 
@@ -1389,6 +1435,8 @@ static void nxs_chat_srv_u_db_sess_s_message_clear(nxs_chat_srv_u_db_sess_t_mess
 
 		return;
 	}
+
+	message->is_private = NXS_NO;
 
 	nxs_string_clear(&message->message);
 }
@@ -1406,7 +1454,8 @@ static void nxs_chat_srv_u_db_sess_s_message_serialize(nxs_chat_srv_u_db_sess_t_
 
 	nxs_base64_encode_string(&message_encoded, &message->message);
 
-	nxs_string_printf(out_str, "{\"message\":\"%r\"}", &message_encoded);
+	nxs_string_printf(
+	        out_str, "{\"message\":\"%r\",\"is_private\":%s}", &message_encoded, message->is_private == NXS_YES ? "true" : "false");
 
 	nxs_string_free(&message_encoded);
 }
@@ -1416,7 +1465,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_message_deserialize(nxs_chat_
 	nxs_chat_srv_err_t rc;
 	nxs_cfg_json_t     cfg_json;
 	nxs_array_t        cfg_arr;
-	nxs_string_t       message_decoded;
+	nxs_string_t       message_encoded;
 
 	if(message == NULL || json_data == NULL) {
 
@@ -1427,11 +1476,12 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_message_deserialize(nxs_chat_
 
 	nxs_cfg_json_conf_array_init(&cfg_arr);
 
-	nxs_string_init(&message_decoded);
+	nxs_string_init(&message_encoded);
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_message,	&message_decoded,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_message,	&message_encoded,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,	&message->is_private,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -1445,10 +1495,10 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_message_deserialize(nxs_chat_
 	}
 	else {
 
-		nxs_base64_decode_string(&message->message, &message_decoded);
+		nxs_base64_decode_string(&message->message, &message_encoded);
 	}
 
-	nxs_string_free(&message_decoded);
+	nxs_string_free(&message_encoded);
 
 	nxs_cfg_json_free(&cfg_json);
 	nxs_cfg_json_conf_array_free(&cfg_arr);
@@ -1466,6 +1516,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_init(nxs_chat_srv_u_db_sess_t_new
 
 	new_issue->priority_id = 0;
 	new_issue->project_id  = 0;
+	new_issue->is_private  = NXS_NO;
 
 	nxs_string_init_empty(&new_issue->description);
 	nxs_string_init_empty(&new_issue->priority_name);
@@ -1489,6 +1540,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_free(nxs_chat_srv_u_db_sess_t_new
 
 	new_issue->priority_id = 0;
 	new_issue->project_id  = 0;
+	new_issue->is_private  = NXS_NO;
 
 	nxs_string_free(&new_issue->description);
 	nxs_string_free(&new_issue->priority_name);
@@ -1529,6 +1581,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_clear(nxs_chat_srv_u_db_sess_t_ne
 
 	new_issue->priority_id = 0;
 	new_issue->project_id  = 0;
+	new_issue->is_private  = NXS_NO;
 
 	nxs_string_clear(&new_issue->description);
 	nxs_string_clear(&new_issue->priority_name);
@@ -1769,6 +1822,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_
 	                  "\"priority_name\":\"%r\","
 	                  "\"subject\":\"%r\","
 	                  "\"description\":\"%r\","
+	                  "\"is_private\":%s,"
 	                  "\"project_name_regex\":\"%r\","
 	                  "\"available_projects\":[%r],"
 	                  "\"selected_projects\":[%r]}",
@@ -1778,6 +1832,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_
 	                  &priority_name_encoded,
 	                  &subject_encoded,
 	                  &description_encoded,
+	                  new_issue->is_private == NXS_YES ? "true" : "false",
 	                  &project_name_regex_encoded,
 	                  &available_projects,
 	                  &selected_projects);
@@ -1822,6 +1877,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize(nxs_cha
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority_name,		&priority_name,			NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,		&subject,			NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,		&description,			NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,		&new_issue->is_private,		NULL,	NULL,									NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_name_regex,	&project_name_regex,		NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_available_projects,	&new_issue->available_projects,	NULL,	&nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_available,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_selected_projects,	&new_issue->selected_projects,	NULL,	&nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_selected,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
