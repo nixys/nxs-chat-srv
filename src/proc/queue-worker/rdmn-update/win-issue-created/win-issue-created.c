@@ -36,7 +36,7 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module initializations */
 
-
+static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
 
 /* Module global functions */
 
@@ -46,7 +46,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_run
                                                                                      size_t                        tlgrm_userid)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_string_t                        message;
+	nxs_string_t                        message, private_issue;
 	nxs_buf_t *                         out_buf;
 	nxs_bool_t                          response_status;
 	nxs_chat_srv_m_tlgrm_message_t      tlgrm_message;
@@ -57,18 +57,26 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_run
 	rc = NXS_CHAT_SRV_E_OK;
 
 	nxs_string_init(&message);
+	nxs_string_init_empty(&private_issue);
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_init();
 
 	nxs_chat_srv_c_tlgrm_message_init(&tlgrm_message);
 
+	if(update->data.issue.is_private == NXS_YES) {
+
+		nxs_string_printf(&private_issue, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED_IS_PRIVATE, _s_private_message);
+	}
+
 	nxs_string_printf(&message,
 	                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED,
+	                  &update->data.issue.project.name,
 	                  update->data.issue.id,
 	                  &update->data.issue.subject,
 	                  &nxs_chat_srv_cfg.rdmn.host,
 	                  update->data.issue.id,
+	                  &private_issue,
 	                  &update->data.issue.author.name,
 	                  &update->data.issue.status.name,
 	                  &update->data.issue.priority.name,
@@ -101,6 +109,7 @@ error:
 	nxs_chat_srv_c_tlgrm_message_free(&tlgrm_message);
 
 	nxs_string_free(&message);
+	nxs_string_free(&private_issue);
 
 	return rc;
 }

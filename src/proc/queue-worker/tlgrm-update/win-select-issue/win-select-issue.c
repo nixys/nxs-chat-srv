@@ -36,7 +36,7 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module initializations */
 
-static nxs_string_t _s_msg_selece_issue	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE);
+static nxs_string_t _s_msg_select_issue	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE);
 
 /* Module global functions */
 
@@ -74,7 +74,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_issue(nxs
 		nxs_chat_srv_u_tlgrm_editmessagetext_add(tlgrm_editmessagetext_ctx,
 		                                         chat_id,
 		                                         message_id,
-		                                         &_s_msg_selece_issue,
+		                                         &_s_msg_select_issue,
 		                                         NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
 
 		for(i = 0; i < nxs_array_count(issues); i++) {

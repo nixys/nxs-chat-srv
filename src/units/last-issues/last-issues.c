@@ -34,6 +34,7 @@ typedef struct
 {
 	size_t			*id;
 	nxs_string_t		*subject;
+	nxs_string_t		*project_name;
 } last_issue_t;
 
 struct nxs_chat_srv_u_last_issues_s
@@ -47,15 +48,14 @@ struct nxs_chat_srv_u_last_issues_s
 
 static nxs_chat_srv_err_t
         nxs_chat_srv_u_last_issues_get_db(nxs_chat_srv_u_last_issues_t *u_ctx, size_t tlgrm_userid, size_t *rdmn_last_issue_id);
-static nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_id_extract(nxs_string_t *issue_subject, nxs_buf_t *json_buf);
+static nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_id_extract(last_issue_t *last_issue_ctx, nxs_buf_t *json_buf);
+static nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_last_extract(last_issue_t *last_issue_ctx, nxs_buf_t *json_buf);
 static nxs_cfg_json_state_t
-        nxs_chat_srv_u_last_issues_id_extract_issue(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-
-static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_last_issues_last_extract(last_issue_t *last_issue_ctx, nxs_buf_t *json_buf);
+        nxs_chat_srv_u_last_issues_last_extract_user(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
-        nxs_chat_srv_u_rdmn_last_issues_last_extract_user(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+        nxs_chat_srv_u_last_issues_extract_issue(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
-        nxs_chat_srv_u_rdmn_last_issues_last_extract_issue(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+        nxs_chat_srv_u_last_issues_extract_poject(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 
 // clang-format off
 
@@ -65,6 +65,8 @@ static nxs_string_t _s_par_user			= nxs_string("user");
 static nxs_string_t _s_par_id			= nxs_string("id");
 static nxs_string_t _s_par_issue		= nxs_string("issue");
 static nxs_string_t _s_par_subject		= nxs_string("subject");
+static nxs_string_t _s_par_project		= nxs_string("project");
+static nxs_string_t _s_par_name			= nxs_string("name");
 
 /* Module global functions */
 
@@ -99,7 +101,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_get(nxs_chat_srv_u_last_issues_t *
                                                   size_t                        rdmn_userid,
                                                   nxs_string_t *                user_api_key,
                                                   size_t *                      rdmn_last_issue_id,
-                                                  nxs_string_t *                issue_subject)
+                                                  nxs_string_t *                issue_subject,
+                                                  nxs_string_t *                issue_project_name)
 {
 	nxs_buf_t          out_buf;
 	last_issue_t       last_issue_ctx;
@@ -114,6 +117,10 @@ nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_get(nxs_chat_srv_u_last_issues_t *
 
 	*rdmn_last_issue_id = 0;
 
+	last_issue_ctx.id           = rdmn_last_issue_id;
+	last_issue_ctx.subject      = issue_subject;
+	last_issue_ctx.project_name = issue_project_name;
+
 	nxs_string_clear(issue_subject);
 
 	nxs_buf_init2(&out_buf);
@@ -122,14 +129,14 @@ nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_get(nxs_chat_srv_u_last_issues_t *
 
 		case NXS_CHAT_SRV_E_OK:
 
-			/* Last Redmine issue id found in DB. Now try to get subject for that issue */
+			/* Last Redmine issue id found in DB. Now try to get subject for that issue from Redmine */
 
 			if(nxs_chat_srv_d_rdmn_issues_get_issue(*rdmn_last_issue_id, user_api_key, &out_buf, NULL) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(nxs_chat_srv_u_last_issues_id_extract(issue_subject, &out_buf) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_last_issues_id_extract(&last_issue_ctx, &out_buf) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -145,10 +152,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_get(nxs_chat_srv_u_last_issues_t *
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			last_issue_ctx.id      = rdmn_last_issue_id;
-			last_issue_ctx.subject = issue_subject;
-
-			if(nxs_chat_srv_u_rdmn_last_issues_last_extract(&last_issue_ctx, &out_buf)) {
+			if(nxs_chat_srv_u_last_issues_last_extract(&last_issue_ctx, &out_buf)) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -246,7 +250,7 @@ static nxs_chat_srv_err_t
 	return rc;
 }
 
-static nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_id_extract(nxs_string_t *issue_subject, nxs_buf_t *json_buf)
+static nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_id_extract(last_issue_t *last_issue_ctx, nxs_buf_t *json_buf)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_cfg_json_t     cfg_json;
@@ -260,7 +264,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_id_extract(nxs_string_t *is
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_issue,	issue_subject,	&nxs_chat_srv_u_last_issues_id_extract_issue,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_issue,	last_issue_ctx,	&nxs_chat_srv_u_last_issues_extract_issue,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -280,45 +284,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_id_extract(nxs_string_t *is
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_u_last_issues_id_extract_issue(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
-{
-	nxs_string_t *       var = nxs_cfg_json_get_val(cfg_json_par_el);
-	nxs_cfg_json_t       cfg_json;
-	nxs_array_t          cfg_arr;
-	nxs_cfg_json_state_t rc;
-
-	rc = NXS_CFG_JSON_CONF_OK;
-
-	nxs_cfg_json_conf_array_init(&cfg_arr);
-
-	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
-
-	// clang-format off
-
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,	var,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-
-	// clang-format on
-
-	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
-
-	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
-
-		nxs_log_write_raw(&process, "rdmn last issue (by id) extract error: 'issue' block");
-
-		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
-	}
-
-error:
-
-	nxs_cfg_json_free(&cfg_json);
-
-	nxs_cfg_json_conf_array_free(&cfg_arr);
-
-	return rc;
-}
-
-static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_last_issues_last_extract(last_issue_t *last_issue_ctx, nxs_buf_t *json_buf)
+static nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_last_extract(last_issue_t *last_issue_ctx, nxs_buf_t *json_buf)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_cfg_json_t     cfg_json;
@@ -332,7 +298,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_last_issues_last_extract(last_issu
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_user,	last_issue_ctx,	&nxs_chat_srv_u_rdmn_last_issues_last_extract_user,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_user,	last_issue_ctx,	&nxs_chat_srv_u_last_issues_last_extract_user,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -353,7 +319,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_last_issues_last_extract(last_issu
 }
 
 static nxs_cfg_json_state_t
-        nxs_chat_srv_u_rdmn_last_issues_last_extract_user(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+        nxs_chat_srv_u_last_issues_last_extract_user(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	last_issue_t *       var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t       cfg_json;
@@ -368,7 +334,7 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_issue,		var,		&nxs_chat_srv_u_rdmn_last_issues_last_extract_issue,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_issue,		var,	&nxs_chat_srv_u_last_issues_extract_issue,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -376,7 +342,7 @@ static nxs_cfg_json_state_t
 
 	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
 
-		nxs_log_write_raw(&process, "rdmn last issue (last) extract error: 'user' block");
+		nxs_log_write_raw(&process, "rdmn last issue extract error: 'user' block");
 
 		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
 	}
@@ -391,7 +357,7 @@ error:
 }
 
 static nxs_cfg_json_state_t
-        nxs_chat_srv_u_rdmn_last_issues_last_extract_issue(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+        nxs_chat_srv_u_last_issues_extract_issue(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	last_issue_t *       var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t       cfg_json;
@@ -406,8 +372,9 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		var->id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,	var->subject,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		var->id,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,	var->subject,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project,	var->project_name,	&nxs_chat_srv_u_last_issues_extract_poject,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -415,7 +382,45 @@ static nxs_cfg_json_state_t
 
 	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
 
-		nxs_log_write_raw(&process, "rdmn last issue (last) extract error: 'user.issue' block");
+		nxs_log_write_raw(&process, "rdmn last issue extract error: 'issue' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_u_last_issues_extract_poject(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_string_t *       var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t       cfg_json;
+	nxs_array_t          cfg_arr;
+	nxs_cfg_json_state_t rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		var,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "rdmn last issue extract error: 'project' block");
 
 		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
 	}

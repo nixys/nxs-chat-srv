@@ -68,6 +68,7 @@ struct nxs_chat_srv_m_rdmn_journal_s
 
 	size_t					id;
 	nxs_string_t				notes;
+	nxs_bool_t				private_notes;
 
 	nxs_chat_srv_m_rdmn_user_t		user;
 

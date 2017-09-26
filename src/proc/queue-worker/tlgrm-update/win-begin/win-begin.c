@@ -53,7 +53,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t    
 	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
 	nxs_chat_srv_u_last_issues_t *          last_issue_ctx;
-	nxs_string_t                            callback_str, message, issue_subject, private_message;
+	nxs_string_t                            callback_str, message, issue_subject, issue_project_name, private_message;
 	nxs_buf_t *                             b;
 	nxs_chat_srv_err_t                      rc;
 	size_t                                  issue_id;
@@ -62,14 +62,16 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t    
 
 	nxs_string_init(&callback_str);
 	nxs_string_init(&message);
-	nxs_string_init(&issue_subject);
+	nxs_string_init_empty(&issue_subject);
+	nxs_string_init_empty(&issue_project_name);
 	nxs_string_init_empty(&private_message);
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
 	last_issue_ctx            = nxs_chat_srv_u_last_issues_init();
 
-	if(nxs_chat_srv_u_last_issues_get(last_issue_ctx, chat_id, rdmn_userid, user_api_key, &issue_id, &issue_subject) !=
+	if(nxs_chat_srv_u_last_issues_get(
+	           last_issue_ctx, chat_id, rdmn_userid, user_api_key, &issue_id, &issue_subject, &issue_project_name) !=
 	   NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -83,6 +85,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t    
 	nxs_string_printf(&message,
 	                  NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN,
 	                  &private_message,
+	                  &issue_project_name,
 	                  issue_id,
 	                  &issue_subject,
 	                  &nxs_chat_srv_cfg.rdmn.host,
@@ -178,6 +181,7 @@ error:
 	nxs_string_free(&callback_str);
 	nxs_string_free(&message);
 	nxs_string_free(&issue_subject);
+	nxs_string_free(&issue_project_name);
 	nxs_string_free(&private_message);
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);

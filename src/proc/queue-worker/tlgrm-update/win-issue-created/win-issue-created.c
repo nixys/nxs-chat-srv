@@ -52,7 +52,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nx
 	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
 	nxs_buf_t *                             b;
-	nxs_string_t                            subject, message;
+	nxs_string_t                            subject, message, project;
 	nxs_chat_srv_err_t                      rc;
 
 	rc = NXS_CHAT_SRV_E_OK;
@@ -62,14 +62,20 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nx
 
 	nxs_string_init(&subject);
 	nxs_string_init(&message);
+	nxs_string_init(&project);
 
-	if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, NULL, NULL, NULL, &subject, NULL, NULL, NULL) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, &project, NULL, NULL, &subject, NULL, NULL, NULL) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	nxs_string_printf(
-	        &message, NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED, new_issue_id, &subject, &nxs_chat_srv_cfg.rdmn.host, new_issue_id);
+	nxs_string_printf(&message,
+	                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED,
+	                  &project,
+	                  new_issue_id,
+	                  &subject,
+	                  &nxs_chat_srv_cfg.rdmn.host,
+	                  new_issue_id);
 
 	if(message_id == 0) {
 
@@ -121,6 +127,7 @@ error:
 
 	nxs_string_free(&subject);
 	nxs_string_free(&message);
+	nxs_string_free(&project);
 
 	return rc;
 }

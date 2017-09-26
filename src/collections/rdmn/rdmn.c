@@ -87,6 +87,7 @@ static nxs_string_t	_s_par_assigned_to	= nxs_string("assigned_to");
 static nxs_string_t	_s_par_details		= nxs_string("details");
 static nxs_string_t	_s_par_property		= nxs_string("property");
 static nxs_string_t	_s_par_attr		= nxs_string("attr");
+static nxs_string_t	_s_par_private_notes	= nxs_string("private_notes");
 
 /* Module global functions */
 
@@ -280,7 +281,8 @@ void nxs_chat_srv_c_rdmn_journal_init(nxs_chat_srv_m_rdmn_journal_t *journal)
 
 	journal->_is_used = NXS_NO;
 
-	journal->id = 0;
+	journal->id            = 0;
+	journal->private_notes = NXS_NO;
 
 	nxs_string_init_empty(&journal->notes);
 
@@ -301,7 +303,8 @@ void nxs_chat_srv_c_rdmn_journal_free(nxs_chat_srv_m_rdmn_journal_t *journal)
 
 	journal->_is_used = NXS_NO;
 
-	journal->id = 0;
+	journal->id            = 0;
+	journal->private_notes = NXS_NO;
 
 	nxs_string_free(&journal->notes);
 
@@ -663,10 +666,11 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_journals(nxs_proces
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&j->id,		NULL,					NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_notes,		&j->notes,	NULL,					NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_user,		&j->user,	&nxs_chat_srv_c_rdmn_extract_json_user,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_details,	&j->details,	NULL,					&nxs_chat_srv_c_rdmn_extract_json_details,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&j->id,			NULL,					NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_notes,		&j->notes,		NULL,					NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_private_notes,	&j->private_notes,	NULL,					NULL,						NXS_CFG_JSON_TYPE_BOOL,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_user,		&j->user,		&nxs_chat_srv_c_rdmn_extract_json_user,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_details,	&j->details,		NULL,					&nxs_chat_srv_c_rdmn_extract_json_details,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 

@@ -59,6 +59,8 @@ static journal_properties_t journal_properties[] =
 	{NXS_STRING_NULL_STR,			JOURNAL_PROPERTY_NONE}
 };
 
+static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
+
 /* Module global functions */
 
 // clang-format on
@@ -74,6 +76,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 	nxs_bool_t                          response_status;
 	nxs_chat_srv_m_tlgrm_message_t      tlgrm_message;
 	nxs_chat_srv_u_db_issues_t *        db_issue_ctx;
+	nxs_bool_t                          use_property;
 	size_t                              i;
 
 	if(update == NULL || journal == NULL) {
@@ -100,6 +103,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 	 * Prepare property block content
 	 */
 
+	use_property = NXS_NO;
+
 	for(i = 0; i < nxs_array_count(&journal->details); i++) {
 
 		d = nxs_array_get(&journal->details, i);
@@ -108,12 +113,16 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 
 			case JOURNAL_PROPERTY_STATUS_ID:
 
+				use_property = NXS_YES;
+
 				nxs_string_printf(
 				        &property_status, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_STATUS, &update->data.issue.status.name);
 
 				break;
 
 			case JOURNAL_PROPERTY_PRIORITY_ID:
+
+				use_property = NXS_YES;
 
 				nxs_string_printf(&property_priority,
 				                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_PRIORITY,
@@ -122,6 +131,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 				break;
 
 			case JOURNAL_PROPERTY_ASSIGNED_TO_ID:
+
+				use_property = NXS_YES;
 
 				nxs_string_printf(&property_assigned_to,
 				                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_ASSIGNED_TO,
@@ -135,7 +146,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 		}
 	}
 
-	if(nxs_string_len(&property_status) > 0 || nxs_string_len(&property_priority) > 0 || nxs_string_len(&property_assigned_to) > 0) {
+	if(use_property == NXS_YES) {
 
 		nxs_string_printf(&properties, "%r%r%r\n", &property_status, &property_priority, &property_assigned_to);
 	}
@@ -144,6 +155,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 
 		nxs_string_printf(&message,
 		                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED,
+		                  journal->private_notes == NXS_YES ? (char *)_s_private_message : "",
+		                  &update->data.issue.project.name,
 		                  update->data.issue.id,
 		                  &update->data.issue.subject,
 		                  &nxs_chat_srv_cfg.rdmn.host,
@@ -154,13 +167,22 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 	}
 	else {
 
-		nxs_string_printf(&message,
-		                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE,
-		                  update->data.issue.id,
-		                  &update->data.issue.subject,
-		                  &nxs_chat_srv_cfg.rdmn.host,
-		                  update->data.issue.id,
-		                  &properties);
+		if(use_property == NXS_YES) {
+
+			nxs_string_printf(&message,
+			                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE,
+			                  journal->private_notes == NXS_YES ? (char *)_s_private_message : "",
+			                  &update->data.issue.project.name,
+			                  update->data.issue.id,
+			                  &update->data.issue.subject,
+			                  &nxs_chat_srv_cfg.rdmn.host,
+			                  update->data.issue.id,
+			                  &properties);
+		}
+		else {
+
+			nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
+		}
 	}
 
 	/* create new comment */
