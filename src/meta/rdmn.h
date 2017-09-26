@@ -88,6 +88,7 @@ struct nxs_chat_srv_m_rdmn_issue_s
 	double					spent_hours;
 	nxs_array_t				journals;		/* type: nxs_chat_srv_m_rdmn_journal_t. */
 	nxs_array_t				watchers;		/* type: nxs_chat_srv_m_rdmn_user_t. */
+	nxs_array_t				cf_watchers;		/* type: size_t. */
 
 	nxs_chat_srv_m_rdmn_project_t		project;
 	nxs_chat_srv_m_rdmn_tracker_t		tracker;

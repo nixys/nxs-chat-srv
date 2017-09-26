@@ -39,6 +39,8 @@ typedef struct
 static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update_t *update);
 static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t *update);
 
+static void receivers_add(nxs_array_t *receivers, size_t author_id, size_t user_id);
+
 // clang-format off
 
 /* Module initializations */
@@ -116,33 +118,22 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 	nxs_array_init2(&receivers, size_t);
 
 	/* add to receivers array assigned to user */
-	if(update->data.issue.author.id != update->data.issue.assigned_to.id) {
+	receivers_add(&receivers, update->data.issue.author.id, update->data.issue.assigned_to.id);
 
-		id = nxs_array_add(&receivers);
-
-		*id = update->data.issue.assigned_to.id;
-	}
-
-	/* add to receivers array all watchers excluding author of the comment */
+	/* add to receivers array all watchers excluding author of the issue */
 	for(i = 0; i < nxs_array_count(&update->data.issue.watchers); i++) {
 
 		u = nxs_array_get(&update->data.issue.watchers, i);
 
-		/* not send message to author of the issue */
-		if(u->id == update->data.issue.author.id) {
+		receivers_add(&receivers, update->data.issue.author.id, u->id);
+	}
 
-			continue;
-		}
+	/* add to receivers array all cf_watchers excluding author of the issue */
+	for(i = 0; i < nxs_array_count(&update->data.issue.cf_watchers); i++) {
 
-		/* excluding assigned to user, it will add to array above */
-		if(u->id == update->data.issue.assigned_to.id) {
+		id = nxs_array_get(&update->data.issue.cf_watchers, i);
 
-			continue;
-		}
-
-		id = nxs_array_add(&receivers);
-
-		*id = u->id;
+		receivers_add(&receivers, update->data.issue.author.id, *id);
 	}
 
 	for(i = 0; i < nxs_array_count(&receivers); i++) {
@@ -208,34 +199,23 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	ids_ctx        = nxs_chat_srv_u_db_ids_init();
 	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
-	/* add to receivers array assigned to user */
-	if(journal->user.id != update->data.issue.assigned_to.id) {
-
-		id = nxs_array_add(&receivers);
-
-		*id = update->data.issue.assigned_to.id;
-	}
+	/* add to receivers array 'assigned to' user */
+	receivers_add(&receivers, journal->user.id, update->data.issue.assigned_to.id);
 
 	/* add to receivers array all watchers excluding author of the comment */
 	for(i = 0; i < nxs_array_count(&update->data.issue.watchers); i++) {
 
 		u = nxs_array_get(&update->data.issue.watchers, i);
 
-		/* not send message to author of the comment */
-		if(u->id == journal->user.id) {
+		receivers_add(&receivers, journal->user.id, u->id);
+	}
 
-			continue;
-		}
+	/* add to receivers array all cf_watchers excluding author of the comment */
+	for(i = 0; i < nxs_array_count(&update->data.issue.cf_watchers); i++) {
 
-		/* excluding assigned to user, it will add to array above */
-		if(u->id == update->data.issue.assigned_to.id) {
+		id = nxs_array_get(&update->data.issue.cf_watchers, i);
 
-			continue;
-		}
-
-		id = nxs_array_add(&receivers);
-
-		*id = u->id;
+		receivers_add(&receivers, journal->user.id, *id);
 	}
 
 	/* send message to all receivers */
@@ -274,4 +254,33 @@ error:
 	nxs_array_free(&receivers);
 
 	return rc;
+}
+
+static void receivers_add(nxs_array_t *receivers, size_t author_id, size_t user_id)
+{
+	size_t *id, i;
+
+	if(user_id == 0) {
+
+		return;
+	}
+
+	if(user_id == author_id) {
+
+		return;
+	}
+
+	for(i = 0; i < nxs_array_count(receivers); i++) {
+
+		id = nxs_array_get(receivers, i);
+
+		if(*id == user_id) {
+
+			return;
+		}
+	}
+
+	id = nxs_array_add(receivers);
+
+	*id = user_id;
 }

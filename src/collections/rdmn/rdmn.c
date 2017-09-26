@@ -59,6 +59,10 @@ static nxs_cfg_json_state_t
         nxs_chat_srv_c_rdmn_extract_json_tracker(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
         nxs_chat_srv_c_rdmn_extract_json_project(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_custom_fields(nxs_process_t *     proc,
+                                                                           nxs_json_t *        json,
+                                                                           nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                           nxs_array_t *       cfg_arr);
 
 // clang-format off
 
@@ -88,6 +92,8 @@ static nxs_string_t	_s_par_details		= nxs_string("details");
 static nxs_string_t	_s_par_property		= nxs_string("property");
 static nxs_string_t	_s_par_attr		= nxs_string("attr");
 static nxs_string_t	_s_par_private_notes	= nxs_string("private_notes");
+static nxs_string_t	_s_par_custom_fields	= nxs_string("custom_fields");
+static nxs_string_t	_s_par_value		= nxs_string("value");
 
 /* Module global functions */
 
@@ -340,6 +346,7 @@ void nxs_chat_srv_c_rdmn_issue_init(nxs_chat_srv_m_rdmn_issue_t *issue)
 
 	nxs_array_init2(&issue->journals, nxs_chat_srv_m_rdmn_issue_t);
 	nxs_array_init2(&issue->watchers, nxs_chat_srv_m_rdmn_user_t);
+	nxs_array_init2(&issue->cf_watchers, size_t);
 
 	nxs_chat_srv_c_rdmn_project_init(&issue->project);
 	nxs_chat_srv_c_rdmn_tracker_init(&issue->tracker);
@@ -386,6 +393,7 @@ void nxs_chat_srv_c_rdmn_issue_free(nxs_chat_srv_m_rdmn_issue_t *issue)
 
 	nxs_array_free(&issue->journals);
 	nxs_array_free(&issue->watchers);
+	nxs_array_free(&issue->cf_watchers);
 
 	nxs_chat_srv_c_rdmn_project_free(&issue->project);
 	nxs_chat_srv_c_rdmn_tracker_free(&issue->tracker);
@@ -546,20 +554,21 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,						NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,	&var->subject,		NULL,						NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,	&var->description,	NULL,						NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_done_ratio,	&var->done_ratio,	NULL,						NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,	&var->is_private,	NULL,						NULL,						NXS_CFG_JSON_TYPE_BOOL,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_spent_hours,	&var->spent_hours,	NULL,						NULL,						NXS_CFG_JSON_TYPE_REAL,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_journals,	&var->journals,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_journals,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_watchers,	&var->watchers,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_users,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project,	&var->project,		&nxs_chat_srv_c_rdmn_extract_json_project,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_tracker,	&var->tracker,		&nxs_chat_srv_c_rdmn_extract_json_tracker,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status,		&var->status,		&nxs_chat_srv_c_rdmn_extract_json_status,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority,	&var->priority,		&nxs_chat_srv_c_rdmn_extract_json_priority,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_author,		&var->author,		&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_assigned_to,	&var->assigned_to,	&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,						NULL,							NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,	&var->subject,		NULL,						NULL,							NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,	&var->description,	NULL,						NULL,							NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_done_ratio,	&var->done_ratio,	NULL,						NULL,							NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,	&var->is_private,	NULL,						NULL,							NXS_CFG_JSON_TYPE_BOOL,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_spent_hours,	&var->spent_hours,	NULL,						NULL,							NXS_CFG_JSON_TYPE_REAL,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_journals,	&var->journals,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_journals,		NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_watchers,	&var->watchers,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_users,		NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project,	&var->project,		&nxs_chat_srv_c_rdmn_extract_json_project,	NULL,							NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_tracker,	&var->tracker,		&nxs_chat_srv_c_rdmn_extract_json_tracker,	NULL,							NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status,		&var->status,		&nxs_chat_srv_c_rdmn_extract_json_status,	NULL,							NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority,	&var->priority,		&nxs_chat_srv_c_rdmn_extract_json_priority,	NULL,							NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_author,		&var->author,		&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,							NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_assigned_to,	&var->assigned_to,	&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,							NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_custom_fields,	var,			NULL,						&nxs_chat_srv_c_rdmn_extract_json_custom_fields,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -700,7 +709,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_details(nxs_process
 	if(nxs_json_type_get(j) != NXS_JSON_TYPE_STRING) {
 
 		nxs_log_write_error(&process,
-		                    "[%s]: rdmn json read error: parse rdmn details error, expected string type for filed \"%r\"",
+		                    "[%s]: rdmn json read error: parse rdmn details error, expected string type for field \"%r\"",
 		                    nxs_proc_get_name(&process),
 		                    &_s_par_property);
 
@@ -906,6 +915,100 @@ error:
 	nxs_cfg_json_free(&cfg_json);
 
 	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_custom_fields(nxs_process_t *     proc,
+                                                                           nxs_json_t *        json,
+                                                                           nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                           nxs_array_t *       cfg_arr)
+{
+	nxs_chat_srv_m_rdmn_issue_t *issue = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_json_t *                 j;
+	nxs_cfg_json_t               cfg_json_cf;
+	nxs_array_t                  cfg_arr_cf, ids;
+	nxs_cfg_json_state_t         rc;
+	nxs_string_t *               s;
+	size_t                       i, *id;
+
+	/* search and check 'id' field */
+	if((j = nxs_json_child_get_by_key(json, nxs_string_str(&_s_par_id))) == NULL) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: rdmn json read error: parse rdmn issue custom fields error, missing field \"%r\"",
+		                    nxs_proc_get_name(&process),
+		                    &_s_par_id);
+
+		return NXS_CFG_JSON_CONF_ERROR;
+	}
+
+	if(nxs_json_type_get(j) != NXS_JSON_TYPE_INTEGER) {
+
+		nxs_log_write_error(
+		        &process,
+		        "[%s]: rdmn json read error: parse rdmn issue custom fields error, expected integer type for field \"%r\"",
+		        nxs_proc_get_name(&process),
+		        &_s_par_id);
+
+		return NXS_CFG_JSON_CONF_ERROR;
+	}
+
+	/* if its not cf_watchers custom field */
+	if((size_t)nxs_json_integer_val(j) != nxs_chat_srv_cfg.rdmn.cf_watchers) {
+
+		return NXS_CFG_JSON_CONF_OK;
+	}
+
+	/* read values for cf_watchers */
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	nxs_array_init2(&ids, nxs_string_t);
+
+	nxs_cfg_json_conf_array_init(&cfg_arr_cf);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr_cf);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr_cf,	&_s_par_value,	&ids,	NULL,	NULL,	NXS_CFG_JSON_TYPE_ARRAY_STRING,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json_cf, NULL, NULL, NULL, &cfg_arr_cf);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json_cf, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_error(
+		        &process, "[%s]: rdmn json read error: parse rdmn issue custom fields error", nxs_proc_get_name(&process));
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+	for(i = 0; i < nxs_array_count(&ids); i++) {
+
+		s = nxs_array_get(&ids, i);
+
+		id = nxs_array_add(&issue->cf_watchers);
+
+		*id = nxs_string_atoi(s);
+	}
+
+error:
+
+	for(i = 0; i < nxs_array_count(&ids); i++) {
+
+		s = nxs_array_get(&ids, i);
+
+		nxs_string_free(s);
+	}
+
+	nxs_array_free(&ids);
+
+	nxs_cfg_json_free(&cfg_json_cf);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr_cf);
 
 	return rc;
 }

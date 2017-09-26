@@ -161,6 +161,7 @@ typedef struct
 	nxs_string_t				auth_token;
 	size_t					issue_list_query_id;
 	nxs_bool_t				ssl_verifyhost;
+	size_t					cf_watchers;
 } nxs_chat_srv_cfg_rdmn_t;
 
 typedef struct
