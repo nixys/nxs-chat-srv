@@ -142,7 +142,7 @@ nxs_chat_srv_err_t
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "GET %s:%s", NXS_CHAT_SRV_D_DB_CACHE_REDIS_PREFIX, cache_name)) == NULL) {
+	if((redis_reply = redisCommand(d_ctx->redis_ctx, "HGET %s %s", NXS_CHAT_SRV_D_DB_CACHE_REDIS_PREFIX, cache_name)) == NULL) {
 
 		nxs_log_write_error(
 		        &process, "[%s]: cache get error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
@@ -219,7 +219,7 @@ nxs_chat_srv_err_t
 	rc = NXS_CHAT_SRV_E_OK;
 
 	if((redis_reply = redisCommand(
-	            d_ctx->redis_ctx, "SET %s:%s %s", NXS_CHAT_SRV_D_DB_CACHE_REDIS_PREFIX, cache_name, nxs_string_str(value))) == NULL) {
+	            d_ctx->redis_ctx, "HSET %s %s %s", NXS_CHAT_SRV_D_DB_CACHE_REDIS_PREFIX, cache_name, nxs_string_str(value))) == NULL) {
 
 		nxs_log_write_error(
 		        &process, "[%s]: cache put error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
@@ -270,7 +270,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_cache_del(nxs_chat_srv_d_db_cache_t *d_ctx,
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "DEL %s:%s", NXS_CHAT_SRV_D_DB_CACHE_REDIS_PREFIX, cache_name)) == NULL) {
+	if((redis_reply = redisCommand(d_ctx->redis_ctx, "HDEL %s %s", NXS_CHAT_SRV_D_DB_CACHE_REDIS_PREFIX, cache_name)) == NULL) {
 
 		nxs_log_write_error(
 		        &process, "[%s]: cache del error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
