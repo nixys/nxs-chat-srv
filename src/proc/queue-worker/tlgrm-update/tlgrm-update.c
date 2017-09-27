@@ -41,7 +41,9 @@ typedef struct
 typedef struct
 {
 	nxs_string_t				command;
+	nxs_bool_t				has_args;
 	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_user_ctx_t *user_ctx);
+	nxs_string_t				description;
 } handlers_commands_t;
 
 /* Module internal (static) functions prototypes */
@@ -99,10 +101,18 @@ static nxs_chat_srv_err_t handler_command_start(nxs_chat_srv_m_tlgrm_update_t *u
                                                 nxs_chat_srv_u_db_sess_t *     sess_ctx,
                                                 nxs_chat_srv_u_db_cache_t *    cache_ctx,
                                                 nxs_chat_srv_m_user_ctx_t *    user_ctx);
-static nxs_chat_srv_err_t handler_command_dialog_destroy(nxs_chat_srv_m_tlgrm_update_t *update,
-                                                         nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                         nxs_chat_srv_u_db_cache_t *    cache_ctx,
-                                                         nxs_chat_srv_m_user_ctx_t *    user_ctx);
+static nxs_chat_srv_err_t handler_command_help(nxs_chat_srv_m_tlgrm_update_t *update,
+                                               nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                               nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                               nxs_chat_srv_m_user_ctx_t *    user_ctx);
+static nxs_chat_srv_err_t handler_command_dialogdestroy(nxs_chat_srv_m_tlgrm_update_t *update,
+                                                        nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                        nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                        nxs_chat_srv_m_user_ctx_t *    user_ctx);
+static nxs_chat_srv_err_t handler_command_dummy(nxs_chat_srv_m_tlgrm_update_t *update,
+                                                nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                nxs_chat_srv_m_user_ctx_t *    user_ctx);
 
 // clang-format off
 
@@ -126,14 +136,12 @@ static handlers_message_t handlers_message[] =
 
 static handlers_commands_t handlers_command[] =
 {
-	{nxs_string("/start"),				&handler_command_start},
-	{nxs_string("/dialog_destroy"),			&handler_command_dialog_destroy},
-	{nxs_string("/help"),				NULL},
-	{nxs_string("/dialog_start"),			NULL},
-	{nxs_string("/issue_create"),			NULL},
-	{nxs_string("/issues_list"),			NULL},
+	{nxs_string("/start"),			NXS_NO,		&handler_command_start,			NXS_STRING_NULL_STR},
+	{nxs_string("/help"),			NXS_NO,		&handler_command_help,			nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_HELP)},
+	{nxs_string("/dialogdestroy"),		NXS_NO,		&handler_command_dialogdestroy,		nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_DIALOGDESTROY)},
+	{nxs_string("/issuecreate"),		NXS_NO,		handler_command_dummy,			nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_ISSUECREATE)},
 
-	{NXS_STRING_NULL_STR,				NULL}
+	{NXS_STRING_NULL_STR,			NXS_NO,		NULL,					NXS_STRING_NULL_STR}
 };
 
 static nxs_string_t _s_cmd_ext		= nxs_string("/ext ");
@@ -210,9 +218,23 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime(nxs_chat_srv
 
 		for(i = 0; handlers_command[i].handler != NULL; i++) {
 
-			if(nxs_string_cmp(&handlers_command[i].command, 0, &update.message.text, 0) == NXS_YES) {
+			if(handlers_command[i].has_args == NXS_NO) {
 
-				nxs_error(rc, handlers_command[i].handler(&update, sess_ctx, cache_ctx, &user_ctx), error);
+				if(nxs_string_cmp(&update.message.text, 0, &handlers_command[i].command, 0) == NXS_YES) {
+
+					nxs_error(rc, handlers_command[i].handler(&update, sess_ctx, cache_ctx, &user_ctx), error);
+				}
+			}
+			else {
+
+				if(nxs_string_ncmp(&update.message.text,
+				                   0,
+				                   &handlers_command[i].command,
+				                   0,
+				                   nxs_string_len(&handlers_command[i].command)) == NXS_YES) {
+
+					nxs_error(rc, handlers_command[i].handler(&update, sess_ctx, cache_ctx, &user_ctx), error);
+				}
 			}
 		}
 
@@ -1506,10 +1528,59 @@ static nxs_chat_srv_err_t handler_command_start(nxs_chat_srv_m_tlgrm_update_t *u
 	return nxs_chat_srv_p_queue_worker_tlgrm_update_win_hello_runtime(tlgrm_userid, &user_ctx->r_userfname, NULL);
 }
 
-static nxs_chat_srv_err_t handler_command_dialog_destroy(nxs_chat_srv_m_tlgrm_update_t *update,
-                                                         nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                         nxs_chat_srv_u_db_cache_t *    cache_ctx,
-                                                         nxs_chat_srv_m_user_ctx_t *    user_ctx)
+static nxs_chat_srv_err_t handler_command_help(nxs_chat_srv_m_tlgrm_update_t *update,
+                                               nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                               nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                               nxs_chat_srv_m_user_ctx_t *    user_ctx)
+{
+	size_t             tlgrm_userid;
+	nxs_string_t       message, cmd_description;
+	nxs_chat_srv_err_t rc;
+	size_t             i;
+
+	if(update == NULL || sess_ctx == NULL || cache_ctx == NULL || user_ctx == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	nxs_string_init(&message);
+	nxs_string_init_empty(&cmd_description);
+
+	for(i = 0; nxs_string_len(&handlers_command[i].command) > 0; i++) {
+
+		if(nxs_string_len(&handlers_command[i].description) == 0) {
+
+			continue;
+		}
+
+		if(handlers_command[i].has_args == NXS_NO) {
+
+			nxs_string_printf2_cat(
+			        &cmd_description, "%r - %r\n", &handlers_command[i].command, &handlers_command[i].description);
+		}
+		else {
+
+			nxs_string_printf2_cat(
+			        &cmd_description, "%r _arguments_ - %r\n", &handlers_command[i].command, &handlers_command[i].description);
+		}
+	}
+
+	nxs_string_printf(&message, NXS_CHAT_SRV_TLGRM_MESSAGE_HELP, &cmd_description);
+
+	tlgrm_userid = nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx);
+
+	rc = nxs_chat_srv_p_queue_worker_tlgrm_update_win_gen_notice(tlgrm_userid, 0, &message, NULL);
+
+	nxs_string_free(&message);
+	nxs_string_free(&cmd_description);
+
+	return rc;
+}
+
+static nxs_chat_srv_err_t handler_command_dialogdestroy(nxs_chat_srv_m_tlgrm_update_t *update,
+                                                        nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                        nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                        nxs_chat_srv_m_user_ctx_t *    user_ctx)
 {
 	nxs_chat_srv_err_t rc;
 
@@ -1527,6 +1598,33 @@ static nxs_chat_srv_err_t handler_command_dialog_destroy(nxs_chat_srv_m_tlgrm_up
 
 		rc = NXS_CHAT_SRV_E_ERR;
 	}
+
+	return rc;
+}
+
+static nxs_chat_srv_err_t handler_command_dummy(nxs_chat_srv_m_tlgrm_update_t *update,
+                                                nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                                nxs_chat_srv_m_user_ctx_t *    user_ctx)
+{
+	size_t             tlgrm_userid;
+	nxs_string_t       message;
+	nxs_chat_srv_err_t rc;
+
+	if(update == NULL || sess_ctx == NULL || cache_ctx == NULL || user_ctx == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	nxs_string_init(&message);
+
+	nxs_string_printf(&message, NXS_CHAT_SRV_TLGRM_MESSAGE_DUMMY);
+
+	tlgrm_userid = nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx);
+
+	rc = nxs_chat_srv_p_queue_worker_tlgrm_update_win_gen_notice(tlgrm_userid, 0, &message, NULL);
+
+	nxs_string_free(&message);
 
 	return rc;
 }

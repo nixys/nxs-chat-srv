@@ -20,6 +20,12 @@
 #define NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE				0xF0, 0x9F, 0x94, 0x95, 0x0
 #define NXS_CHAT_SRV_UTF8_ENTRY_SIGN					0xE2, 0x9C, 0x85, 0x0
 
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_HELP			"справка по использованию бота"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_DIALOGDESTROY		"завершить текущий диалог"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_ISSUECREATE			"создать новую задачу"
+
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_HELP					"...Справка по использованию бота...\n\nОписание команд:\n\n%r\n"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_DUMMY				"На текущий момент данная команда не реализована"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_HELLO				"%r, добро пожаловать в чат поддержки Nixys!\nТут будет краткая инструкция по использованию ..."
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_FULL				"*Создание новой задачи*\n\n" \
 									"*Проект:* %r\n" \
@@ -38,10 +44,10 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_SUBJECT			"Как назвать задачу?"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT			"_Будет задана при создании задачи_"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR				"%s Произошла внутрення ошибка сервера, мы уже получили уведомление об этом и работаем над решением проблемы. Пожалуйста, [воспользуйтесь web-версией системы задач](https://task.nixys.ru/) или повторите свой запрос позже."
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_ACTION				"Не верное действие. Вам необходимо либо следовать указаниям мастера, либо Вы можете отменить текущий диалог."
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_ACTION				"Не верное действие. Вам необходимо либо следовать указаниям мастера, либо Вы можете отменить текущий диалог"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_REPLY				"К сожалению, не удалось определить номер задачи в которую необходимо отправить Ваше сообщение"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_SESSION_DESTROYED			"Предыдущий диалог завершён."
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_DESCRIPTION_CHANGED			"Описание изменено."
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_SESSION_DESTROYED			"Предыдущий диалог завершён"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_DESCRIPTION_CHANGED			"Описание изменено"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_DESCRIPTION			"Как изменить описание задачи?"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED			"Задача [(%r - #%zu) %r](%r/issues/%zu) создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE			"Ваш комментарий отправлен в задачу [#%zu](%r/issues/%zu)"

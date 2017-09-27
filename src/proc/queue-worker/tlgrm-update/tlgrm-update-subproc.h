@@ -19,6 +19,7 @@
 #include <proc/queue-worker/tlgrm-update/win-select-project/win-select-project.h>
 #include <proc/queue-worker/tlgrm-update/win-session-destroyed/win-session-destroyed.h>
 #include <proc/queue-worker/tlgrm-update/win-select-priority/win-select-priority.h>
+#include <proc/queue-worker/tlgrm-update/win-gen-notice/win-gen-notice.h>
 #include <proc/queue-worker/tlgrm-update/win-begin/win-begin.h>
 /*%%_NXS_TPL_HEADERS_END_%%*/
 
