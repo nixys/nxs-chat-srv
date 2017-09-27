@@ -139,6 +139,10 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_chat_srv_cfg.rdmn.ssl_verifyhost            = NXS_YES;
 	nxs_chat_srv_cfg.rdmn.issue_list_query_id       = 0;
 	nxs_chat_srv_cfg.rdmn.cf_watchers               = 0;
+	nxs_chat_srv_cfg.rdmn.cf_ignore_status          = 0;
+	nxs_chat_srv_cfg.rdmn.status_in_progress        = 0;
+	nxs_chat_srv_cfg.rdmn.status_resolved           = 0;
+	nxs_chat_srv_cfg.rdmn.status_need_feedback      = 0;
 
 	/* Init cfg context values */
 

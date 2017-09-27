@@ -85,8 +85,15 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_m_tlg
                                                               nxs_chat_srv_u_db_cache_t *    cache_ctx,
                                                               nxs_chat_srv_m_user_ctx_t *    user_ctx);
 
-static nxs_chat_srv_err_t
-        handler_message_exec_reply(nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_m_user_ctx_t *user_ctx, size_t tlgrm_userid);
+static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                nxs_chat_srv_m_tlgrm_update_t *update,
+                                                nxs_chat_srv_m_user_ctx_t *    user_ctx,
+                                                size_t                         tlgrm_userid);
+static nxs_chat_srv_err_t handler_message_reply_ext(nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                    nxs_chat_srv_m_tlgrm_update_t *update,
+                                                    size_t                         tlgrm_userid,
+                                                    nxs_string_t *                 rdmn_api_key,
+                                                    size_t                         issue_id);
 
 static nxs_chat_srv_err_t handler_command_start(nxs_chat_srv_m_tlgrm_update_t *update,
                                                 nxs_chat_srv_u_db_sess_t *     sess_ctx,
@@ -128,6 +135,10 @@ static handlers_commands_t handlers_command[] =
 
 	{NXS_STRING_NULL_STR,				NULL}
 };
+
+static nxs_string_t _s_cmd_ext		= nxs_string("/ext ");
+
+static nxs_string_t _s_cf_ignore_value	= nxs_string("1");
 
 /* Module global functions */
 
@@ -357,7 +368,7 @@ static nxs_chat_srv_err_t handler_message_exec(nxs_chat_srv_m_tlgrm_update_t *up
 
 		/* reply to message */
 
-		if(handler_message_exec_reply(update, user_ctx, tlgrm_userid) == NXS_CHAT_SRV_E_OK) {
+		if(handler_message_reply(sess_ctx, update, user_ctx, tlgrm_userid) == NXS_CHAT_SRV_E_OK) {
 
 			nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
 		}
@@ -432,21 +443,26 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
                                                              nxs_chat_srv_u_db_cache_t *           cache_ctx,
                                                              nxs_chat_srv_m_user_ctx_t *           user_ctx)
 {
-	size_t                                   chat_id, bot_message_id, usr_message_id, issues_count;
+	size_t                                   chat_id, bot_message_id, usr_message_id, issues_count, status_id;
 	nxs_chat_srv_err_t                       rc;
 	nxs_chat_srv_m_db_cache_issue_priority_t issue_priority;
-	nxs_array_t                              cache_projects;
-	nxs_string_t *                           api_key, *message;
+	nxs_array_t                              cache_projects, custom_fields;
+	nxs_string_t *                           api_key, *message, m;
 	nxs_chat_srv_u_db_issues_t *             db_issue_ctx;
 	nxs_chat_srv_u_last_issues_t *           last_issue_ctx;
 	nxs_array_t                              issues;
-	nxs_bool_t                               private_notes;
+	nxs_bool_t                               private_notes, is_ext;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
 	private_notes = NXS_NO;
+	status_id     = 0;
+	is_ext        = NXS_NO;
+
+	nxs_string_init(&m);
 
 	nxs_chat_srv_c_rdmn_issues_init(&issues);
+	nxs_chat_srv_c_rdmn_issues_cf_init(&custom_fields);
 
 	db_issue_ctx   = nxs_chat_srv_u_db_issues_init();
 	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
@@ -491,33 +507,120 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 			break;
 
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE:
+		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_IN_PROGRESS:
+		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_NEED_FEEDBACK:
+		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_RESOLVED:
+		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_PRIVATE:
+		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_WF_IGNORE:
 
 			/* add comment to selected issue processing */
 
-			if(nxs_chat_srv_u_rdmn_issues_add_note(callback->object_id, message, private_notes, api_key) != NXS_CHAT_SRV_E_OK) {
+			/* if need to use extended actions when adding the note into an issue */
+			if(nxs_string_ncmp(message, 0, &_s_cmd_ext, 0, nxs_string_len(&_s_cmd_ext)) == NXS_YES) {
 
-				nxs_log_write_warn(&process,
-				                   "[%s]: can't send user message to Redmine issue: can't add note into Redmine issue ("
-				                   "rdmn user id: %zu)",
-				                   nxs_proc_get_name(&process),
-				                   user_ctx->r_userid);
+				is_ext = NXS_YES;
 
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				nxs_string_cpy(&m, 0, message, nxs_string_len(&_s_cmd_ext));
+			}
+			else {
+
+				nxs_string_clone(&m, message);
 			}
 
-			/* set issue 'callback->object_id' as last for telegram user 'tlgrm_userid' */
-			nxs_chat_srv_u_last_issues_set(last_issue_ctx, chat_id, callback->object_id);
+			switch(callback->type) {
 
-			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(
-			           sess_ctx, chat_id, bot_message_id, update, NULL, callback->object_id) != NXS_CHAT_SRV_E_OK) {
+				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_IN_PROGRESS:
 
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+					status_id = nxs_chat_srv_cfg.rdmn.status_in_progress;
+
+					break;
+
+				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_NEED_FEEDBACK:
+
+					status_id = nxs_chat_srv_cfg.rdmn.status_need_feedback;
+
+					break;
+
+				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_RESOLVED:
+
+					status_id = nxs_chat_srv_cfg.rdmn.status_resolved;
+
+					break;
+
+				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_PRIVATE:
+
+					private_notes = NXS_YES;
+
+					break;
+
+				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_WF_IGNORE:
+
+					nxs_chat_srv_c_rdmn_issues_cf_add(
+					        &custom_fields, nxs_chat_srv_cfg.rdmn.cf_ignore_status, &_s_cf_ignore_value);
+
+					break;
+
+				default:
+
+					if(is_ext == NXS_YES) {
+
+						if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_add_note_ext(
+						           chat_id, bot_message_id, callback->object_id, NULL) != NXS_CHAT_SRV_E_OK) {
+
+							nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+						}
+
+						nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
+					}
+
+					break;
 			}
 
-			nxs_chat_srv_u_db_issues_set(db_issue_ctx, chat_id, usr_message_id, callback->object_id);
-			nxs_chat_srv_u_db_issues_set(db_issue_ctx, chat_id, bot_message_id, callback->object_id);
+			switch(nxs_chat_srv_u_rdmn_issues_add_note(
+			               callback->object_id, &m, private_notes, status_id, &custom_fields, api_key) != NXS_CHAT_SRV_E_OK) {
 
-			nxs_chat_srv_u_db_sess_destroy(sess_ctx);
+				case NXS_CHAT_SRV_E_OK:
+
+					/* set issue 'callback->object_id' as last for telegram user 'tlgrm_userid' */
+					nxs_chat_srv_u_last_issues_set(last_issue_ctx, chat_id, callback->object_id);
+
+					if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(
+					           sess_ctx, chat_id, bot_message_id, update, NULL, callback->object_id) !=
+					   NXS_CHAT_SRV_E_OK) {
+
+						nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+					}
+
+					nxs_chat_srv_u_db_issues_set(db_issue_ctx, chat_id, usr_message_id, callback->object_id);
+					nxs_chat_srv_u_db_issues_set(db_issue_ctx, chat_id, bot_message_id, callback->object_id);
+
+					nxs_chat_srv_u_db_sess_destroy(sess_ctx);
+
+					break;
+
+				case NXS_CHAT_SRV_E_WARN:
+
+					if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_add_note_ext(
+					           chat_id, bot_message_id, callback->object_id, NULL) != NXS_CHAT_SRV_E_OK) {
+
+						nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+					}
+
+					break;
+
+				default:
+
+					nxs_log_write_warn(
+					        &process,
+					        "[%s]: can't send user message to Redmine issue: can't add note into Redmine issue ("
+					        "rdmn user id: %zu)",
+					        nxs_proc_get_name(&process),
+					        user_ctx->r_userid);
+
+					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+
+					break;
+			}
 
 			break;
 
@@ -601,6 +704,9 @@ error:
 	}
 
 	nxs_chat_srv_c_rdmn_issues_free(&issues);
+	nxs_chat_srv_c_rdmn_issues_cf_free(&custom_fields);
+
+	nxs_string_free(&m);
 
 	nxs_array_free(&cache_projects);
 
@@ -1188,13 +1294,15 @@ error:
 	return rc;
 }
 
-static nxs_chat_srv_err_t
-        handler_message_exec_reply(nxs_chat_srv_m_tlgrm_update_t *update, nxs_chat_srv_m_user_ctx_t *user_ctx, size_t tlgrm_userid)
+static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                nxs_chat_srv_m_tlgrm_update_t *update,
+                                                nxs_chat_srv_m_user_ctx_t *    user_ctx,
+                                                size_t                         tlgrm_userid)
 {
 	nxs_chat_srv_u_db_issues_t *  db_issue_ctx;
 	nxs_chat_srv_u_rdmn_user_t *  rdmn_user_ctx;
 	nxs_chat_srv_u_last_issues_t *last_issue_ctx;
-	nxs_string_t *                api_key, m;
+	nxs_string_t *                rdmn_api_key, m;
 	nxs_chat_srv_err_t            rc;
 	nxs_bool_t                    private_notes;
 	size_t                        issue_id;
@@ -1243,9 +1351,9 @@ static nxs_chat_srv_err_t
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	api_key = nxs_chat_srv_u_rdmn_user_get_api_key(rdmn_user_ctx);
+	rdmn_api_key = nxs_chat_srv_u_rdmn_user_get_api_key(rdmn_user_ctx);
 
-	if(nxs_string_len(api_key) == 0) {
+	if(nxs_string_len(rdmn_api_key) == 0) {
 
 		nxs_log_write_warn(&process,
 		                   "[%s]: can't send user reply into Redmine: user api key has zero size (user id: %zu)",
@@ -1257,27 +1365,60 @@ static nxs_chat_srv_err_t
 
 	private_notes = nxs_chat_srv_c_notes_check_private(&update->message.text, &m);
 
-	if(nxs_chat_srv_u_rdmn_issues_add_note(issue_id, &m, private_notes, api_key) != NXS_CHAT_SRV_E_OK) {
+	/* if need to use extended actions when adding the note into an issue */
+	if(nxs_string_ncmp(&m, 0, &_s_cmd_ext, 0, nxs_string_len(&_s_cmd_ext)) == NXS_YES) {
 
-		nxs_log_write_warn(&process,
-		                   "[%s]: can't send user reply into Redmine: can't add not into Redmine issue ("
-		                   "user id: %zu)",
-		                   nxs_proc_get_name(&process),
-		                   tlgrm_userid);
+		/* if '/ext ' command specified */
 
-		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		if(handler_message_reply_ext(sess_ctx, update, tlgrm_userid, rdmn_api_key, issue_id) != NXS_CHAT_SRV_E_OK) {
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
 	}
+	else {
 
-	/* set issue 'issue_id' as last for telegram user 'tlgrm_userid' */
-	nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, issue_id);
+		switch(nxs_chat_srv_u_rdmn_issues_add_note(issue_id, &m, private_notes, 0, NULL, rdmn_api_key) != NXS_CHAT_SRV_E_OK) {
 
-	if(nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, update->message.message_id, issue_id) != NXS_CHAT_SRV_E_OK) {
+			case NXS_CHAT_SRV_E_OK:
 
-		nxs_log_write_warn(&process,
-		                   "[%s]: can't send user reply into Redmine: can't set value into db-issues ("
-		                   "user id: %zu)",
-		                   nxs_proc_get_name(&process),
-		                   tlgrm_userid);
+				/* set issue 'issue_id' as last for telegram user 'tlgrm_userid' */
+				nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, issue_id);
+
+				if(nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, update->message.message_id, issue_id) !=
+				   NXS_CHAT_SRV_E_OK) {
+
+					nxs_log_write_warn(&process,
+					                   "[%s]: can't send user reply into Redmine: can't set value into db-issues ("
+					                   "user id: %zu)",
+					                   nxs_proc_get_name(&process),
+					                   tlgrm_userid);
+				}
+
+				break;
+
+			case NXS_CHAT_SRV_E_WARN:
+
+				/* On HTTP/422 */
+
+				if(handler_message_reply_ext(sess_ctx, update, tlgrm_userid, rdmn_api_key, issue_id) != NXS_CHAT_SRV_E_OK) {
+
+					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				}
+
+				break;
+
+			default:
+
+				nxs_log_write_warn(&process,
+				                   "[%s]: can't send user message to Redmine issue: can't add note into Redmine issue ("
+				                   "rdmn user id: %zu)",
+				                   nxs_proc_get_name(&process),
+				                   user_ctx->r_userid);
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+
+				break;
+		}
 	}
 
 error:
@@ -1287,6 +1428,63 @@ error:
 	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 
 	nxs_string_free(&m);
+
+	return rc;
+}
+
+static nxs_chat_srv_err_t handler_message_reply_ext(nxs_chat_srv_u_db_sess_t *     sess_ctx,
+                                                    nxs_chat_srv_m_tlgrm_update_t *update,
+                                                    size_t                         tlgrm_userid,
+                                                    nxs_string_t *                 rdmn_api_key,
+                                                    size_t                         issue_id)
+{
+	nxs_chat_srv_err_t             rc;
+	nxs_chat_srv_m_tlgrm_message_t response_message;
+	nxs_buf_t                      response_buf;
+	nxs_bool_t                     response_status;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_chat_srv_c_tlgrm_message_init(&response_message);
+
+	nxs_buf_init2(&response_buf);
+
+	if(nxs_chat_srv_u_db_sess_start(sess_ctx,
+	                                rdmn_api_key,
+	                                0,
+	                                update->message.message_id,
+	                                0,
+	                                NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE,
+	                                NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_u_db_sess_t_set_message(sess_ctx, &update->message.text) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_add_note_ext(tlgrm_userid, 0, issue_id, &response_buf) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_c_tlgrm_message_result_pull_json(&response_message, &response_status, &response_buf) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_u_db_sess_set_ids(sess_ctx, response_message.chat.id, 0, response_message.message_id) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+error:
+
+	nxs_chat_srv_c_tlgrm_message_free(&response_message);
+
+	nxs_buf_free(&response_buf);
 
 	return rc;
 }

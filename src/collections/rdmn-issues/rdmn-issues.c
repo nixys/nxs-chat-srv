@@ -75,4 +75,58 @@ void nxs_chat_srv_c_rdmn_issues_free(nxs_array_t *issues)
 	nxs_array_free(issues);
 }
 
+void nxs_chat_srv_c_rdmn_issues_cf_init(nxs_array_t *custom_fields)
+{
+
+	if(custom_fields == NULL) {
+
+		return;
+	}
+
+	nxs_array_init2(custom_fields, nxs_chat_srv_m_rdmn_issues_cf_t);
+}
+
+void nxs_chat_srv_c_rdmn_issues_cf_free(nxs_array_t *custom_fields)
+{
+	nxs_chat_srv_m_rdmn_issues_cf_t *cf;
+	size_t                           i;
+
+	if(custom_fields == NULL) {
+
+		return;
+	}
+
+	for(i = 0; i < nxs_array_count(custom_fields); i++) {
+
+		cf = nxs_array_get(custom_fields, i);
+
+		cf->id = 0;
+
+		nxs_string_free(&cf->value);
+	}
+
+	nxs_array_free(custom_fields);
+}
+
+void nxs_chat_srv_c_rdmn_issues_cf_add(nxs_array_t *custom_fields, size_t id, nxs_string_t *value)
+{
+	nxs_chat_srv_m_rdmn_issues_cf_t *cf;
+
+	if(custom_fields == NULL) {
+
+		return;
+	}
+
+	if(id == 0) {
+
+		return;
+	}
+
+	cf = nxs_array_add(custom_fields);
+
+	cf->id = id;
+
+	nxs_string_init3(&cf->value, value);
+}
+
 /* Module internal (static) functions */

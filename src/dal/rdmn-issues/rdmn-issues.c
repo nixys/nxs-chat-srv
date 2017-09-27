@@ -48,14 +48,18 @@ static nxs_string_t		_s_content_type		= nxs_string("Content-Type: application/js
 nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue_id,
                                                           nxs_string_t *   note,
                                                           nxs_bool_t       private_notes,
+                                                          size_t           status_id,
+                                                          nxs_array_t *    custom_fields,
                                                           nxs_string_t *   user_api_key,
                                                           nxs_buf_t *      out_buf,
                                                           nxs_http_code_t *http_code)
 {
-	nxs_chat_srv_err_t rc;
-	nxs_curl_t         curl;
-	nxs_string_t       data, api_key, note_escaped;
-	int                ec;
+	nxs_chat_srv_err_t               rc;
+	nxs_curl_t                       curl;
+	nxs_string_t                     data, api_key, note_escaped, status, cf_str, cf_str_els;
+	size_t                           i;
+	nxs_chat_srv_m_rdmn_issues_cf_t *cf;
+	int                              ec;
 
 	if(note == NULL || user_api_key == NULL) {
 
@@ -67,6 +71,9 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 	nxs_string_init(&data);
 	nxs_string_init(&api_key);
 	nxs_string_init(&note_escaped);
+	nxs_string_init_empty(&status);
+	nxs_string_init_empty(&cf_str);
+	nxs_string_init_empty(&cf_str_els);
 
 	nxs_curl_init(&curl);
 
@@ -79,8 +86,34 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 
 	nxs_string_escape(&note_escaped, note, NXS_STRING_ESCAPE_TYPE_JSON);
 
-	nxs_string_printf(
-	        &data, "{\"issue\":{\"notes\":\"%r\",\"private_notes\":%s}}", &note_escaped, private_notes == NXS_YES ? "true" : "false");
+	if(status_id > 0) {
+
+		nxs_string_printf(&status, ",\"status_id\":%zu", status_id);
+	}
+
+	if(custom_fields != NULL && nxs_array_count(custom_fields) > 0) {
+
+		for(i = 0; i < nxs_array_count(custom_fields); i++) {
+
+			cf = nxs_array_get(custom_fields, i);
+
+			if(i > 0) {
+
+				nxs_string_char_add_char(&cf_str_els, (u_char)',');
+			}
+
+			nxs_string_printf2_cat(&cf_str_els, "{\"id\":%zu,\"value\":\"%r\"}", cf->id, &cf->value);
+		}
+
+		nxs_string_printf(&cf_str, ",\"custom_fields\":[%r]", &cf_str_els);
+	}
+
+	nxs_string_printf(&data,
+	                  "{\"issue\":{\"notes\":\"%r\",\"private_notes\":%s%r%r}}",
+	                  &note_escaped,
+	                  private_notes == NXS_YES ? "true" : "false",
+	                  &status,
+	                  &cf_str);
 
 	nxs_curl_set_post(&curl, (nxs_buf_t *)&data);
 
@@ -108,6 +141,9 @@ error:
 	nxs_string_free(&data);
 	nxs_string_free(&api_key);
 	nxs_string_free(&note_escaped);
+	nxs_string_free(&status);
+	nxs_string_free(&cf_str);
+	nxs_string_free(&cf_str_els);
 
 	nxs_curl_free(&curl);
 

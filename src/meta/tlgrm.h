@@ -49,17 +49,22 @@ enum nxs_chat_srv_m_tlgrm_parse_mode_e
 enum nxs_chat_srv_m_tlgrm_bttn_callback_type_e
 {
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_NONE,
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_NEW_ISSUE,		/* create new issue */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE,		/* add comment to existing issue */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CREATE_ISSUE,		/* create new issue */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PROJECT,		/* select project */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PROJECT,	/* selected project */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PRIORITY,	/* select priority */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,	/* selected priority */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_ISSUE,		/* select issues to add comment */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CHANGE_DESCRIPTION,	/* change issue description */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SESSION_DESTROY,	/* destroy current session */
-	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK			/* back to previous 'window' */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_NEW_ISSUE,			/* create new issue */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE,			/* add comment to existing issue */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_IN_PROGRESS,	/* add comment to existing issue (and change status to 'In progress') */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_NEED_FEEDBACK,	/* add comment to existing issue (and change status to 'Need Feedback') */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_RESOLVED,	/* add comment to existing issue (and change status to 'Resolved') */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_PRIVATE,		/* add comment to existing issue (and make it private) */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_WF_IGNORE,		/* add comment to existing issue (and ignore workflow statuses errors) */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CREATE_ISSUE,			/* create new issue */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PROJECT,			/* select project */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PROJECT,		/* selected project */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PRIORITY,		/* select priority */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,		/* selected priority */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_ISSUE,			/* select issues to add comment */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CHANGE_DESCRIPTION,		/* change issue description */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SESSION_DESTROY,		/* destroy current session */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK				/* back to previous 'window' */
 };
 
 struct nxs_chat_srv_m_tlgrm_force_reply_s

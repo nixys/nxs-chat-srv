@@ -102,6 +102,10 @@ static nxs_string_t _s_par_issue_priorities_ttl		= nxs_string("issue_priorities_
 static nxs_string_t _s_par_ssl_verifyhost		= nxs_string("ssl_verifyhost");
 static nxs_string_t _s_par_issue_list_query_id		= nxs_string("issue_list_query_id");
 static nxs_string_t _s_par_cf_watchers			= nxs_string("cf_watchers");
+static nxs_string_t _s_par_cf_ignore_status		= nxs_string("cf_ignore_status");
+static nxs_string_t _s_par_status_in_progress		= nxs_string("status_in_progress");
+static nxs_string_t _s_par_status_resolved		= nxs_string("status_resolved");
+static nxs_string_t _s_par_status_need_feedback		= nxs_string("status_need_feedback");
 
 /* Module global functions */
 
@@ -466,6 +470,10 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_issue_list_query_id,	&var->issue_list_query_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ssl_verifyhost,		&var->ssl_verifyhost,		NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_cf_watchers,		&var->cf_watchers,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_cf_ignore_status,	&var->cf_ignore_status,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status_in_progress,	&var->status_in_progress,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status_resolved,	&var->status_resolved,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status_need_feedback,	&var->status_need_feedback,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 

@@ -99,12 +99,57 @@ error:
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t issue_id, nxs_string_t *note, nxs_bool_t private_notes, nxs_string_t *api_key)
+nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t        issue_id,
+                                                       nxs_string_t *note,
+                                                       nxs_bool_t    private_notes,
+                                                       size_t        status_id,
+                                                       nxs_array_t * custom_fields,
+                                                       nxs_string_t *api_key)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_http_code_t    http_code;
 
-	rc = nxs_chat_srv_d_rdmn_issues_add_comment(issue_id, note, private_notes, api_key, NULL, &http_code);
+	if((rc = nxs_chat_srv_d_rdmn_issues_add_comment(
+	            issue_id, note, private_notes, status_id, custom_fields, api_key, NULL, &http_code)) != NXS_CHAT_SRV_E_OK) {
+
+		return rc;
+	}
+
+	switch(http_code) {
+
+		case NXS_HTTP_CODE_200_OK:
+
+			nxs_log_write_debug(&process,
+			                    "[%s]: rdmn issue add note: note successfully added (response code: %d)",
+			                    nxs_proc_get_name(&process),
+			                    http_code);
+
+			rc = NXS_CHAT_SRV_E_OK;
+
+			break;
+
+		case NXS_HTTP_CODE_422_UNPROCESSABLE_ENTITY:
+
+			nxs_log_write_warn(&process,
+			                   "[%s]: rdmn issue add note warn: warn Redmine response code (response code: %d)",
+			                   nxs_proc_get_name(&process),
+			                   http_code);
+
+			rc = NXS_CHAT_SRV_E_WARN;
+
+			break;
+
+		default:
+
+			nxs_log_write_error(&process,
+			                    "[%s]: rdmn issue add note error: wrong Redmine response code (response code: %d)",
+			                    nxs_proc_get_name(&process),
+			                    http_code);
+
+			rc = NXS_CHAT_SRV_E_ERR;
+
+			break;
+	}
 
 	return rc;
 }
