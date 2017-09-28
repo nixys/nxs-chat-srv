@@ -81,7 +81,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create(size_t        project_id,
 
 	nxs_buf_init2(&out_buf);
 
-	if(nxs_chat_srv_d_rdmn_issues_create(project_id, priority_id, subject, description, is_private, api_key, &out_buf, &http_code) !=
+	if(nxs_chat_srv_d_rdmn_issues_create(project_id, priority_id, subject, description, is_private, api_key, &http_code, &out_buf) !=
 	   NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -106,52 +106,23 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t        issue_id,
                                                        nxs_array_t * custom_fields,
                                                        nxs_string_t *api_key)
 {
-	nxs_chat_srv_err_t rc;
-	nxs_http_code_t    http_code;
 
-	if((rc = nxs_chat_srv_d_rdmn_issues_add_comment(
-	            issue_id, note, private_notes, status_id, custom_fields, api_key, NULL, &http_code)) != NXS_CHAT_SRV_E_OK) {
+	switch(nxs_chat_srv_d_rdmn_issues_add_comment(issue_id, note, private_notes, status_id, custom_fields, api_key, NULL, NULL)) {
 
-		return rc;
-	}
+		case NXS_CHAT_SRV_E_OK:
 
-	switch(http_code) {
+			return NXS_CHAT_SRV_E_OK;
 
-		case NXS_HTTP_CODE_200_OK:
+		case NXS_CHAT_SRV_E_ATTR:
 
-			nxs_log_write_debug(&process,
-			                    "[%s]: rdmn issue add note: note successfully added (response code: %d)",
-			                    nxs_proc_get_name(&process),
-			                    http_code);
-
-			rc = NXS_CHAT_SRV_E_OK;
-
-			break;
-
-		case NXS_HTTP_CODE_422_UNPROCESSABLE_ENTITY:
-
-			nxs_log_write_warn(&process,
-			                   "[%s]: rdmn issue add note warn: warn Redmine response code (response code: %d)",
-			                   nxs_proc_get_name(&process),
-			                   http_code);
-
-			rc = NXS_CHAT_SRV_E_WARN;
-
-			break;
+			return NXS_CHAT_SRV_E_WARN;
 
 		default:
 
-			nxs_log_write_error(&process,
-			                    "[%s]: rdmn issue add note error: wrong Redmine response code (response code: %d)",
-			                    nxs_proc_get_name(&process),
-			                    http_code);
-
-			rc = NXS_CHAT_SRV_E_ERR;
-
 			break;
 	}
 
-	return rc;
+	return NXS_CHAT_SRV_E_ERR;
 }
 
 nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_get_query(nxs_array_t * issues,
@@ -174,7 +145,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_get_query(nxs_array_t * issues,
 
 	nxs_buf_init2(&out_buf);
 
-	if(nxs_chat_srv_d_rdmn_issues_get_query(issue_query_id, api_key, offset, limit, &out_buf, &http_code) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_d_rdmn_issues_get_query(issue_query_id, api_key, offset, limit, &http_code, &out_buf) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}

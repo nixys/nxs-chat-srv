@@ -146,7 +146,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_user_pull(nxs_chat_srv_u_rdmn_user_t *u_c
 	 * get data from Redmine
 	 */
 
-	if(nxs_chat_srv_d_rdmn_users_get(user_id, NXS_NO, &nxs_chat_srv_cfg.rdmn.api_key, &out_buf, NULL, 0, 0) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_d_rdmn_users_get(user_id, NXS_NO, &nxs_chat_srv_cfg.rdmn.api_key, 0, 0, NULL, &out_buf) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}

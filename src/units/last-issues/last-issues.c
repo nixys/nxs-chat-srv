@@ -131,7 +131,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_get(nxs_chat_srv_u_last_issues_t *
 
 			/* Last Redmine issue id found in DB. Now try to get subject for that issue from Redmine */
 
-			if(nxs_chat_srv_d_rdmn_issues_get_issue(*rdmn_last_issue_id, user_api_key, &out_buf, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_d_rdmn_issues_get_issue(*rdmn_last_issue_id, user_api_key, NULL, &out_buf) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -147,7 +147,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_get(nxs_chat_srv_u_last_issues_t *
 
 			/* Last Redmine issue id was not found in DB. Try to get data from Redmine */
 
-			if(nxs_chat_srv_d_rdmn_last_issue_get(rdmn_userid, user_api_key, &out_buf, NULL) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_d_rdmn_last_issue_get(rdmn_userid, user_api_key, NULL, &out_buf) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}

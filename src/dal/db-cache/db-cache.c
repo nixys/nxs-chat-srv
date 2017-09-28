@@ -83,14 +83,14 @@ nxs_chat_srv_d_db_cache_t *nxs_chat_srv_d_db_cache_init(void)
 		if(d_ctx->redis_ctx != NULL) {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: cache error, can't connect to Redis: %s",
+			                    "[%s]: db cache error, can't connect to Redis: %s",
 			                    nxs_proc_get_name(&process),
 			                    d_ctx->redis_ctx->errstr);
 		}
 		else {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: cache error, can't connect to Redis: can't allocate Redis context",
+			                    "[%s]: db cache error, can't connect to Redis: can't allocate Redis context",
 			                    nxs_proc_get_name(&process));
 		}
 
@@ -127,15 +127,20 @@ nxs_chat_srv_err_t
 
 	if(d_ctx->redis_ctx == NULL) {
 
-		nxs_log_write_error(&process, "[%s]: cache get error: Redis context is NULL", nxs_proc_get_name(&process));
+		nxs_log_write_error(&process,
+		                    "[%s]: db cache get error: Redis context is NULL (cache type id: %d)",
+		                    nxs_proc_get_name(&process),
+		                    cache_type);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
 
 	if((cache_name = nxs_chat_srv_d_db_cache_get_name(cache_type)) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: cache get error: unknown cache type (cache type: %d)", nxs_proc_get_name(&process), cache_type);
+		nxs_log_write_error(&process,
+		                    "[%s]: db cache get error: unknown cache type (cache type id: %d)",
+		                    nxs_proc_get_name(&process),
+		                    cache_type);
 
 		return NXS_CHAT_SRV_E_TYPE;
 	}
@@ -144,13 +149,18 @@ nxs_chat_srv_err_t
 
 	if((redis_reply = redisCommand(d_ctx->redis_ctx, "HGET %s %s", NXS_CHAT_SRV_D_DB_CACHE_REDIS_PREFIX, cache_name)) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: cache get error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: db cache get error, Redis reply error: %s (cache type: %s)",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->redis_ctx->errstr,
+		                    cache_name);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
 	if(redis_reply->type == REDIS_REPLY_STRING) {
+
+		nxs_log_write_debug(&process, "[%s]: db cache get: success (cache type: %s)", nxs_proc_get_name(&process), cache_name);
 
 		nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len);
 	}
@@ -160,13 +170,20 @@ nxs_chat_srv_err_t
 
 			/* value not found by specified key */
 
+			nxs_log_write_debug(&process,
+			                    "[%s]: db cache get: value does not exist (cache type: %s)",
+			                    nxs_proc_get_name(&process),
+			                    cache_name);
+
 			nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
 		}
 		else {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: cache get error: unexpected Redis reply type (expected type: %d, received type: %d)",
+			                    "[%s]: db cache get error: unexpected Redis reply type (cache type: %s, expected type: %d, "
+			                    "received type: %d)",
 			                    nxs_proc_get_name(&process),
+			                    cache_name,
 			                    REDIS_REPLY_STRING,
 			                    redis_reply->type);
 
@@ -203,15 +220,20 @@ nxs_chat_srv_err_t
 
 	if(d_ctx->redis_ctx == NULL) {
 
-		nxs_log_write_error(&process, "[%s]: cache put error: Redis context is NULL", nxs_proc_get_name(&process));
+		nxs_log_write_error(&process,
+		                    "[%s]: db cache put error: Redis context is NULL (cache type id: %d)",
+		                    nxs_proc_get_name(&process),
+		                    cache_type);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
 
 	if((cache_name = nxs_chat_srv_d_db_cache_get_name(cache_type)) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: cache put error: unknown cache type (cache type: %d)", nxs_proc_get_name(&process), cache_type);
+		nxs_log_write_error(&process,
+		                    "[%s]: db cache put error: unknown cache type (cache type id: %d)",
+		                    nxs_proc_get_name(&process),
+		                    cache_type);
 
 		return NXS_CHAT_SRV_E_TYPE;
 	}
@@ -221,11 +243,16 @@ nxs_chat_srv_err_t
 	if((redis_reply = redisCommand(
 	            d_ctx->redis_ctx, "HSET %s %s %s", NXS_CHAT_SRV_D_DB_CACHE_REDIS_PREFIX, cache_name, nxs_string_str(value))) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: cache put error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: db cache put error, Redis reply error: %s (cache type: %s)",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->redis_ctx->errstr,
+		                    cache_name);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
+
+	nxs_log_write_debug(&process, "[%s]: db cache put: success (cache type: %s)", nxs_proc_get_name(&process), cache_name);
 
 error:
 
@@ -255,15 +282,20 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_cache_del(nxs_chat_srv_d_db_cache_t *d_ctx,
 
 	if(d_ctx->redis_ctx == NULL) {
 
-		nxs_log_write_error(&process, "[%s]: cache del error: Redis context is NULL", nxs_proc_get_name(&process));
+		nxs_log_write_error(&process,
+		                    "[%s]: db cache del error: Redis context is NULL (cache type id: %d)",
+		                    nxs_proc_get_name(&process),
+		                    cache_type);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
 
 	if((cache_name = nxs_chat_srv_d_db_cache_get_name(cache_type)) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: cache del error: unknown cache type (cache type: %d)", nxs_proc_get_name(&process), cache_type);
+		nxs_log_write_error(&process,
+		                    "[%s]: db cache del error: unknown cache type (cache type id: %d)",
+		                    nxs_proc_get_name(&process),
+		                    cache_type);
 
 		return NXS_CHAT_SRV_E_TYPE;
 	}
@@ -272,11 +304,16 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_cache_del(nxs_chat_srv_d_db_cache_t *d_ctx,
 
 	if((redis_reply = redisCommand(d_ctx->redis_ctx, "HDEL %s %s", NXS_CHAT_SRV_D_DB_CACHE_REDIS_PREFIX, cache_name)) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: cache del error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: db cache del error, Redis reply error: %s (cache type: %s)",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->redis_ctx->errstr,
+		                    cache_name);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
+
+	nxs_log_write_debug(&process, "[%s]: db cache del: success (cache type: %s)", nxs_proc_get_name(&process), cache_name);
 
 error:
 

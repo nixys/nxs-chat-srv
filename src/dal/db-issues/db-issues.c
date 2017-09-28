@@ -69,14 +69,14 @@ nxs_chat_srv_d_db_issues_t *nxs_chat_srv_d_db_issues_init(void)
 		if(d_ctx->redis_ctx != NULL) {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: issues error, can't connect to Redis: %s",
+			                    "[%s]: db issues error, can't connect to Redis: %s",
 			                    nxs_proc_get_name(&process),
 			                    d_ctx->redis_ctx->errstr);
 		}
 		else {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: issues error, can't connect to Redis: can't allocate Redis context",
+			                    "[%s]: db issues error, can't connect to Redis: can't allocate Redis context",
 			                    nxs_proc_get_name(&process));
 		}
 
@@ -112,7 +112,11 @@ nxs_chat_srv_err_t
 
 	if(d_ctx->redis_ctx == NULL) {
 
-		nxs_log_write_error(&process, "[%s]: issues get error: Redis context is NULL", nxs_proc_get_name(&process));
+		nxs_log_write_error(&process,
+		                    "[%s]: db issues get error: Redis context is NULL (tlgrm chat id: %zu, tlgrm message id: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_chat_id,
+		                    tlgrm_message_id);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -122,13 +126,23 @@ nxs_chat_srv_err_t
 	if((redis_reply = redisCommand(
 	            d_ctx->redis_ctx, "HGET %s:%lu %lu", NXS_CHAT_SRV_D_DB_ISSUES_REDIS_PREFIX, tlgrm_chat_id, tlgrm_message_id)) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: issues get error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: db issues get error, Redis reply error: %s (tlgrm chat id: %zu, tlgrm message id: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->redis_ctx->errstr,
+		                    tlgrm_chat_id,
+		                    tlgrm_message_id);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
 	if(redis_reply->type == REDIS_REPLY_STRING) {
+
+		nxs_log_write_debug(&process,
+		                    "[%s]: db issues get: success (tlgrm chat id: %zu, tlgrm message id: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_chat_id,
+		                    tlgrm_message_id);
 
 		nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len);
 	}
@@ -138,13 +152,22 @@ nxs_chat_srv_err_t
 
 			/* value not found by specified key */
 
+			nxs_log_write_debug(&process,
+			                    "[%s]: db issues get: value does not exist (tlgrm chat id: %zu, tlgrm message id: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    tlgrm_chat_id,
+			                    tlgrm_message_id);
+
 			nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
 		}
 		else {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: issues get error: unexpected Redis reply type (expected type: %d, received type: %d)",
+			                    "[%s]: db issues get error: unexpected Redis reply type (tlgrm chat id: %zu, tlgrm message id: "
+			                    "%zu, expected type: %d, received type: %d)",
 			                    nxs_proc_get_name(&process),
+			                    tlgrm_chat_id,
+			                    tlgrm_message_id,
 			                    REDIS_REPLY_STRING,
 			                    redis_reply->type);
 
@@ -180,7 +203,11 @@ nxs_chat_srv_err_t
 
 	if(d_ctx->redis_ctx == NULL) {
 
-		nxs_log_write_error(&process, "[%s]: issues put error: Redis context is NULL", nxs_proc_get_name(&process));
+		nxs_log_write_error(&process,
+		                    "[%s]: db issues put error: Redis context is NULL (tlgrm chat id: %zu, tlgrm message id: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_chat_id,
+		                    tlgrm_message_id);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -194,11 +221,21 @@ nxs_chat_srv_err_t
 	                               tlgrm_message_id,
 	                               nxs_string_str(value))) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: issues put error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: db issues put error, Redis reply error: %s (tlgrm chat id: %zu, tlgrm message id: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->redis_ctx->errstr,
+		                    tlgrm_chat_id,
+		                    tlgrm_message_id);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
+
+	nxs_log_write_debug(&process,
+	                    "[%s]: db issues put: success (tlgrm chat id: %zu, tlgrm message id: %zu)",
+	                    nxs_proc_get_name(&process),
+	                    tlgrm_chat_id,
+	                    tlgrm_message_id);
 
 error:
 

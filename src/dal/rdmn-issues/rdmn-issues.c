@@ -51,14 +51,16 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
                                                           size_t           status_id,
                                                           nxs_array_t *    custom_fields,
                                                           nxs_string_t *   user_api_key,
-                                                          nxs_buf_t *      out_buf,
-                                                          nxs_http_code_t *http_code)
+                                                          nxs_http_code_t *http_code,
+                                                          nxs_buf_t *      out_buf)
 {
 	nxs_chat_srv_err_t               rc;
 	nxs_curl_t                       curl;
 	nxs_string_t                     data, api_key, note_escaped, status, cf_str, cf_str_els;
 	size_t                           i;
 	nxs_chat_srv_m_rdmn_issues_cf_t *cf;
+	nxs_http_code_t                  ret_code;
+	nxs_buf_t *                      b;
 	int                              ec;
 
 	if(note == NULL || user_api_key == NULL) {
@@ -121,19 +123,68 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 	            &process, &curl, NXS_REST_API_COMMON_CMD_PUT, (u_char *)"%r/issues/%zu.json", &nxs_chat_srv_cfg.rdmn.host, issue_id)) !=
 	   NXS_CURL_E_OK) {
 
-		nxs_log_write_warn(&process, "[%s]: redmine add issue comment error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
+		nxs_log_write_warn(&process,
+		                   "[%s]: rdmn add issue comment error: curl error (issue id: %zu, rc: %d)",
+		                   nxs_proc_get_name(&process),
+		                   issue_id,
+		                   ec);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
+	ret_code = nxs_curl_get_ret_code(&curl);
+	b        = nxs_curl_get_out_buf(&curl);
+
 	if(http_code != NULL) {
 
-		*http_code = nxs_curl_get_ret_code(&curl);
+		*http_code = ret_code;
 	}
 
 	if(out_buf != NULL) {
 
-		nxs_buf_clone(out_buf, nxs_curl_get_out_buf(&curl));
+		nxs_buf_clone(out_buf, b);
+	}
+
+	switch(ret_code) {
+
+		case NXS_HTTP_CODE_200_OK:
+
+			nxs_log_write_debug(&process,
+			                    "[%s]: rdmn issue add note: note successfully added (issue id: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    issue_id);
+
+			rc = NXS_CHAT_SRV_E_OK;
+
+			break;
+
+		case NXS_HTTP_CODE_422_UNPROCESSABLE_ENTITY:
+
+			nxs_log_write_warn(&process,
+			                   "[%s]: rdmn issue add note warn: Redmine unprocessable entity (issue id: %zu, response code: "
+			                   "%d, response body: \"%s\")",
+			                   nxs_proc_get_name(&process),
+			                   issue_id,
+			                   ret_code,
+			                   nxs_buf_get_subbuf(b, 0));
+
+			rc = NXS_CHAT_SRV_E_ATTR;
+
+			break;
+
+		default:
+
+			nxs_log_write_error(&process,
+			                    "[%s]: rdmn issue add note error: wrong Redmine response code (issue id: %zu, response code: "
+			                    "%d, response body: \"%s\")",
+			                    nxs_proc_get_name(&process),
+			                    issue_id,
+			                    ret_code,
+			                    nxs_buf_get_subbuf(b, 0));
+
+			rc = NXS_CHAT_SRV_E_WARN;
+
+			break;
 	}
 
 error:
@@ -156,12 +207,14 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_create(size_t           project_id
                                                      nxs_string_t *   description,
                                                      nxs_bool_t       is_private,
                                                      nxs_string_t *   user_api_key,
-                                                     nxs_buf_t *      out_buf,
-                                                     nxs_http_code_t *http_code)
+                                                     nxs_http_code_t *http_code,
+                                                     nxs_buf_t *      out_buf)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_curl_t         curl;
 	nxs_string_t       data, api_key, subject_escaped, description_escaped;
+	nxs_http_code_t    ret_code;
+	nxs_buf_t *        b;
 	int                ec;
 
 	if(subject == NULL || description == NULL || user_api_key == NULL) {
@@ -209,19 +262,68 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_create(size_t           project_id
 	if((ec = nxs_curl_query(&process, &curl, NXS_REST_API_COMMON_CMD_POST, (u_char *)"%r/issues.json", &nxs_chat_srv_cfg.rdmn.host)) !=
 	   NXS_CURL_E_OK) {
 
-		nxs_log_write_warn(&process, "[%s]: redmine create issue error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
+		nxs_log_write_warn(&process,
+		                   "[%s]: rdmn issue create error: curl error (project id: %zu, rc: %d)",
+		                   nxs_proc_get_name(&process),
+		                   project_id,
+		                   ec);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
+	ret_code = nxs_curl_get_ret_code(&curl);
+	b        = nxs_curl_get_out_buf(&curl);
+
 	if(http_code != NULL) {
 
-		*http_code = nxs_curl_get_ret_code(&curl);
+		*http_code = ret_code;
 	}
 
 	if(out_buf != NULL) {
 
-		nxs_buf_clone(out_buf, nxs_curl_get_out_buf(&curl));
+		nxs_buf_clone(out_buf, b);
+	}
+
+	switch(ret_code) {
+
+		case NXS_HTTP_CODE_201_CREATED:
+
+			nxs_log_write_debug(&process,
+			                    "[%s]: rdmn issue create: successfully created (project id: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    project_id);
+
+			rc = NXS_CHAT_SRV_E_OK;
+
+			break;
+
+		case NXS_HTTP_CODE_422_UNPROCESSABLE_ENTITY:
+
+			nxs_log_write_warn(&process,
+			                   "[%s]: rdmn issue create warn: Redmine unprocessable entity (project id: %zu, response code: "
+			                   "%d, response body: \"%s\")",
+			                   nxs_proc_get_name(&process),
+			                   project_id,
+			                   ret_code,
+			                   nxs_buf_get_subbuf(b, 0));
+
+			rc = NXS_CHAT_SRV_E_ATTR;
+
+			break;
+
+		default:
+
+			nxs_log_write_error(&process,
+			                    "[%s]: rdmn issue create error: wrong Redmine response code (project id: %zu, response code: "
+			                    "%d, response body: \"%s\")",
+			                    nxs_proc_get_name(&process),
+			                    project_id,
+			                    ret_code,
+			                    nxs_buf_get_subbuf(b, 0));
+
+			rc = NXS_CHAT_SRV_E_WARN;
+
+			break;
 	}
 
 error:
@@ -240,12 +342,14 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_get_query(size_t           issue_q
                                                         nxs_string_t *   user_api_key,
                                                         size_t           offset,
                                                         size_t           limit,
-                                                        nxs_buf_t *      out_buf,
-                                                        nxs_http_code_t *http_code)
+                                                        nxs_http_code_t *http_code,
+                                                        nxs_buf_t *      out_buf)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_curl_t         curl;
 	nxs_string_t       api_key;
+	nxs_http_code_t    ret_code;
+	nxs_buf_t *        b;
 	int                ec;
 
 	if(user_api_key == NULL) {
@@ -276,19 +380,60 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_get_query(size_t           issue_q
 	                        limit)) != NXS_CURL_E_OK) {
 
 		nxs_log_write_warn(
-		        &process, "[%s]: redmine get issues by query error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
+		        &process,
+		        "[%s]: rdmn get issues by query error: curl error (issues query id: %zu, offset: %zu, limit: %zu, rc: %d)",
+		        nxs_proc_get_name(&process),
+		        issue_query_id,
+		        offset,
+		        limit,
+		        ec);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
+	ret_code = nxs_curl_get_ret_code(&curl);
+	b        = nxs_curl_get_out_buf(&curl);
+
 	if(http_code != NULL) {
 
-		*http_code = nxs_curl_get_ret_code(&curl);
+		*http_code = ret_code;
 	}
 
 	if(out_buf != NULL) {
 
-		nxs_buf_clone(out_buf, nxs_curl_get_out_buf(&curl));
+		nxs_buf_clone(out_buf, b);
+	}
+
+	switch(ret_code) {
+
+		case NXS_HTTP_CODE_200_OK:
+
+			nxs_log_write_debug(&process,
+			                    "[%s]: rdmn get issues by query: success (issues query id: %zu, offset: %zu, limit: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    issue_query_id,
+			                    offset,
+			                    limit);
+
+			rc = NXS_CHAT_SRV_E_OK;
+
+			break;
+
+		default:
+
+			nxs_log_write_error(&process,
+			                    "[%s]: rdmn get issues by query error: wrong Redmine response code (issues query id: %zu, "
+			                    "offset: %zu, limit: %zu, response code: %d, response body: \"%s\")",
+			                    nxs_proc_get_name(&process),
+			                    issue_query_id,
+			                    offset,
+			                    limit,
+			                    ret_code,
+			                    nxs_buf_get_subbuf(b, 0));
+
+			rc = NXS_CHAT_SRV_E_WARN;
+
+			break;
 	}
 
 error:
@@ -301,11 +446,13 @@ error:
 }
 
 nxs_chat_srv_err_t
-        nxs_chat_srv_d_rdmn_issues_get_issue(size_t issue_id, nxs_string_t *user_api_key, nxs_buf_t *out_buf, nxs_http_code_t *http_code)
+        nxs_chat_srv_d_rdmn_issues_get_issue(size_t issue_id, nxs_string_t *user_api_key, nxs_http_code_t *http_code, nxs_buf_t *out_buf)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_curl_t         curl;
 	nxs_string_t       api_key;
+	nxs_http_code_t    ret_code;
+	nxs_buf_t *        b;
 	int                ec;
 
 	if(user_api_key == NULL) {
@@ -330,19 +477,52 @@ nxs_chat_srv_err_t
 	            &process, &curl, NXS_REST_API_COMMON_CMD_GET, (u_char *)"%r/issues/%zu.json", &nxs_chat_srv_cfg.rdmn.host, issue_id)) !=
 	   NXS_CURL_E_OK) {
 
-		nxs_log_write_warn(&process, "[%s]: redmine get issue by id error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
+		nxs_log_write_warn(&process,
+		                   "[%s]: rdmn get issue error: curl error (issue id: %zu, rc: %d)",
+		                   nxs_proc_get_name(&process),
+		                   issue_id,
+		                   ec);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
+	ret_code = nxs_curl_get_ret_code(&curl);
+	b        = nxs_curl_get_out_buf(&curl);
+
 	if(http_code != NULL) {
 
-		*http_code = nxs_curl_get_ret_code(&curl);
+		*http_code = ret_code;
 	}
 
 	if(out_buf != NULL) {
 
-		nxs_buf_clone(out_buf, nxs_curl_get_out_buf(&curl));
+		nxs_buf_clone(out_buf, b);
+	}
+
+	switch(ret_code) {
+
+		case NXS_HTTP_CODE_200_OK:
+
+			nxs_log_write_debug(
+			        &process, "[%s]: rdmn get issue: success (issue id: %zu)", nxs_proc_get_name(&process), issue_id);
+
+			rc = NXS_CHAT_SRV_E_OK;
+
+			break;
+
+		default:
+
+			nxs_log_write_error(&process,
+			                    "[%s]: rdmn get issue error: wrong Redmine response code (issue id: %zu, "
+			                    "response code: %d, response body: \"%s\")",
+			                    nxs_proc_get_name(&process),
+			                    issue_id,
+			                    ret_code,
+			                    nxs_buf_get_subbuf(b, 0));
+
+			rc = NXS_CHAT_SRV_E_WARN;
+
+			break;
 	}
 
 error:

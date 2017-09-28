@@ -112,7 +112,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_sendmessage_push(nxs_chat_srv_u_tlgrm_se
 {
 	nxs_chat_srv_err_t rc;
 	nxs_string_t       message, reply_markup_str, text_serialized;
-	nxs_http_code_t    http_code;
 
 	if(u_ctx == NULL) {
 
@@ -137,16 +136,10 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_sendmessage_push(nxs_chat_srv_u_tlgrm_se
 	                  &text_serialized,
 	                  &reply_markup_str);
 
-	if(nxs_chat_srv_d_tlgrm_request(NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_MESSAGE, &message, &u_ctx->response_buf, &http_code) !=
+	if(nxs_chat_srv_d_tlgrm_request(NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_MESSAGE, &message, NULL, &u_ctx->response_buf) !=
 	   NXS_CHAT_SRV_E_OK) {
 
-		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-	}
-
-	if(http_code != NXS_HTTP_CODE_200_OK) {
-
-		nxs_log_write_warn(
-		        &process, "[%s]: wrong telegram send message http code (http code: %d)", nxs_proc_get_name(&process), http_code);
+		nxs_log_write_error(&process, "[%s]: can't send tlgrm message (message: \"%r\")", nxs_proc_get_name(&process), &message);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}

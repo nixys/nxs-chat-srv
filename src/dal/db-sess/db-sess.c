@@ -69,14 +69,14 @@ nxs_chat_srv_d_db_sess_t *nxs_chat_srv_d_db_sess_init(void)
 		if(d_ctx->redis_ctx != NULL) {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: sessions error, can't connect to Redis: %s",
+			                    "[%s]: db sessions error, can't connect to Redis: %s",
 			                    nxs_proc_get_name(&process),
 			                    d_ctx->redis_ctx->errstr);
 		}
 		else {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: sessions error, can't connect to Redis: can't allocate Redis context",
+			                    "[%s]: db sessions error, can't connect to Redis: can't allocate Redis context",
 			                    nxs_proc_get_name(&process));
 		}
 
@@ -111,7 +111,10 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_get(nxs_chat_srv_d_db_sess_t *d_ctx, s
 
 	if(d_ctx->redis_ctx == NULL) {
 
-		nxs_log_write_error(&process, "[%s]: session get error: Redis context is NULL", nxs_proc_get_name(&process));
+		nxs_log_write_error(&process,
+		                    "[%s]: db session get error: Redis context is NULL (tlgrm userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_userid);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -120,13 +123,19 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_get(nxs_chat_srv_d_db_sess_t *d_ctx, s
 
 	if((redis_reply = redisCommand(d_ctx->redis_ctx, "GET %s:%lu", NXS_CHAT_SRV_D_DB_SESS_REDIS_PREFIX, tlgrm_userid)) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: session get error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: db session get error, Redis reply error: %s (tlgrm userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->redis_ctx->errstr,
+		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
 	if(redis_reply->type == REDIS_REPLY_STRING) {
+
+		nxs_log_write_debug(
+		        &process, "[%s]: db session get: success (tlgrm userid: %zu)", nxs_proc_get_name(&process), tlgrm_userid);
 
 		nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len);
 	}
@@ -136,13 +145,20 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_get(nxs_chat_srv_d_db_sess_t *d_ctx, s
 
 			/* value not found by specified key */
 
+			nxs_log_write_debug(&process,
+			                    "[%s]: db session get: value does not exist (tlgrm userid: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    tlgrm_userid);
+
 			nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
 		}
 		else {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: session get error: unexpected Redis reply type (expected type: %d, received type: %d)",
+			                    "[%s]: db session get error: unexpected Redis reply type (tlgrm userid: %zu, expected type: "
+			                    "%d, received type: %d)",
 			                    nxs_proc_get_name(&process),
+			                    tlgrm_userid,
 			                    REDIS_REPLY_STRING,
 			                    redis_reply->type);
 
@@ -177,7 +193,10 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_put(nxs_chat_srv_d_db_sess_t *d_ctx, s
 
 	if(d_ctx->redis_ctx == NULL) {
 
-		nxs_log_write_error(&process, "[%s]: session put error: Redis context is NULL", nxs_proc_get_name(&process));
+		nxs_log_write_error(&process,
+		                    "[%s]: db session put error: Redis context is NULL (tlgrm userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_userid);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -187,11 +206,16 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_put(nxs_chat_srv_d_db_sess_t *d_ctx, s
 	if((redis_reply = redisCommand(
 	            d_ctx->redis_ctx, "SET %s:%lu %s", NXS_CHAT_SRV_D_DB_SESS_REDIS_PREFIX, tlgrm_userid, nxs_string_str(value))) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: session put error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: db session put error, Redis reply error: %s (tlgrm userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->redis_ctx->errstr,
+		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
+
+	nxs_log_write_debug(&process, "[%s]: db session put: success (tlgrm userid: %zu)", nxs_proc_get_name(&process), tlgrm_userid);
 
 error:
 
@@ -220,7 +244,10 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_del(nxs_chat_srv_d_db_sess_t *d_ctx, s
 
 	if(d_ctx->redis_ctx == NULL) {
 
-		nxs_log_write_error(&process, "[%s]: session del error: Redis context is NULL", nxs_proc_get_name(&process));
+		nxs_log_write_error(&process,
+		                    "[%s]: db session del error: Redis context is NULL (tlgrm userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_userid);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -229,11 +256,16 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_del(nxs_chat_srv_d_db_sess_t *d_ctx, s
 
 	if((redis_reply = redisCommand(d_ctx->redis_ctx, "DEL %s:%lu", NXS_CHAT_SRV_D_DB_SESS_REDIS_PREFIX, tlgrm_userid)) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: session del error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: db session del error, Redis reply error: %s (tlgrm userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->redis_ctx->errstr,
+		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
+
+	nxs_log_write_debug(&process, "[%s]: db session del: success (tlgrm userid: %zu)", nxs_proc_get_name(&process), tlgrm_userid);
 
 error:
 

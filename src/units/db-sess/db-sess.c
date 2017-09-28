@@ -916,7 +916,7 @@ static nxs_chat_srv_err_t
 
 	nxs_buf_init2(&out_buf);
 
-	if(nxs_chat_srv_d_rdmn_users_get(rdmn_userid, NXS_YES, &nxs_chat_srv_cfg.rdmn.api_key, &out_buf, NULL, 0, 0) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_d_rdmn_users_get(rdmn_userid, NXS_YES, &nxs_chat_srv_cfg.rdmn.api_key, 0, 0, NULL, &out_buf) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}

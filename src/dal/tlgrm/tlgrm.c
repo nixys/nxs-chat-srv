@@ -62,13 +62,13 @@ nxs_chat_srv_d_tlgrm_method_t tlgrm_methods[] =
 
 nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_t type,
                                                 nxs_string_t *                    body,
-                                                nxs_buf_t *                       out_buf,
-                                                nxs_http_code_t *                 http_code)
+                                                nxs_http_code_t *                 http_code,
+                                                nxs_buf_t *                       out_buf)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_curl_t         curl;
 	nxs_string_t *     method;
-	nxs_http_code_t    h;
+	nxs_http_code_t    ret_code;
 	nxs_buf_t *        b;
 	int                ec;
 
@@ -100,31 +100,46 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_
 	                        &nxs_chat_srv_cfg.tlgrm.bot_api_key,
 	                        method)) != NXS_CURL_E_OK) {
 
-		nxs_log_write_warn(&process, "[%s]: telegram request error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
+		nxs_log_write_warn(&process, "[%s]: tlgrm request error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	h = nxs_curl_get_ret_code(&curl);
-	b = nxs_curl_get_out_buf(&curl);
-
-	if(h != NXS_HTTP_CODE_200_OK) {
-
-		nxs_log_write_warn(&process,
-		                   "[%s]: wrong telegram http response code (response code: %d, reesponse body: \"%s\")",
-		                   nxs_proc_get_name(&process),
-		                   h,
-		                   nxs_buf_get_subbuf(b, 0));
-	}
+	ret_code = nxs_curl_get_ret_code(&curl);
+	b        = nxs_curl_get_out_buf(&curl);
 
 	if(http_code != NULL) {
 
-		*http_code = h;
+		*http_code = ret_code;
 	}
 
 	if(out_buf != NULL) {
 
 		nxs_buf_clone(out_buf, b);
+	}
+
+	switch(ret_code) {
+
+		case NXS_HTTP_CODE_200_OK:
+
+			nxs_log_write_debug(&process, "[%s]: tlgrm request: success", nxs_proc_get_name(&process));
+
+			rc = NXS_CHAT_SRV_E_OK;
+
+			break;
+
+		default:
+
+			nxs_log_write_error(
+			        &process,
+			        "[%s]: lgrm request error: wrong Telegram response code (response code: %d, response body: \"%s\")",
+			        nxs_proc_get_name(&process),
+			        ret_code,
+			        nxs_buf_get_subbuf(b, 0));
+
+			rc = NXS_CHAT_SRV_E_WARN;
+
+			break;
 	}
 
 error:

@@ -48,25 +48,24 @@ static nxs_string_t		_s_content_type		= nxs_string("Content-Type: application/js
 nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_users_get(size_t           user_id,
                                                  nxs_bool_t       include_memberships,
                                                  nxs_string_t *   api_key,
-                                                 nxs_buf_t *      out_buf,
-                                                 nxs_http_code_t *http_code,
                                                  size_t           offset,
-                                                 size_t           limit)
+                                                 size_t           limit,
+                                                 nxs_http_code_t *http_code,
+                                                 nxs_buf_t *      out_buf)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_curl_t         curl;
 	nxs_string_t       api_key_header;
 	nxs_http_code_t    ret_code;
+	nxs_buf_t *        b;
 	int                ec;
 
-	if(api_key == NULL || out_buf == NULL) {
+	if(api_key == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
 	rc = NXS_CHAT_SRV_E_OK;
-
-	nxs_buf_clear(out_buf);
 
 	nxs_curl_init(&curl);
 
@@ -89,7 +88,13 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_users_get(size_t           user_id,
 		                        limit,
 		                        offset)) != NXS_CURL_E_OK) {
 
-			nxs_log_write_warn(&process, "[%s]: rdmn users get error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
+			nxs_log_write_warn(&process,
+			                   "[%s]: rdmn users get error: curl error (user id: %zu, offset: %zu, limit: %zu, rc: %d)",
+			                   nxs_proc_get_name(&process),
+			                   user_id,
+			                   offset,
+			                   limit,
+			                   ec);
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
@@ -104,35 +109,60 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_users_get(size_t           user_id,
 		                        user_id,
 		                        include_memberships == NXS_YES ? "?include=memberships" : "")) != NXS_CURL_E_OK) {
 
-			nxs_log_write_warn(&process, "[%s]: rdmn users get error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
+			nxs_log_write_warn(&process,
+			                   "[%s]: rdmn users get error: curl error (user id: %zu, offset: %zu, limit: %zu, rc: %d)",
+			                   nxs_proc_get_name(&process),
+			                   user_id,
+			                   offset,
+			                   limit,
+			                   ec);
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
 	}
 
 	ret_code = nxs_curl_get_ret_code(&curl);
+	b        = nxs_curl_get_out_buf(&curl);
 
 	if(http_code != NULL) {
 
 		*http_code = ret_code;
 	}
 
+	if(out_buf != NULL) {
+
+		nxs_buf_clone(out_buf, b);
+	}
+
 	switch(ret_code) {
 
 		case NXS_HTTP_CODE_200_OK:
 
-			nxs_buf_clone(out_buf, nxs_curl_get_out_buf(&curl));
+			nxs_log_write_debug(&process,
+			                    "[%s]: rdmn users get: success (user id: %zu, offset: %zu, limit: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    user_id,
+			                    offset,
+			                    limit);
+
+			rc = NXS_CHAT_SRV_E_OK;
 
 			break;
 
 		default:
 
-			nxs_log_write_warn(&process,
-			                   "[%s]: rdmn users get error: wrong http error code (error http code: %d)",
-			                   nxs_proc_get_name(&process),
-			                   ret_code);
+			nxs_log_write_error(
+			        &process,
+			        "[%s]: rdmn users get error: wrong Redmine response code (user id: %zu, offset: %zu, limit: %zu, "
+			        "response code: %d, response body: \"%s\")",
+			        nxs_proc_get_name(&process),
+			        user_id,
+			        offset,
+			        limit,
+			        ret_code,
+			        nxs_buf_get_subbuf(b, 0));
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			rc = NXS_CHAT_SRV_E_WARN;
 
 			break;
 	}

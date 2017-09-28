@@ -69,14 +69,14 @@ nxs_chat_srv_d_db_ids_t *nxs_chat_srv_d_db_ids_init(void)
 		if(d_ctx->redis_ctx != NULL) {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: ids error, can't connect to Redis: %s",
+			                    "[%s]: db ids error, can't connect to Redis: %s",
 			                    nxs_proc_get_name(&process),
 			                    d_ctx->redis_ctx->errstr);
 		}
 		else {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: ids error, can't connect to Redis: can't allocate Redis context",
+			                    "[%s]: db ids error, can't connect to Redis: can't allocate Redis context",
 			                    nxs_proc_get_name(&process));
 		}
 
@@ -111,7 +111,10 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_ids_get(nxs_chat_srv_d_db_ids_t *d_ctx, siz
 
 	if(d_ctx->redis_ctx == NULL) {
 
-		nxs_log_write_error(&process, "[%s]: ids get error: Redis context is NULL", nxs_proc_get_name(&process));
+		nxs_log_write_error(&process,
+		                    "[%s]: db ids get error: Redis context is NULL (rdmn userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    rdmn_userid);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -120,13 +123,18 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_ids_get(nxs_chat_srv_d_db_ids_t *d_ctx, siz
 
 	if((redis_reply = redisCommand(d_ctx->redis_ctx, "HGET %s %lu", NXS_CHAT_SRV_D_DB_IDS_REDIS_PREFIX, rdmn_userid)) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: ids get error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: db ids get error, Redis reply error: %s (rdmn userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->redis_ctx->errstr,
+		                    rdmn_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
 	if(redis_reply->type == REDIS_REPLY_STRING) {
+
+		nxs_log_write_debug(&process, "[%s]: db ids get: success (rdmn userid: %zu)", nxs_proc_get_name(&process), rdmn_userid);
 
 		nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len);
 	}
@@ -136,13 +144,20 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_ids_get(nxs_chat_srv_d_db_ids_t *d_ctx, siz
 
 			/* value not found by specified key */
 
+			nxs_log_write_debug(&process,
+			                    "[%s]: db ids get: value does not exist (rdmn userid: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    rdmn_userid);
+
 			nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
 		}
 		else {
 
 			nxs_log_write_error(&process,
-			                    "[%s]: ids get error: unexpected Redis reply type (expected type: %d, received type: %d)",
+			                    "[%s]: db ids get error: unexpected Redis reply type (rdmn userid: %zu, expected type: %d, "
+			                    "received type: %d)",
 			                    nxs_proc_get_name(&process),
+			                    rdmn_userid,
 			                    REDIS_REPLY_STRING,
 			                    redis_reply->type);
 
@@ -177,7 +192,10 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_ids_put(nxs_chat_srv_d_db_ids_t *d_ctx, siz
 
 	if(d_ctx->redis_ctx == NULL) {
 
-		nxs_log_write_error(&process, "[%s]: ids put error: Redis context is NULL", nxs_proc_get_name(&process));
+		nxs_log_write_error(&process,
+		                    "[%s]: db ids put error: Redis context is NULL (rdmn userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    rdmn_userid);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -187,11 +205,16 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_ids_put(nxs_chat_srv_d_db_ids_t *d_ctx, siz
 	if((redis_reply = redisCommand(
 	            d_ctx->redis_ctx, "HSET %s %lu %s", NXS_CHAT_SRV_D_DB_IDS_REDIS_PREFIX, rdmn_userid, nxs_string_str(value))) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: ids put error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: db ids put error, Redis reply error: %s (rdmn userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->redis_ctx->errstr,
+		                    rdmn_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
+
+	nxs_log_write_debug(&process, "[%s]: db ids put: success (rdmn userid: %zu)", nxs_proc_get_name(&process), rdmn_userid);
 
 error:
 
