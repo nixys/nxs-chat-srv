@@ -99,12 +99,14 @@ nxs_chat_srv_d_db_last_issues_t *nxs_chat_srv_d_db_last_issues_free(nxs_chat_srv
 	return (nxs_chat_srv_d_db_last_issues_t *)nxs_free(d_ctx);
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_d_db_last_issues_get(nxs_chat_srv_d_db_last_issues_t *d_ctx, size_t tlgrm_userid, nxs_string_t *value)
+nxs_chat_srv_err_t
+        nxs_chat_srv_d_db_last_issues_get(nxs_chat_srv_d_db_last_issues_t *d_ctx, size_t tlgrm_userid, size_t *rdmn_last_issue_id)
 {
 	redisReply *       redis_reply;
+	nxs_string_t       value;
 	nxs_chat_srv_err_t rc;
 
-	if(d_ctx == NULL || value == NULL) {
+	if(d_ctx == NULL || rdmn_last_issue_id == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
@@ -121,6 +123,8 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_last_issues_get(nxs_chat_srv_d_db_last_issu
 
 	rc = NXS_CHAT_SRV_E_OK;
 
+	nxs_string_init(&value);
+
 	if((redis_reply = redisCommand(d_ctx->redis_ctx, "HGET %s %lu", NXS_CHAT_SRV_D_DB_LAST_ISSUES_REDIS_PREFIX, tlgrm_userid)) ==
 	   NULL) {
 
@@ -135,10 +139,15 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_last_issues_get(nxs_chat_srv_d_db_last_issu
 
 	if(redis_reply->type == REDIS_REPLY_STRING) {
 
-		nxs_log_write_debug(
-		        &process, "[%s]: db last issues get: success (tlgrm userid: %zu)", nxs_proc_get_name(&process), tlgrm_userid);
+		nxs_string_char_ncpy(&value, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len);
 
-		nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len);
+		*rdmn_last_issue_id = nxs_string_atoi(&value);
+
+		nxs_log_write_debug(&process,
+		                    "[%s]: db last issues get: success (tlgrm userid: %zu, rdmn last issue id: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_userid,
+		                    *rdmn_last_issue_id);
 	}
 	else {
 
@@ -170,6 +179,8 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_last_issues_get(nxs_chat_srv_d_db_last_issu
 
 error:
 
+	nxs_string_free(&value);
+
 	if(redis_reply != NULL) {
 
 		freeReplyObject(redis_reply);
@@ -183,12 +194,12 @@ error:
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_d_db_last_issues_put(nxs_chat_srv_d_db_last_issues_t *d_ctx, size_t tlgrm_userid, nxs_string_t *value)
+nxs_chat_srv_err_t nxs_chat_srv_d_db_last_issues_put(nxs_chat_srv_d_db_last_issues_t *d_ctx, size_t tlgrm_userid, size_t rdmn_last_issue_id)
 {
 	redisReply *       redis_reply;
 	nxs_chat_srv_err_t rc;
 
-	if(d_ctx == NULL || value == NULL) {
+	if(d_ctx == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
@@ -196,9 +207,10 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_last_issues_put(nxs_chat_srv_d_db_last_issu
 	if(d_ctx->redis_ctx == NULL) {
 
 		nxs_log_write_error(&process,
-		                    "[%s]: db last issues put error: Redis context is NULL (tlgrm userid: %zu)",
+		                    "[%s]: db last issues put error: Redis context is NULL (tlgrm userid: %zu, rdmn last issue id: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    tlgrm_userid);
+		                    tlgrm_userid,
+		                    rdmn_last_issue_id);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -206,19 +218,24 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_last_issues_put(nxs_chat_srv_d_db_last_issu
 	rc = NXS_CHAT_SRV_E_OK;
 
 	if((redis_reply = redisCommand(
-	            d_ctx->redis_ctx, "HSET %s %lu %s", NXS_CHAT_SRV_D_DB_LAST_ISSUES_REDIS_PREFIX, tlgrm_userid, nxs_string_str(value))) ==
+	            d_ctx->redis_ctx, "HSET %s %lu %lu", NXS_CHAT_SRV_D_DB_LAST_ISSUES_REDIS_PREFIX, tlgrm_userid, rdmn_last_issue_id)) ==
 	   NULL) {
 
 		nxs_log_write_error(&process,
-		                    "[%s]: db last issues put error, Redis reply error: %s (tlgrm userid: %zu)",
+		                    "[%s]: db last issues put error, Redis reply error: %s (tlgrm userid: %zu, rdmn last issue id: %zu)",
 		                    nxs_proc_get_name(&process),
 		                    d_ctx->redis_ctx->errstr,
-		                    tlgrm_userid);
+		                    tlgrm_userid,
+		                    rdmn_last_issue_id);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	nxs_log_write_debug(&process, "[%s]: db last issues put: success (tlgrm userid: %zu)", nxs_proc_get_name(&process), tlgrm_userid);
+	nxs_log_write_debug(&process,
+	                    "[%s]: db last issues put: success (tlgrm userid: %zu, rdmn last issue id: %zu)",
+	                    nxs_proc_get_name(&process),
+	                    tlgrm_userid,
+	                    rdmn_last_issue_id);
 
 error:
 

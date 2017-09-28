@@ -75,8 +75,6 @@ nxs_chat_srv_u_db_ids_t *nxs_chat_srv_u_db_ids_free(nxs_chat_srv_u_db_ids_t *u_c
 
 nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_get(nxs_chat_srv_u_db_ids_t *u_ctx, size_t rdmn_userid, size_t *tlgrm_userid)
 {
-	nxs_string_t       value;
-	size_t             id;
 	nxs_chat_srv_err_t rc;
 
 	if(tlgrm_userid == NULL) {
@@ -84,13 +82,9 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_get(nxs_chat_srv_u_db_ids_t *u_ctx, siz
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	nxs_string_init(&value);
-
-	switch((rc = nxs_chat_srv_d_db_ids_get(u_ctx->db_ids_ctx, rdmn_userid, &value))) {
+	switch((rc = nxs_chat_srv_d_db_ids_get(u_ctx->db_ids_ctx, rdmn_userid, tlgrm_userid))) {
 
 		case NXS_CHAT_SRV_E_OK:
-
-			id = nxs_string_atoi(&value);
 
 			break;
 
@@ -101,7 +95,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_get(nxs_chat_srv_u_db_ids_t *u_ctx, siz
 			                    nxs_proc_get_name(&process),
 			                    rdmn_userid);
 
-			id = 0;
+			*tlgrm_userid = 0;
 
 			rc = NXS_CHAT_SRV_E_OK;
 
@@ -114,28 +108,19 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_get(nxs_chat_srv_u_db_ids_t *u_ctx, siz
 			                    nxs_proc_get_name(&process),
 			                    rdmn_userid);
 
-			id = 0;
+			*tlgrm_userid = 0;
 
 			break;
 	}
-
-	*tlgrm_userid = id;
-
-	nxs_string_free(&value);
 
 	return rc;
 }
 
 nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_set(nxs_chat_srv_u_db_ids_t *u_ctx, size_t rdmn_userid, size_t tlgrm_userid)
 {
-	nxs_string_t       value;
 	nxs_chat_srv_err_t rc;
 
-	nxs_string_init(&value);
-
-	nxs_string_printf(&value, "%zu", tlgrm_userid);
-
-	if((rc = nxs_chat_srv_d_db_ids_put(u_ctx->db_ids_ctx, rdmn_userid, &value)) != NXS_CHAT_SRV_E_OK) {
+	if((rc = nxs_chat_srv_d_db_ids_put(u_ctx->db_ids_ctx, rdmn_userid, tlgrm_userid)) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: can't save tlgrm user id into DB (rdmn userid: %zu, tlgrm userid: %zu)",
@@ -143,8 +128,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_set(nxs_chat_srv_u_db_ids_t *u_ctx, siz
 		                    rdmn_userid,
 		                    tlgrm_userid);
 	}
-
-	nxs_string_free(&value);
 
 	return rc;
 }

@@ -12,17 +12,17 @@ NXS_FW_VERSION					=	dev
 NXS_FW_CORE_INCLUDES_PATH			=	/usr/include/nxs-fw-libs
 NXS_FW_CORE_LIBS_PATH				=	/usr/lib/nxs-fw-libs
 
-USE_NXS_MODULES					=	-D USE_NXS_JSON -D USE_NXS_CURL -D USE_NXS_REST_API 
+USE_NXS_MODULES					=	-D USE_NXS_JSON -D USE_NXS_CURL -D USE_NXS_MYSQL -D USE_NXS_REST_API 
 
 NXS_CORE_INCLUDES				=	-I $(NXS_FW_CORE_INCLUDES_PATH)/$(NXS_FW_VERSION)
 
 PROJ_INCLUDES					=	-I ./src
 
 NXS_CORE_HEADERS				=	$(shell find $(NXS_FW_CORE_INCLUDES_PATH)/$(NXS_FW_VERSION) -type f -name "*.h")
-NXS_CORE_LINKS					=	-L$(NXS_FW_CORE_LIBS_PATH)/$(NXS_FW_VERSION) -lnxs-general -lnxs-cfg-json -lnxs-json -lnxs-curl -lnxs-rest-api 
+NXS_CORE_LINKS					=	-L$(NXS_FW_CORE_LIBS_PATH)/$(NXS_FW_VERSION) -lnxs-general -lnxs-cfg-json -lnxs-json -lnxs-curl -lnxs-mysql -lnxs-rest-api 
 
 NXS_INCLUDES					=	-I/usr/include/libevent-nxs 
-NXS_LINKS					=	-ljansson -lcurl -L/usr/lib/x86_64-linux-gnu/libevent-nxs -levent -lssl -lcrypto -levent_openssl 
+NXS_LINKS					=	-ljansson -lcurl -L/usr/lib/mysql -lmysqlclient -L/usr/lib/x86_64-linux-gnu/libevent-nxs -levent -lssl -lcrypto -levent_openssl 
 
 NXS_USER_INCLUDES				=	
 NXS_USER_LINKS					=	-lhiredis

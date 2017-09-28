@@ -173,14 +173,9 @@ error:
 
 nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_set(nxs_chat_srv_u_last_issues_t *u_ctx, size_t tlgrm_userid, size_t rdmn_last_issue_id)
 {
-	nxs_string_t       value;
 	nxs_chat_srv_err_t rc;
 
-	nxs_string_init(&value);
-
-	nxs_string_printf(&value, "%zu", rdmn_last_issue_id);
-
-	if((rc = nxs_chat_srv_d_db_last_issues_put(u_ctx->db_last_issues_ctx, tlgrm_userid, &value)) != NXS_CHAT_SRV_E_OK) {
+	if((rc = nxs_chat_srv_d_db_last_issues_put(u_ctx->db_last_issues_ctx, tlgrm_userid, rdmn_last_issue_id)) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: can't save user last issue into DB (tlgrm userid: %zu, rdmn last issue id: %zu)",
@@ -188,8 +183,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_set(nxs_chat_srv_u_last_issues_t *
 		                    tlgrm_userid,
 		                    rdmn_last_issue_id);
 	}
-
-	nxs_string_free(&value);
 
 	return rc;
 }
@@ -199,8 +192,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_set(nxs_chat_srv_u_last_issues_t *
 static nxs_chat_srv_err_t
         nxs_chat_srv_u_last_issues_get_db(nxs_chat_srv_u_last_issues_t *u_ctx, size_t tlgrm_userid, size_t *rdmn_last_issue_id)
 {
-	nxs_string_t       value;
-	size_t             id;
 	nxs_chat_srv_err_t rc;
 
 	if(rdmn_last_issue_id == NULL) {
@@ -208,13 +199,9 @@ static nxs_chat_srv_err_t
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	nxs_string_init(&value);
-
-	switch((rc = nxs_chat_srv_d_db_last_issues_get(u_ctx->db_last_issues_ctx, tlgrm_userid, &value))) {
+	switch((rc = nxs_chat_srv_d_db_last_issues_get(u_ctx->db_last_issues_ctx, tlgrm_userid, rdmn_last_issue_id))) {
 
 		case NXS_CHAT_SRV_E_OK:
-
-			id = nxs_string_atoi(&value);
 
 			break;
 
@@ -225,7 +212,7 @@ static nxs_chat_srv_err_t
 			                    nxs_proc_get_name(&process),
 			                    tlgrm_userid);
 
-			id = 0;
+			*rdmn_last_issue_id = 0;
 
 			rc = NXS_CHAT_SRV_E_EXIST;
 
@@ -238,14 +225,10 @@ static nxs_chat_srv_err_t
 			                    nxs_proc_get_name(&process),
 			                    tlgrm_userid);
 
-			id = 0;
+			*rdmn_last_issue_id = 0;
 
 			break;
 	}
-
-	*rdmn_last_issue_id = id;
-
-	nxs_string_free(&value);
 
 	return rc;
 }

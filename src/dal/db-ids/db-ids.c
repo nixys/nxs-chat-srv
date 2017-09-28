@@ -19,7 +19,7 @@
 
 /* Definitions */
 
-#define NXS_CHAT_SRV_D_DB_IDS_REDIS_PREFIX	"nxs-chat-srv:ids"
+
 
 /* Project globals */
 extern		nxs_process_t			process;
@@ -33,14 +33,12 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 struct nxs_chat_srv_d_db_ids_s
 {
-	redisContext				*redis_ctx;
+	nxs_mysql_t				mysql_ctx;
 };
 
 /* Module internal (static) functions prototypes */
 
 // clang-format on
-
-static redisContext *nxs_chat_srv_d_db_ids_redis_ctx_free(redisContext *redis_ctx);
 
 // clang-format off
 
@@ -58,27 +56,14 @@ nxs_chat_srv_d_db_ids_t *nxs_chat_srv_d_db_ids_init(void)
 
 	d_ctx = (nxs_chat_srv_d_db_ids_t *)nxs_malloc(NULL, sizeof(nxs_chat_srv_d_db_ids_t));
 
-	/* Connect to Redis */
+	/* Connect to MySQL */
 
-	d_ctx->redis_ctx = redisConnect((char *)nxs_string_str(&nxs_chat_srv_cfg.redis.host), nxs_chat_srv_cfg.redis.port);
+	if(nxs_chat_srv_c_mysql_connect(&d_ctx->mysql_ctx) != NXS_CHAT_SRV_E_OK) {
 
-	if(d_ctx->redis_ctx == NULL || d_ctx->redis_ctx->err != 0) {
-
-		/* Redis connection in error state */
-
-		if(d_ctx->redis_ctx != NULL) {
-
-			nxs_log_write_error(&process,
-			                    "[%s]: db ids error, can't connect to Redis: %s",
-			                    nxs_proc_get_name(&process),
-			                    d_ctx->redis_ctx->errstr);
-		}
-		else {
-
-			nxs_log_write_error(&process,
-			                    "[%s]: db ids error, can't connect to Redis: can't allocate Redis context",
-			                    nxs_proc_get_name(&process));
-		}
+		nxs_log_write_error(&process,
+		                    "[%s]: db ids error, can't connect to MySQL: \"%s\"",
+		                    nxs_proc_get_name(&process),
+		                    d_ctx->mysql_ctx.err_str);
 
 		return nxs_chat_srv_d_db_ids_free(d_ctx);
 	}
@@ -94,152 +79,159 @@ nxs_chat_srv_d_db_ids_t *nxs_chat_srv_d_db_ids_free(nxs_chat_srv_d_db_ids_t *d_c
 		return NULL;
 	}
 
-	d_ctx->redis_ctx = nxs_chat_srv_d_db_ids_redis_ctx_free(d_ctx->redis_ctx);
+	nxs_chat_srv_c_mysql_disconnect(&d_ctx->mysql_ctx);
 
 	return (nxs_chat_srv_d_db_ids_t *)nxs_free(d_ctx);
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_d_db_ids_get(nxs_chat_srv_d_db_ids_t *d_ctx, size_t rdmn_userid, nxs_string_t *value)
+nxs_chat_srv_err_t nxs_chat_srv_d_db_ids_get(nxs_chat_srv_d_db_ids_t *d_ctx, size_t rdmn_userid, size_t *tlgrm_userid)
 {
-	redisReply *       redis_reply;
+	nxs_mysql_res_t    res;
 	nxs_chat_srv_err_t rc;
 
-	if(d_ctx == NULL || value == NULL) {
+	if(d_ctx == NULL || tlgrm_userid == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process,
-		                    "[%s]: db ids get error: Redis context is NULL (rdmn userid: %zu)",
-		                    nxs_proc_get_name(&process),
-		                    rdmn_userid);
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "HGET %s %lu", NXS_CHAT_SRV_D_DB_IDS_REDIS_PREFIX, rdmn_userid)) == NULL) {
+	nxs_mysql_res_init(&res);
+
+	if(nxs_mysql_query(&d_ctx->mysql_ctx,
+	                   NXS_MYSQL_QUERY_TYPE_SELECT,
+	                   &res,
+	                   "SELECT "
+	                   "	`tlgrm_userid` "
+	                   "FROM "
+	                   "	`ids` "
+	                   "WHERE "
+	                   "	`rdmn_userid` = %zu",
+	                   rdmn_userid) != NXS_MYSQL_E_OK) {
 
 		nxs_log_write_error(&process,
-		                    "[%s]: db ids get error, Redis reply error: %s (rdmn userid: %zu)",
+		                    "[%s]: db ids get error, MySQL select error: \"%s\" (rdmn userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    d_ctx->mysql_ctx.err_str,
 		                    rdmn_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(redis_reply->type == REDIS_REPLY_STRING) {
+	if(nxs_mysql_res_rows(&res) == 0) {
 
-		nxs_log_write_debug(&process, "[%s]: db ids get: success (rdmn userid: %zu)", nxs_proc_get_name(&process), rdmn_userid);
+		nxs_log_write_debug(
+		        &process, "[%s]: db ids get: value does not exist (rdmn userid: %zu)", nxs_proc_get_name(&process), rdmn_userid);
 
-		nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len);
+		nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
 	}
-	else {
 
-		if(redis_reply->type == REDIS_REPLY_NIL) {
+	*tlgrm_userid = nxs_string_atoi(nxs_mysql_res_get(&res, 0, 0));
 
-			/* value not found by specified key */
-
-			nxs_log_write_debug(&process,
-			                    "[%s]: db ids get: value does not exist (rdmn userid: %zu)",
-			                    nxs_proc_get_name(&process),
-			                    rdmn_userid);
-
-			nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
-		}
-		else {
-
-			nxs_log_write_error(&process,
-			                    "[%s]: db ids get error: unexpected Redis reply type (rdmn userid: %zu, expected type: %d, "
-			                    "received type: %d)",
-			                    nxs_proc_get_name(&process),
-			                    rdmn_userid,
-			                    REDIS_REPLY_STRING,
-			                    redis_reply->type);
-
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
-	}
+	nxs_log_write_debug(&process, "[%s]: db ids get: success (rdmn userid: %zu)", nxs_proc_get_name(&process), rdmn_userid);
 
 error:
 
-	if(redis_reply != NULL) {
-
-		freeReplyObject(redis_reply);
-	}
-
-	if(rc != NXS_CHAT_SRV_E_OK && rc != NXS_CHAT_SRV_E_EXIST) {
-
-		d_ctx->redis_ctx = nxs_chat_srv_d_db_ids_redis_ctx_free(d_ctx->redis_ctx);
-	}
+	nxs_mysql_res_free(&res);
 
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_d_db_ids_put(nxs_chat_srv_d_db_ids_t *d_ctx, size_t rdmn_userid, nxs_string_t *value)
+nxs_chat_srv_err_t nxs_chat_srv_d_db_ids_put(nxs_chat_srv_d_db_ids_t *d_ctx, size_t rdmn_userid, size_t tlgrm_userid)
 {
-	redisReply *       redis_reply;
+	nxs_mysql_res_t    res;
 	nxs_chat_srv_err_t rc;
 
-	if(d_ctx == NULL || value == NULL) {
+	if(d_ctx == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process,
-		                    "[%s]: db ids put error: Redis context is NULL (rdmn userid: %zu)",
-		                    nxs_proc_get_name(&process),
-		                    rdmn_userid);
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(
-	            d_ctx->redis_ctx, "HSET %s %lu %s", NXS_CHAT_SRV_D_DB_IDS_REDIS_PREFIX, rdmn_userid, nxs_string_str(value))) == NULL) {
+	nxs_mysql_res_init(&res);
+
+	if(nxs_mysql_query(&d_ctx->mysql_ctx,
+	                   NXS_MYSQL_QUERY_TYPE_SELECT,
+	                   &res,
+	                   "SELECT "
+	                   "	`tlgrm_userid` "
+	                   "FROM "
+	                   "	`ids` "
+	                   "WHERE "
+	                   "	`rdmn_userid` = %zu",
+	                   rdmn_userid) != NXS_MYSQL_E_OK) {
 
 		nxs_log_write_error(&process,
-		                    "[%s]: db ids put error, Redis reply error: %s (rdmn userid: %zu)",
+		                    "[%s]: db ids put error, MySQL select error: \"%s\" (rdmn userid: %zu, tlgrm userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
-		                    rdmn_userid);
+		                    d_ctx->mysql_ctx.err_str,
+		                    rdmn_userid,
+		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	nxs_log_write_debug(&process, "[%s]: db ids put: success (rdmn userid: %zu)", nxs_proc_get_name(&process), rdmn_userid);
+	if(nxs_mysql_res_rows(&res) == 0) {
+
+		if(nxs_mysql_query(&d_ctx->mysql_ctx,
+		                   NXS_MYSQL_QUERY_TYPE_INSERT,
+		                   NULL,
+		                   "INSERT INTO"
+		                   "	`ids` (`rdmn_userid`, `tlgrm_userid`) "
+		                   "VALUES (%zu, %zu)",
+		                   rdmn_userid,
+		                   tlgrm_userid) != NXS_MYSQL_E_OK) {
+
+			nxs_log_write_error(&process,
+			                    "[%s]: db ids put error, MySQL insert error: %s (rdmn userid: %zu, tlgrm userid: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    d_ctx->mysql_ctx.err_str,
+			                    rdmn_userid,
+			                    tlgrm_userid);
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
+	}
+	else {
+
+		if((size_t)nxs_string_atoi(nxs_mysql_res_get(&res, 0, 0)) != tlgrm_userid) {
+
+			if(nxs_mysql_query(&d_ctx->mysql_ctx,
+			                   NXS_MYSQL_QUERY_TYPE_UPDATE,
+			                   NULL,
+			                   "UPDATE"
+			                   "	`ids`"
+			                   "SET "
+			                   "	`tlgrm_userid` = %zu "
+			                   "WHERE "
+			                   "	`rdmn_userid` = %zu",
+			                   tlgrm_userid,
+			                   rdmn_userid) != NXS_MYSQL_E_OK) {
+
+				nxs_log_write_error(&process,
+				                    "[%s]: db ids put error, MySQL update error: %s (rdmn userid: %zu, tlgrm userid: %zu)",
+				                    nxs_proc_get_name(&process),
+				                    d_ctx->mysql_ctx.err_str,
+				                    rdmn_userid,
+				                    tlgrm_userid);
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+		}
+	}
+
+	nxs_log_write_debug(&process,
+	                    "[%s]: db ids put: success (rdmn userid: %zu, tlgrm userid: %zu)",
+	                    nxs_proc_get_name(&process),
+	                    rdmn_userid,
+	                    tlgrm_userid);
 
 error:
 
-	if(redis_reply != NULL) {
-
-		freeReplyObject(redis_reply);
-	}
-
-	if(rc != NXS_CHAT_SRV_E_OK) {
-
-		d_ctx->redis_ctx = nxs_chat_srv_d_db_ids_redis_ctx_free(d_ctx->redis_ctx);
-	}
+	nxs_mysql_res_free(&res);
 
 	return rc;
 }
 
 /* Module internal (static) functions */
-
-static redisContext *nxs_chat_srv_d_db_ids_redis_ctx_free(redisContext *redis_ctx)
-{
-
-	if(redis_ctx != NULL) {
-
-		redisFree(redis_ctx);
-	}
-
-	return NULL;
-}

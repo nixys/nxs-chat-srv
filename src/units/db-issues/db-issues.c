@@ -81,8 +81,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_issues_get(nxs_chat_srv_u_db_issues_t *u_ct
                                                 size_t                      tlgrm_message_id,
                                                 size_t *                    rdmn_issue_id)
 {
-	nxs_string_t       value;
-	size_t             id;
 	nxs_chat_srv_err_t rc;
 
 	if(rdmn_issue_id == NULL) {
@@ -90,13 +88,9 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_issues_get(nxs_chat_srv_u_db_issues_t *u_ct
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	nxs_string_init(&value);
-
-	switch((rc = nxs_chat_srv_d_db_issues_get(u_ctx->db_issues_ctx, tlgrm_chat_id, tlgrm_message_id, &value))) {
+	switch((rc = nxs_chat_srv_d_db_issues_get(u_ctx->db_issues_ctx, tlgrm_chat_id, tlgrm_message_id, rdmn_issue_id))) {
 
 		case NXS_CHAT_SRV_E_OK:
-
-			id = nxs_string_atoi(&value);
 
 			break;
 
@@ -109,7 +103,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_issues_get(nxs_chat_srv_u_db_issues_t *u_ct
 			        tlgrm_chat_id,
 			        tlgrm_message_id);
 
-			id = 0;
+			*rdmn_issue_id = 0;
 
 			rc = NXS_CHAT_SRV_E_OK;
 
@@ -123,14 +117,10 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_issues_get(nxs_chat_srv_u_db_issues_t *u_ct
 			                    tlgrm_chat_id,
 			                    tlgrm_message_id);
 
-			id = 0;
+			*rdmn_issue_id = 0;
 
 			break;
 	}
-
-	*rdmn_issue_id = id;
-
-	nxs_string_free(&value);
 
 	return rc;
 }
@@ -138,14 +128,9 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_issues_get(nxs_chat_srv_u_db_issues_t *u_ct
 nxs_chat_srv_err_t
         nxs_chat_srv_u_db_issues_set(nxs_chat_srv_u_db_issues_t *u_ctx, size_t tlgrm_chat_id, size_t tlgrm_message_id, size_t rdmn_issue_id)
 {
-	nxs_string_t       value;
 	nxs_chat_srv_err_t rc;
 
-	nxs_string_init(&value);
-
-	nxs_string_printf(&value, "%zu", rdmn_issue_id);
-
-	if((rc = nxs_chat_srv_d_db_issues_put(u_ctx->db_issues_ctx, tlgrm_chat_id, tlgrm_message_id, &value)) != NXS_CHAT_SRV_E_OK) {
+	if((rc = nxs_chat_srv_d_db_issues_put(u_ctx->db_issues_ctx, tlgrm_chat_id, tlgrm_message_id, rdmn_issue_id)) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_error(
 		        &process,
@@ -155,8 +140,6 @@ nxs_chat_srv_err_t
 		        tlgrm_message_id,
 		        rdmn_issue_id);
 	}
-
-	nxs_string_free(&value);
 
 	return rc;
 }
