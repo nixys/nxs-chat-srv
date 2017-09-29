@@ -26,7 +26,11 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module declarations */
 
-
+typedef struct
+{
+	nxs_chat_srv_m_rdmn_issues_visibility_t		issues_visibility;
+	nxs_string_t					name;
+} nxs_chat_srv_c_rdmn_issues_visibilities_t;
 
 /* Module internal (static) functions prototypes */
 
@@ -63,41 +67,206 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_custom_fields(nxs_p
                                                                            nxs_json_t *        json,
                                                                            nxs_cfg_json_par_t *cfg_json_par_el,
                                                                            nxs_array_t *       cfg_arr);
+static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_members(nxs_process_t *     proc,
+                                                                     nxs_json_t *        json,
+                                                                     nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                     nxs_array_t *       cfg_arr);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_rdmn_extract_json_access(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_roles(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                   nxs_array_t *       cfg_arr);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_rdmn_extract_json_permissions(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 
 // clang-format off
 
 /* Module initializations */
 
-static nxs_string_t	_s_par_action		= nxs_string("action");
-static nxs_string_t	_s_par_data		= nxs_string("data");
-static nxs_string_t	_s_par_issue		= nxs_string("issue");
-static nxs_string_t	_s_par_id		= nxs_string("id");
-static nxs_string_t	_s_par_project		= nxs_string("project");
-static nxs_string_t	_s_par_name		= nxs_string("name");
-static nxs_string_t	_s_par_tracker		= nxs_string("tracker");
-static nxs_string_t	_s_par_status		= nxs_string("status");
-static nxs_string_t	_s_par_priority		= nxs_string("priority");
-static nxs_string_t	_s_par_author		= nxs_string("author");
-static nxs_string_t	_s_par_subject		= nxs_string("subject");
-static nxs_string_t	_s_par_description	= nxs_string("description");
-static nxs_string_t	_s_par_done_ratio	= nxs_string("done_ratio");
-static nxs_string_t	_s_par_is_private	= nxs_string("is_private");
-static nxs_string_t	_s_par_spent_hours	= nxs_string("spent_hours");
-static nxs_string_t	_s_par_watchers		= nxs_string("watchers");
-static nxs_string_t	_s_par_journals		= nxs_string("journals");
-static nxs_string_t	_s_par_user		= nxs_string("user");
-static nxs_string_t	_s_par_notes		= nxs_string("notes");
-static nxs_string_t	_s_par_assigned_to	= nxs_string("assigned_to");
-static nxs_string_t	_s_par_details		= nxs_string("details");
-static nxs_string_t	_s_par_property		= nxs_string("property");
-static nxs_string_t	_s_par_attr		= nxs_string("attr");
-static nxs_string_t	_s_par_private_notes	= nxs_string("private_notes");
-static nxs_string_t	_s_par_custom_fields	= nxs_string("custom_fields");
-static nxs_string_t	_s_par_value		= nxs_string("value");
+nxs_chat_srv_c_rdmn_issues_visibilities_t issues_visibilities[] =
+{
+	{NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_ALL,		nxs_string("all")},
+	{NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_DEFAULT,		nxs_string("default")},
+	{NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_OWN,		nxs_string("own")},
+
+	{NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_NONE,		NXS_STRING_NULL_STR},
+};
+
+static nxs_string_t	_s_par_action			= nxs_string("action");
+static nxs_string_t	_s_par_data			= nxs_string("data");
+static nxs_string_t	_s_par_issue			= nxs_string("issue");
+static nxs_string_t	_s_par_id			= nxs_string("id");
+static nxs_string_t	_s_par_project			= nxs_string("project");
+static nxs_string_t	_s_par_name			= nxs_string("name");
+static nxs_string_t	_s_par_tracker			= nxs_string("tracker");
+static nxs_string_t	_s_par_status			= nxs_string("status");
+static nxs_string_t	_s_par_priority			= nxs_string("priority");
+static nxs_string_t	_s_par_author			= nxs_string("author");
+static nxs_string_t	_s_par_subject			= nxs_string("subject");
+static nxs_string_t	_s_par_description		= nxs_string("description");
+static nxs_string_t	_s_par_done_ratio		= nxs_string("done_ratio");
+static nxs_string_t	_s_par_is_private		= nxs_string("is_private");
+static nxs_string_t	_s_par_spent_hours		= nxs_string("spent_hours");
+static nxs_string_t	_s_par_watchers			= nxs_string("watchers");
+static nxs_string_t	_s_par_journals			= nxs_string("journals");
+static nxs_string_t	_s_par_user			= nxs_string("user");
+static nxs_string_t	_s_par_notes			= nxs_string("notes");
+static nxs_string_t	_s_par_assigned_to		= nxs_string("assigned_to");
+static nxs_string_t	_s_par_details			= nxs_string("details");
+static nxs_string_t	_s_par_property			= nxs_string("property");
+static nxs_string_t	_s_par_attr			= nxs_string("attr");
+static nxs_string_t	_s_par_private_notes		= nxs_string("private_notes");
+static nxs_string_t	_s_par_custom_fields		= nxs_string("custom_fields");
+static nxs_string_t	_s_par_value			= nxs_string("value");
+static nxs_string_t	_s_par_members			= nxs_string("members");
+static nxs_string_t	_s_par_access			= nxs_string("access");
+static nxs_string_t	_s_par_roles			= nxs_string("roles");
+static nxs_string_t	_s_par_view_current_issue	= nxs_string("view_current_issue");
+static nxs_string_t	_s_par_view_private_notes	= nxs_string("view_private_notes");
+static nxs_string_t	_s_par_permissions		= nxs_string("permissions");
+static nxs_string_t	_s_par_issues_visibility	= nxs_string("issues_visibility");
 
 /* Module global functions */
 
 // clang-format on
+
+void nxs_chat_srv_c_rdmn_access_init(nxs_chat_srv_m_rdmn_access_t *access)
+{
+
+	if(access == NULL) {
+
+		return;
+	}
+
+	access->_is_used = NXS_NO;
+
+	access->view_current_issue = NXS_NO;
+	access->view_private_notes = NXS_NO;
+}
+
+void nxs_chat_srv_c_rdmn_access_free(nxs_chat_srv_m_rdmn_access_t *access)
+{
+
+	if(access == NULL) {
+
+		return;
+	}
+
+	access->_is_used = NXS_NO;
+
+	access->view_current_issue = NXS_NO;
+	access->view_private_notes = NXS_NO;
+}
+
+void nxs_chat_srv_c_rdmn_permissions_init(nxs_chat_srv_m_rdmn_permissions_t *permissions)
+{
+
+	if(permissions == NULL) {
+
+		return;
+	}
+
+	permissions->_is_used = NXS_NO;
+
+	permissions->view_private_notes = NXS_NO;
+	permissions->issues_visibility  = NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_NONE;
+}
+
+void nxs_chat_srv_c_rdmn_permissions_free(nxs_chat_srv_m_rdmn_permissions_t *permissions)
+{
+
+	if(permissions == NULL) {
+
+		return;
+	}
+
+	permissions->_is_used = NXS_NO;
+
+	permissions->view_private_notes = NXS_NO;
+	permissions->issues_visibility  = NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_NONE;
+}
+
+void nxs_chat_srv_c_rdmn_role_init(nxs_chat_srv_m_rdmn_role_t *role)
+{
+
+	if(role == NULL) {
+
+		return;
+	}
+
+	role->_is_used = NXS_NO;
+
+	role->id = 0;
+
+	nxs_string_init_empty(&role->name);
+
+	nxs_chat_srv_c_rdmn_permissions_init(&role->permissions);
+}
+
+void nxs_chat_srv_c_rdmn_role_free(nxs_chat_srv_m_rdmn_role_t *role)
+{
+
+	if(role == NULL) {
+
+		return;
+	}
+
+	role->_is_used = NXS_NO;
+
+	role->id = 0;
+
+	nxs_string_free(&role->name);
+
+	nxs_chat_srv_c_rdmn_permissions_free(&role->permissions);
+}
+
+void nxs_chat_srv_c_rdmn_member_init(nxs_chat_srv_m_rdmn_member_t *member)
+{
+
+	if(member == NULL) {
+
+		return;
+	}
+
+	member->_is_used = NXS_NO;
+
+	member->id = 0;
+
+	nxs_string_init_empty(&member->name);
+
+	nxs_chat_srv_c_rdmn_access_init(&member->access);
+
+	nxs_array_init2(&member->roles, nxs_chat_srv_m_rdmn_role_t);
+}
+
+void nxs_chat_srv_c_rdmn_member_free(nxs_chat_srv_m_rdmn_member_t *member)
+{
+	nxs_chat_srv_m_rdmn_role_t *r;
+	size_t                      i;
+
+	if(member == NULL) {
+
+		return;
+	}
+
+	member->_is_used = NXS_NO;
+
+	member->id = 0;
+
+	nxs_string_free(&member->name);
+
+	nxs_chat_srv_c_rdmn_access_free(&member->access);
+
+	for(i = 0; i < nxs_array_count(&member->roles); i++) {
+
+		r = nxs_array_get(&member->roles, i);
+
+		nxs_chat_srv_c_rdmn_role_free(r);
+	}
+
+	nxs_array_free(&member->roles);
+}
 
 void nxs_chat_srv_c_rdmn_project_init(nxs_chat_srv_m_rdmn_project_t *project)
 {
@@ -112,10 +281,14 @@ void nxs_chat_srv_c_rdmn_project_init(nxs_chat_srv_m_rdmn_project_t *project)
 	project->id = 0;
 
 	nxs_string_init_empty(&project->name);
+
+	nxs_array_init2(&project->members, nxs_chat_srv_m_rdmn_member_t);
 }
 
 void nxs_chat_srv_c_rdmn_project_free(nxs_chat_srv_m_rdmn_project_t *project)
 {
+	nxs_chat_srv_m_rdmn_member_t *m;
+	size_t                        i;
 
 	if(project == NULL) {
 
@@ -127,6 +300,15 @@ void nxs_chat_srv_c_rdmn_project_free(nxs_chat_srv_m_rdmn_project_t *project)
 	project->id = 0;
 
 	nxs_string_free(&project->name);
+
+	for(i = 0; i < nxs_array_count(&project->members); i++) {
+
+		m = nxs_array_get(&project->members, i);
+
+		nxs_chat_srv_c_rdmn_member_free(m);
+	}
+
+	nxs_array_free(&project->members);
 }
 
 void nxs_chat_srv_c_rdmn_tracker_init(nxs_chat_srv_m_rdmn_tracker_t *tracker)
@@ -896,8 +1078,9 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,	NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_members,	&var->members,		NULL,	&nxs_chat_srv_c_rdmn_extract_json_members,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -1009,6 +1192,157 @@ error:
 	nxs_cfg_json_free(&cfg_json_cf);
 
 	nxs_cfg_json_conf_array_free(&cfg_arr_cf);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_members(nxs_process_t *     proc,
+                                                                     nxs_json_t *        json,
+                                                                     nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                     nxs_array_t *       cfg_arr)
+{
+	nxs_array_t *                 members = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_chat_srv_m_rdmn_member_t *m;
+
+	m = nxs_array_add(members);
+
+	nxs_chat_srv_c_rdmn_member_init(m);
+
+	m->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_skip_undef(cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&m->id,			NULL,						NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,		&m->name,		NULL,						NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_access,		&m->access,		&nxs_chat_srv_c_rdmn_extract_json_access,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_roles,		&m->roles,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_roles,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	return NXS_CFG_JSON_CONF_OK;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_rdmn_extract_json_access(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_m_rdmn_access_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t                cfg_json;
+	nxs_array_t                   cfg_arr;
+	nxs_cfg_json_state_t          rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	var->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_view_current_issue,	&var->view_current_issue,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_view_private_notes,	&var->view_private_notes,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "rdmn json read error: 'access' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_roles(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                   nxs_array_t *       cfg_arr)
+{
+	nxs_array_t *               roles = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_chat_srv_m_rdmn_role_t *r;
+
+	r = nxs_array_add(roles);
+
+	nxs_chat_srv_c_rdmn_role_init(r);
+
+	r->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_skip_undef(cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&r->id,			NULL,						NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,		&r->name,		NULL,						NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_permissions,	&r->permissions,	&nxs_chat_srv_c_rdmn_extract_json_permissions,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	return NXS_CFG_JSON_CONF_OK;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_rdmn_extract_json_permissions(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_m_rdmn_permissions_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t                     cfg_json;
+	nxs_array_t                        cfg_arr;
+	nxs_string_t                       issues_visibility;
+	nxs_cfg_json_state_t               rc;
+	size_t                             i;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	var->_is_used = NXS_YES;
+
+	nxs_string_init(&issues_visibility);
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_issues_visibility,	&issues_visibility,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_view_private_notes,	&var->view_private_notes,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "rdmn json read error: 'permissions' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+	for(i = 0; issues_visibilities[i].issues_visibility != NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_NONE; i++) {
+
+		if(nxs_string_cmp(&issues_visibility, 0, &issues_visibilities[i].name, 0) == NXS_YES) {
+
+			var->issues_visibility = issues_visibilities[i].issues_visibility;
+		}
+	}
+
+error:
+
+	nxs_string_free(&issues_visibility);
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
 
 	return rc;
 }

@@ -3,16 +3,65 @@
 
 // clang-format off
 
-typedef struct			nxs_chat_srv_m_rdmn_project_s		nxs_chat_srv_m_rdmn_project_t;
-typedef struct			nxs_chat_srv_m_rdmn_tracker_s		nxs_chat_srv_m_rdmn_tracker_t;
-typedef struct			nxs_chat_srv_m_rdmn_status_s		nxs_chat_srv_m_rdmn_status_t;
-typedef struct			nxs_chat_srv_m_rdmn_priority_s		nxs_chat_srv_m_rdmn_priority_t;
-typedef struct			nxs_chat_srv_m_rdmn_user_s		nxs_chat_srv_m_rdmn_user_t;
-typedef struct			nxs_chat_srv_m_rdmn_detail_s		nxs_chat_srv_m_rdmn_detail_t;
-typedef struct			nxs_chat_srv_m_rdmn_journal_s		nxs_chat_srv_m_rdmn_journal_t;
-typedef struct			nxs_chat_srv_m_rdmn_issue_s		nxs_chat_srv_m_rdmn_issue_t;
-typedef struct			nxs_chat_srv_m_rdmn_data_s		nxs_chat_srv_m_rdmn_data_t;
-typedef struct			nxs_chat_srv_m_rdmn_update_s		nxs_chat_srv_m_rdmn_update_t;
+typedef enum			nxs_chat_srv_m_rdmn_issues_visibility_e		nxs_chat_srv_m_rdmn_issues_visibility_t;
+
+typedef struct			nxs_chat_srv_m_rdmn_access_s			nxs_chat_srv_m_rdmn_access_t;
+typedef struct			nxs_chat_srv_m_rdmn_permissions_s		nxs_chat_srv_m_rdmn_permissions_t;
+typedef struct			nxs_chat_srv_m_rdmn_role_s			nxs_chat_srv_m_rdmn_role_t;
+typedef struct			nxs_chat_srv_m_rdmn_member_s			nxs_chat_srv_m_rdmn_member_t;
+typedef struct			nxs_chat_srv_m_rdmn_project_s			nxs_chat_srv_m_rdmn_project_t;
+typedef struct			nxs_chat_srv_m_rdmn_tracker_s			nxs_chat_srv_m_rdmn_tracker_t;
+typedef struct			nxs_chat_srv_m_rdmn_status_s			nxs_chat_srv_m_rdmn_status_t;
+typedef struct			nxs_chat_srv_m_rdmn_priority_s			nxs_chat_srv_m_rdmn_priority_t;
+typedef struct			nxs_chat_srv_m_rdmn_user_s			nxs_chat_srv_m_rdmn_user_t;
+typedef struct			nxs_chat_srv_m_rdmn_detail_s			nxs_chat_srv_m_rdmn_detail_t;
+typedef struct			nxs_chat_srv_m_rdmn_journal_s			nxs_chat_srv_m_rdmn_journal_t;
+typedef struct			nxs_chat_srv_m_rdmn_issue_s			nxs_chat_srv_m_rdmn_issue_t;
+typedef struct			nxs_chat_srv_m_rdmn_data_s			nxs_chat_srv_m_rdmn_data_t;
+typedef struct			nxs_chat_srv_m_rdmn_update_s			nxs_chat_srv_m_rdmn_update_t;
+
+enum nxs_chat_srv_m_rdmn_issues_visibility_e
+{
+	NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_NONE,
+	NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_ALL,
+	NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_DEFAULT,
+	NXS_CHAT_SRV_M_RDMN_ISSUES_VISIBILITY_OWN
+};
+
+struct nxs_chat_srv_m_rdmn_access_s
+{
+	nxs_bool_t				_is_used;
+
+	nxs_bool_t				view_current_issue;
+	nxs_bool_t				view_private_notes;
+};
+
+struct nxs_chat_srv_m_rdmn_permissions_s
+{
+	nxs_bool_t				_is_used;
+
+	nxs_chat_srv_m_rdmn_issues_visibility_t	issues_visibility;
+	nxs_bool_t				view_private_notes;
+};
+
+struct nxs_chat_srv_m_rdmn_role_s
+{
+	nxs_bool_t				_is_used;
+
+	size_t					id;
+	nxs_string_t				name;
+	nxs_chat_srv_m_rdmn_permissions_t	permissions;
+};
+
+struct nxs_chat_srv_m_rdmn_member_s
+{
+	nxs_bool_t				_is_used;
+
+	size_t					id;
+	nxs_string_t				name;
+	nxs_chat_srv_m_rdmn_access_t		access;
+	nxs_array_t				roles;			/* type: nxs_chat_srv_m_rdmn_role_t */
+};
 
 struct nxs_chat_srv_m_rdmn_project_s
 {
@@ -20,6 +69,7 @@ struct nxs_chat_srv_m_rdmn_project_s
 
 	size_t					id;
 	nxs_string_t				name;
+	nxs_array_t				members;		/* type: nxs_chat_srv_m_rdmn_member_t */
 };
 
 struct nxs_chat_srv_m_rdmn_tracker_s

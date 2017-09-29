@@ -39,7 +39,11 @@ typedef struct
 static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update_t *update);
 static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t *update);
 
-static void receivers_add(nxs_array_t *receivers, size_t author_id, size_t user_id);
+static void receivers_add(nxs_array_t *                  receivers,
+                          size_t                         author_id,
+                          size_t                         user_id,
+                          nxs_array_t *                  members,
+                          nxs_chat_srv_m_rdmn_journal_t *journal);
 
 // clang-format off
 
@@ -118,14 +122,15 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 	nxs_array_init2(&receivers, size_t);
 
 	/* add to receivers array assigned to user */
-	receivers_add(&receivers, update->data.issue.author.id, update->data.issue.assigned_to.id);
+	receivers_add(
+	        &receivers, update->data.issue.author.id, update->data.issue.assigned_to.id, &update->data.issue.project.members, NULL);
 
 	/* add to receivers array all watchers excluding author of the issue */
 	for(i = 0; i < nxs_array_count(&update->data.issue.watchers); i++) {
 
 		u = nxs_array_get(&update->data.issue.watchers, i);
 
-		receivers_add(&receivers, update->data.issue.author.id, u->id);
+		receivers_add(&receivers, update->data.issue.author.id, u->id, &update->data.issue.project.members, NULL);
 	}
 
 	/* add to receivers array all cf_watchers excluding author of the issue */
@@ -133,7 +138,7 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 
 		id = nxs_array_get(&update->data.issue.cf_watchers, i);
 
-		receivers_add(&receivers, update->data.issue.author.id, *id);
+		receivers_add(&receivers, update->data.issue.author.id, *id, &update->data.issue.project.members, NULL);
 	}
 
 	for(i = 0; i < nxs_array_count(&receivers); i++) {
@@ -200,14 +205,14 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
 	/* add to receivers array 'assigned to' user */
-	receivers_add(&receivers, journal->user.id, update->data.issue.assigned_to.id);
+	receivers_add(&receivers, journal->user.id, update->data.issue.assigned_to.id, &update->data.issue.project.members, journal);
 
 	/* add to receivers array all watchers excluding author of the comment */
 	for(i = 0; i < nxs_array_count(&update->data.issue.watchers); i++) {
 
 		u = nxs_array_get(&update->data.issue.watchers, i);
 
-		receivers_add(&receivers, journal->user.id, u->id);
+		receivers_add(&receivers, journal->user.id, u->id, &update->data.issue.project.members, journal);
 	}
 
 	/* add to receivers array all cf_watchers excluding author of the comment */
@@ -215,7 +220,7 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 
 		id = nxs_array_get(&update->data.issue.cf_watchers, i);
 
-		receivers_add(&receivers, journal->user.id, *id);
+		receivers_add(&receivers, journal->user.id, *id, &update->data.issue.project.members, journal);
 	}
 
 	/* send message to all receivers */
@@ -256,20 +261,27 @@ error:
 	return rc;
 }
 
-static void receivers_add(nxs_array_t *receivers, size_t author_id, size_t user_id)
+static void receivers_add(nxs_array_t *                  receivers,
+                          size_t                         author_id,
+                          size_t                         user_id,
+                          nxs_array_t *                  members,
+                          nxs_chat_srv_m_rdmn_journal_t *journal)
 {
-	size_t *id, i;
+	nxs_chat_srv_m_rdmn_member_t *m;
+	size_t *                      id, i;
 
 	if(user_id == 0) {
 
 		return;
 	}
 
+	/* skip adding into array author of changes */
 	if(user_id == author_id) {
 
 		return;
 	}
 
+	/* avoid elements duplicates */
 	for(i = 0; i < nxs_array_count(receivers); i++) {
 
 		id = nxs_array_get(receivers, i);
@@ -280,7 +292,43 @@ static void receivers_add(nxs_array_t *receivers, size_t author_id, size_t user_
 		}
 	}
 
-	id = nxs_array_add(receivers);
+	/* check view changes permissions */
+	for(i = 0; i < nxs_array_count(members); i++) {
 
-	*id = user_id;
+		m = nxs_array_get(members, i);
+
+		/* found member */
+		if(m->id == user_id) {
+
+			/* user allowed to see this issue */
+			if(m->access.view_current_issue == NXS_YES) {
+
+				if(journal == NULL) {
+
+					/* issue without journal (new issue) */
+
+					id = nxs_array_add(receivers);
+
+					*id = user_id;
+
+					return;
+				}
+				else {
+
+					if(journal->private_notes == NXS_NO || m->access.view_private_notes == NXS_YES) {
+
+						/* not a private note or user can see private notes */
+
+						id = nxs_array_add(receivers);
+
+						*id = user_id;
+
+						return;
+					}
+				}
+			}
+
+			return;
+		}
+	}
 }

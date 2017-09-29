@@ -95,7 +95,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_
 	if((ec = nxs_curl_query(&process,
 	                        &curl,
 	                        NXS_REST_API_COMMON_CMD_POST,
-	                        (u_char *)"%r%r/%r",
+	                        (u_char *)"%r/bot%r/%r",
 	                        &nxs_chat_srv_cfg.tlgrm.bot_api_addr,
 	                        &nxs_chat_srv_cfg.tlgrm.bot_api_key,
 	                        method)) != NXS_CURL_E_OK) {

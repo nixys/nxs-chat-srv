@@ -5,7 +5,19 @@
 
 /* Prototypes */
 
-void					nxs_chat_srv_c_rdmn					(void);
+void				nxs_chat_srv_c_rdmn				(void);
+
+void				nxs_chat_srv_c_rdmn_access_init			(nxs_chat_srv_m_rdmn_access_t *access);
+void				nxs_chat_srv_c_rdmn_access_free			(nxs_chat_srv_m_rdmn_access_t *access);
+
+void				nxs_chat_srv_c_rdmn_permissions_init		(nxs_chat_srv_m_rdmn_permissions_t *permissions);
+void				nxs_chat_srv_c_rdmn_permissions_free		(nxs_chat_srv_m_rdmn_permissions_t *permissions);
+
+void				nxs_chat_srv_c_rdmn_role_init			(nxs_chat_srv_m_rdmn_role_t *role);
+void				nxs_chat_srv_c_rdmn_role_free			(nxs_chat_srv_m_rdmn_role_t *role);
+
+void				nxs_chat_srv_c_rdmn_member_init			(nxs_chat_srv_m_rdmn_member_t *member);
+void				nxs_chat_srv_c_rdmn_member_free			(nxs_chat_srv_m_rdmn_member_t *member);
 
 void				nxs_chat_srv_c_rdmn_project_init		(nxs_chat_srv_m_rdmn_project_t *project);
 void				nxs_chat_srv_c_rdmn_project_free		(nxs_chat_srv_m_rdmn_project_t *project);
