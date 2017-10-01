@@ -160,6 +160,8 @@ nxs_chat_srv_err_t
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
+	rc = NXS_CHAT_SRV_E_OK;
+
 	if(nxs_mysql_query(&d_ctx->mysql_ctx,
 	                   NXS_MYSQL_QUERY_TYPE_INSERT,
 	                   NULL,

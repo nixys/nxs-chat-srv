@@ -46,6 +46,7 @@ static nxs_string_t		_s_content_type		= nxs_string("Content-Type: application/js
 // clang-format on
 
 nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue_id,
+                                                          size_t           assigned_to_id,
                                                           nxs_string_t *   note,
                                                           nxs_bool_t       private_notes,
                                                           size_t           status_id,
@@ -56,7 +57,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 {
 	nxs_chat_srv_err_t               rc;
 	nxs_curl_t                       curl;
-	nxs_string_t                     data, api_key, note_escaped, status, cf_str, cf_str_els;
+	nxs_string_t                     data, api_key, note_escaped, status, assigned_to, cf_str, cf_str_els;
 	size_t                           i;
 	nxs_chat_srv_m_rdmn_issues_cf_t *cf;
 	nxs_http_code_t                  ret_code;
@@ -74,6 +75,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 	nxs_string_init(&api_key);
 	nxs_string_init(&note_escaped);
 	nxs_string_init_empty(&status);
+	nxs_string_init_empty(&assigned_to);
 	nxs_string_init_empty(&cf_str);
 	nxs_string_init_empty(&cf_str_els);
 
@@ -91,6 +93,11 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 	if(status_id > 0) {
 
 		nxs_string_printf(&status, ",\"status_id\":%zu", status_id);
+	}
+
+	if(assigned_to_id > 0) {
+
+		nxs_string_printf(&assigned_to, ",\"assigned_to_id\":%zu", assigned_to_id);
 	}
 
 	if(custom_fields != NULL && nxs_array_count(custom_fields) > 0) {
@@ -111,10 +118,11 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 	}
 
 	nxs_string_printf(&data,
-	                  "{\"issue\":{\"notes\":\"%r\",\"private_notes\":%s%r%r}}",
+	                  "{\"issue\":{\"notes\":\"%r\",\"private_notes\":%s%r%r%r}}",
 	                  &note_escaped,
 	                  private_notes == NXS_YES ? "true" : "false",
 	                  &status,
+	                  &assigned_to,
 	                  &cf_str);
 
 	nxs_curl_set_post(&curl, (nxs_buf_t *)&data);
@@ -193,6 +201,7 @@ error:
 	nxs_string_free(&api_key);
 	nxs_string_free(&note_escaped);
 	nxs_string_free(&status);
+	nxs_string_free(&assigned_to);
 	nxs_string_free(&cf_str);
 	nxs_string_free(&cf_str_els);
 

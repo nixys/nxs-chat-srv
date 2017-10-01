@@ -4,7 +4,7 @@
 // clang-format off
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION					"0.0.3"
+#define NXS_CHAT_SRV_VERSION						"0.0.4"
 
 /* Project basic global definitions */
 
@@ -81,6 +81,7 @@
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TO_STATUS_RESOLVED		(u_char *)"Перевести в статус \"Решена\""
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TO_PRIVATE_NOTE		(u_char *)"Сделать комментарий париватным"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_IGNORE_STATUS			(u_char *)"Игнорировать ошибки статуса"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TAKE_ISSUE			(u_char *)"Взять задачу в работу"
 
 /* Project global typedefs */
 

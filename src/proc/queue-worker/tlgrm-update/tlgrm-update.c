@@ -465,7 +465,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
                                                              nxs_chat_srv_u_db_cache_t *           cache_ctx,
                                                              nxs_chat_srv_m_user_ctx_t *           user_ctx)
 {
-	size_t                                   chat_id, bot_message_id, usr_message_id, issues_count, status_id;
+	size_t                                   chat_id, bot_message_id, usr_message_id, issues_count, status_id, assigned_to_id;
 	nxs_chat_srv_err_t                       rc;
 	nxs_chat_srv_m_db_cache_issue_priority_t issue_priority;
 	nxs_array_t                              cache_projects, custom_fields;
@@ -477,9 +477,10 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	private_notes = NXS_NO;
-	status_id     = 0;
-	is_ext        = NXS_NO;
+	private_notes  = NXS_NO;
+	status_id      = 0;
+	assigned_to_id = 0;
+	is_ext         = NXS_NO;
 
 	nxs_string_init(&m);
 
@@ -534,6 +535,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_RESOLVED:
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_PRIVATE:
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_WF_IGNORE:
+		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_TAKE_ISSUE:
 
 			/* add comment to selected issue processing */
 
@@ -582,6 +584,13 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 					break;
 
+				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_TAKE_ISSUE:
+
+					status_id      = nxs_chat_srv_cfg.rdmn.status_in_progress;
+					assigned_to_id = user_ctx->r_userid;
+
+					break;
+
 				default:
 
 					if(is_ext == NXS_YES) {
@@ -599,7 +608,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 			}
 
 			switch(nxs_chat_srv_u_rdmn_issues_add_note(
-			               callback->object_id, &m, private_notes, status_id, &custom_fields, api_key) != NXS_CHAT_SRV_E_OK) {
+			               callback->object_id, assigned_to_id, &m, private_notes, status_id, &custom_fields, api_key) !=
+			       NXS_CHAT_SRV_E_OK) {
 
 				case NXS_CHAT_SRV_E_OK:
 
@@ -1399,7 +1409,7 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_sess_t *     s
 	}
 	else {
 
-		switch(nxs_chat_srv_u_rdmn_issues_add_note(issue_id, &m, private_notes, 0, NULL, rdmn_api_key) != NXS_CHAT_SRV_E_OK) {
+		switch(nxs_chat_srv_u_rdmn_issues_add_note(issue_id, 0, &m, private_notes, 0, NULL, rdmn_api_key) != NXS_CHAT_SRV_E_OK) {
 
 			case NXS_CHAT_SRV_E_OK:
 

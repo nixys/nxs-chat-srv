@@ -100,6 +100,7 @@ error:
 }
 
 nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t        issue_id,
+                                                       size_t        assigned_to_id,
                                                        nxs_string_t *note,
                                                        nxs_bool_t    private_notes,
                                                        size_t        status_id,
@@ -107,7 +108,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t        issue_id,
                                                        nxs_string_t *api_key)
 {
 
-	switch(nxs_chat_srv_d_rdmn_issues_add_comment(issue_id, note, private_notes, status_id, custom_fields, api_key, NULL, NULL)) {
+	switch(nxs_chat_srv_d_rdmn_issues_add_comment(
+	        issue_id, assigned_to_id, note, private_notes, status_id, custom_fields, api_key, NULL, NULL)) {
 
 		case NXS_CHAT_SRV_E_OK:
 

@@ -56,6 +56,7 @@ enum nxs_chat_srv_m_tlgrm_bttn_callback_type_e
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_RESOLVED,	/* add comment to existing issue (and change status to 'Resolved') */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_PRIVATE,		/* add comment to existing issue (and make it private) */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_WF_IGNORE,		/* add comment to existing issue (and ignore workflow statuses errors) */
+	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_TAKE_ISSUE,	/* add comment to existing issue (and take issue to process) */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CREATE_ISSUE,			/* create new issue */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_PROJECT,			/* select project */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PROJECT,		/* selected project */

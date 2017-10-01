@@ -108,6 +108,14 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_add_note_ext(siz
 		        issue_id,
 		        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_IGNORE_STATUS);
 
+		nxs_chat_srv_u_tlgrm_sendmessage_inline_keybutton_callback_add(
+		        tlgrm_sendmessage_ctx,
+		        5,
+		        0,
+		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_TAKE_ISSUE,
+		        issue_id,
+		        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TAKE_ISSUE);
+
 		nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(tlgrm_sendmessage_ctx);
 
 		if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
@@ -168,6 +176,14 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_add_note_ext(siz
 		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_WF_IGNORE,
 		        issue_id,
 		        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_IGNORE_STATUS);
+
+		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
+		        tlgrm_editmessagetext_ctx,
+		        5,
+		        0,
+		        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_TAKE_ISSUE,
+		        issue_id,
+		        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TAKE_ISSUE);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_disable_web_page_preview(tlgrm_editmessagetext_ctx);
 
