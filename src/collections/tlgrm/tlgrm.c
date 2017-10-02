@@ -212,6 +212,114 @@ void nxs_chat_srv_c_tlgrm_format_escape_html(nxs_string_t *text_dst, nxs_string_
 	}
 }
 
+/*
+ * Split 'message_src' to chunks and put 'message_header' into first chunk
+ */
+nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_make_message_chunks(nxs_string_t *message_header, nxs_string_t *message_src, nxs_array_t *chunks)
+{
+	nxs_string_t *s;
+	nxs_bool_t    f;
+	size_t        i, o;
+	u_char        c;
+
+	if(message_header == NULL || chunks == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if(message_src == NULL) {
+
+		s = nxs_array_add(chunks);
+
+		nxs_string_init(s);
+
+		nxs_string_printf(s, "%r", message_header);
+
+		return NXS_CHAT_SRV_E_OK;
+	}
+
+	if(nxs_string_len(message_src) <= NXS_CHAT_SRV_TLGRM_MAX_MESSAGE_SIZE) {
+
+		s = nxs_array_add(chunks);
+
+		nxs_string_init(s);
+
+		nxs_string_printf(s, "%r%r", message_header, message_src);
+
+		return NXS_CHAT_SRV_E_OK;
+	}
+
+	o = 0;
+
+	do {
+
+		for(f = NXS_NO, i = o + NXS_CHAT_SRV_TLGRM_MAX_MESSAGE_SIZE; i > o; i--) {
+
+			c = nxs_string_get_char(message_src, i);
+
+			if(c == (u_char)' ' || c == (u_char)'\t' || c == (u_char)'\n') {
+
+				f = NXS_YES;
+
+				break;
+			}
+		}
+
+		if(f == NXS_YES) {
+
+			s = nxs_array_add(chunks);
+
+			if(nxs_array_count(chunks) == 1) {
+
+				nxs_string_init3(s, message_header);
+
+				nxs_string_ncpy(s, nxs_string_len(s), message_src, o, i - o);
+			}
+			else {
+
+				nxs_string_init(s);
+
+				nxs_string_ncpy(s, 0, message_src, o, i - o);
+			}
+
+			o = i + 1;
+		}
+		else {
+
+			/* message too big */
+
+			for(i = 0; i < nxs_array_count(chunks); i++) {
+
+				s = nxs_array_get(chunks, i);
+
+				nxs_string_free(s);
+			}
+
+			nxs_array_clear(chunks);
+
+			s = nxs_array_add(chunks);
+
+			nxs_string_init(s);
+
+			nxs_string_printf(s, "%r%s", message_header, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_TOO_BIG);
+
+			return NXS_CHAT_SRV_E_WARN;
+		}
+
+	} while(o + NXS_CHAT_SRV_TLGRM_MAX_MESSAGE_SIZE < nxs_string_len(message_src));
+
+	if(nxs_string_len(message_src) - o > 0) {
+
+		s = nxs_array_add(chunks);
+
+		nxs_string_init(s);
+
+		nxs_string_ncpy(s, 0, message_src, o, nxs_string_len(message_src) - o);
+	}
+
+	return NXS_CHAT_SRV_E_OK;
+}
+
 void nxs_chat_srv_c_tlgrm_update_init(nxs_chat_srv_m_tlgrm_update_t *update)
 {
 
