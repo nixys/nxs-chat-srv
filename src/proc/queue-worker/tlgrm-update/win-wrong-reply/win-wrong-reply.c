@@ -54,7 +54,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_wrong_reply_runt
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
 
 	nxs_chat_srv_u_tlgrm_sendmessage_add(
-	        tlgrm_sendmessage_ctx, chat_id, &_s_msg_wrong_reply, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+	        tlgrm_sendmessage_ctx, chat_id, &_s_msg_wrong_reply, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE);
 
 	if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
 

@@ -46,11 +46,12 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_run
                                                                                      size_t                        tlgrm_userid)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_string_t                        message, private_issue;
-	nxs_buf_t *                         out_buf;
-	nxs_bool_t                          response_status;
-	nxs_chat_srv_m_tlgrm_message_t      tlgrm_message;
-	nxs_chat_srv_u_db_issues_t *        db_issue_ctx;
+	nxs_string_t message, private_issue, description_fmt, project_fmt, subject_fmt, author_fmt, status_fmt, priority_fmt,
+	        assigned_to_fmt;
+	nxs_buf_t *                    out_buf;
+	nxs_bool_t                     response_status;
+	nxs_chat_srv_m_tlgrm_message_t tlgrm_message;
+	nxs_chat_srv_u_db_issues_t *   db_issue_ctx;
 
 	nxs_chat_srv_err_t rc;
 
@@ -58,6 +59,13 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_run
 
 	nxs_string_init(&message);
 	nxs_string_init_empty(&private_issue);
+	nxs_string_init_empty(&description_fmt);
+	nxs_string_init_empty(&project_fmt);
+	nxs_string_init_empty(&subject_fmt);
+	nxs_string_init_empty(&author_fmt);
+	nxs_string_init_empty(&status_fmt);
+	nxs_string_init_empty(&priority_fmt);
+	nxs_string_init_empty(&assigned_to_fmt);
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_init();
@@ -69,23 +77,31 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_run
 		nxs_string_printf(&private_issue, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED_IS_PRIVATE, _s_private_message);
 	}
 
+	nxs_chat_srv_c_tlgrm_format_escape_html(&description_fmt, &update->data.issue.description);
+	nxs_chat_srv_c_tlgrm_format_escape_html(&project_fmt, &update->data.issue.project.name);
+	nxs_chat_srv_c_tlgrm_format_escape_html(&subject_fmt, &update->data.issue.subject);
+	nxs_chat_srv_c_tlgrm_format_escape_html(&author_fmt, &update->data.issue.author.name);
+	nxs_chat_srv_c_tlgrm_format_escape_html(&status_fmt, &update->data.issue.status.name);
+	nxs_chat_srv_c_tlgrm_format_escape_html(&priority_fmt, &update->data.issue.priority.name);
+	nxs_chat_srv_c_tlgrm_format_escape_html(&assigned_to_fmt, &update->data.issue.assigned_to.name);
+
 	nxs_string_printf(&message,
 	                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED,
-	                  &update->data.issue.project.name,
-	                  update->data.issue.id,
-	                  &update->data.issue.subject,
 	                  &nxs_chat_srv_cfg.rdmn.host,
 	                  update->data.issue.id,
+	                  &project_fmt,
+	                  update->data.issue.id,
+	                  &subject_fmt,
 	                  &private_issue,
-	                  &update->data.issue.author.name,
-	                  &update->data.issue.status.name,
-	                  &update->data.issue.priority.name,
-	                  &update->data.issue.assigned_to.name,
-	                  &update->data.issue.description);
+	                  &author_fmt,
+	                  &status_fmt,
+	                  &priority_fmt,
+	                  &assigned_to_fmt,
+	                  &description_fmt);
 
 	/* create new comment */
 
-	nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, tlgrm_userid, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+	nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, tlgrm_userid, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 	nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(tlgrm_sendmessage_ctx);
 
@@ -110,6 +126,13 @@ error:
 
 	nxs_string_free(&message);
 	nxs_string_free(&private_issue);
+	nxs_string_free(&description_fmt);
+	nxs_string_free(&project_fmt);
+	nxs_string_free(&subject_fmt);
+	nxs_string_free(&author_fmt);
+	nxs_string_free(&status_fmt);
+	nxs_string_free(&priority_fmt);
+	nxs_string_free(&assigned_to_fmt);
 
 	return rc;
 }

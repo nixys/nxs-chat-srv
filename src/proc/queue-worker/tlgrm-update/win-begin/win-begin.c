@@ -77,6 +77,9 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t    
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
+	nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &issue_subject);
+	nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &issue_project_name);
+
 	if(private_notes == NXS_YES) {
 
 		nxs_string_printf(&private_message, "\n%s", _s_private_message);
@@ -85,18 +88,17 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t    
 	nxs_string_printf(&message,
 	                  NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN,
 	                  &private_message,
+	                  &nxs_chat_srv_cfg.rdmn.host,
+	                  issue_id,
 	                  &issue_project_name,
 	                  issue_id,
-	                  &issue_subject,
-	                  &nxs_chat_srv_cfg.rdmn.host,
-	                  issue_id);
+	                  &issue_subject);
 
 	if(message_id == 0) {
 
 		/* create new comment */
 
-		nxs_chat_srv_u_tlgrm_sendmessage_add(
-		        tlgrm_sendmessage_ctx, chat_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 		nxs_chat_srv_u_tlgrm_sendmessage_inline_keybutton_callback_add(tlgrm_sendmessage_ctx,
 		                                                               0,
@@ -138,7 +140,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t    
 		/* update existing comment */
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(tlgrm_editmessagetext_ctx,
 		                                                                   0,

@@ -4,7 +4,7 @@
 // clang-format off
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.0.4"
+#define NXS_CHAT_SRV_VERSION						"0.0.5"
 
 /* Project basic global definitions */
 
@@ -19,6 +19,7 @@
 
 #define NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE				0xF0, 0x9F, 0x94, 0x95, 0x0
 #define NXS_CHAT_SRV_UTF8_ENTRY_SIGN					0xE2, 0x9C, 0x85, 0x0
+#define NXS_CHAT_SRV_UTF8_EXCLAMATION					0xE2, 0x9D, 0x97, 0x0
 
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_HELP			"справка по использованию бота"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_DIALOGDESTROY		"завершить текущий диалог"
@@ -27,42 +28,44 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_HELP					"...Справка по использованию бота...\n\nОписание команд:\n\n%r\n"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_DUMMY				"На текущий момент данная команда не реализована"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_HELLO				"%r, добро пожаловать в чат поддержки Nixys!\nТут будет краткая инструкция по использованию ..."
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_FULL				"*Создание новой задачи*\n\n" \
-									"*Проект:* %r\n" \
-									"*Приоритет:* %r\n" \
-									"*Тема:* %r\n" \
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_FULL				"<b>Создание новой задачи</b>\n\n" \
+									"<b>Проект:</b> %r\n" \
+									"<b>Приоритет:</b> %r\n" \
+									"<b>Тема:</b> %r\n" \
 									"%r" \
-									"*Описание:* %r\n---------\n" \
-									"_Ниже Вы можете изменить параметры новой задачи_"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_SHORT				"*Создание новой задачи*\n\n" \
-									"*Проект:* %r\n" \
-									"*Приоритет:* %r\n" \
-									"*Тема:* %r\n" \
+									"<b>Описание:</b> %r\n---------\n" \
+									"<i>Ниже Вы можете изменить параметры новой задачи</i>"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_SHORT				"<b>Создание новой задачи</b>\n\n" \
+									"<b>Проект:</b> %r\n" \
+									"<b>Приоритет:</b> %r\n" \
+									"<b>Тема:</b> %r\n" \
 									"%r" \
-									"*Описание:* %r\n"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN				"Как поступить с Вашим комментарием? Добавить в последнюю задачу, выбрать задачу из списка или создать новую?%r\n---------\nПоследняя задача: [(%r - #%zu) %r](%r/issues/%zu)"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_SUBJECT			"Как назвать задачу?"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT			"_Будет задана при создании задачи_"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR				"%s Произошла внутрення ошибка сервера, мы уже получили уведомление об этом и работаем над решением проблемы. Пожалуйста, [воспользуйтесь web-версией системы задач](https://task.nixys.ru/) или повторите свой запрос позже."
+									"<b>Описание:</b> %r\n"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN				"Как поступить с Вашим комментарием? Добавить в последнюю задачу, выбрать задачу из списка или создать новую?%r\n---------\nПоследняя задача: <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_SUBJECT			"Напишите название задачи?"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT			"<i>Будет задана при создании задачи</i>"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR				"%s Произошла внутрення ошибка сервера, мы уже получили уведомление об этом и работаем над решением проблемы. Пожалуйста, <a href=\"%r\">воспользуйтесь web-версией системы задач</a> или повторите свой запрос позже."
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_ACTION				"Не верное действие. Вам необходимо либо следовать указаниям мастера, либо Вы можете отменить текущий диалог"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_REPLY				"К сожалению, не удалось определить номер задачи в которую необходимо отправить Ваше сообщение"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SESSION_DESTROYED			"Предыдущий диалог завершён"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_DESCRIPTION_CHANGED			"Описание изменено"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_DESCRIPTION			"Как изменить описание задачи?"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED			"Задача [(%r - #%zu) %r](%r/issues/%zu) создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE			"Ваш комментарий отправлен в задачу [#%zu](%r/issues/%zu)"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_DESCRIPTION			"Напишите новое описание задачи?"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED			"Задача <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a> создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE			"Ваш комментарий отправлен в задачу <a href=\"%r/issues/%zu\">#%zu</a>"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE				"Пожалуйста, выберите задачу в которую необходимо отправить Ваш комментарий"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_PRIVACY			"*Приватная задача %s*\n"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ADD_NOTE_EXT				"Для добавления комментария необходимо выбрать одно из следующих действий"
 
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED				"Создана новая задача [(%r - #%zu) %r](%r/issues/%zu)\n\n%r*Автор:* %r\n*Статус:* %r\n*Приоритет:* %r\n*Назначена:* %r\n\n*Описание*:\n---\n%r"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED				"%s[(%r - #%zu) %r](%r/issues/%zu)\n\n%r%r писал(а):\n---\n%r"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE		"%s[(%r - #%zu) %r](%r/issues/%zu)\n\n%r"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED				"Создана новая задача <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>Автор:</b> %r\n<b>Статус:</b> %r\n<b>Приоритет:</b> %r\n<b>Назначена:</b> %r\n\n<b>Описание</b>:\n---\n%r"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED				"%s<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>%r писал(а):</b>\n---\n%r"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE		"%s<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r"
 
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED_IS_PRIVATE		"*Частная:* да %s\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_STATUS			"*Статус:* %r\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_PRIORITY		"*Приоритет:* %r\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_ASSIGNED_TO		"*Назначена:* %r\n"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED_IS_PRIVATE		"<b>Частная:</b> да %s\n"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_IS_PRIVATE_YES		"<b>Частная:</b> да\n"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_IS_PRIVATE_NO		"<b>Частная:</b> нет\n"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_STATUS			"<b>Статус:</b> %r\n"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_PRIORITY		"<b>Приоритет:</b> %r\n"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_ASSIGNED_TO		"<b>Назначена:</b> %r\n"
 
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_ADD_LAST_ACTIVE		(u_char *)"Добавить в последнюю задачу"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_NEW_ISSUE			(u_char *)"Создать новую задачу"

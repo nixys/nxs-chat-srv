@@ -98,6 +98,11 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(n
 			nxs_string_printf(&private_msg, NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_PRIVACY, _s_private_message);
 		}
 
+		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &project_name);
+		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &priority_name);
+		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &subject);
+		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &description);
+
 		nxs_string_printf(&message,
 		                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_FULL,
 		                  &project_name,
@@ -109,7 +114,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(n
 		tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 		for(i = 0; i < nxs_array_count(projects); i++) {
 

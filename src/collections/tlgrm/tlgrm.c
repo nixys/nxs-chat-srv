@@ -111,6 +111,107 @@ static nxs_chat_srv_c_tlgrm_parse_mode_t parse_mode[] =
 
 // clang-format on
 
+void nxs_chat_srv_c_tlgrm_format_escape_markdown(nxs_string_t *text_dst, nxs_string_t *text_src)
+{
+	size_t       i;
+	u_char       c;
+	nxs_string_t text_dst_tmp, *t;
+
+	if(text_dst == NULL) {
+
+		nxs_string_init(&text_dst_tmp);
+
+		t = &text_dst_tmp;
+	}
+	else {
+
+		t = text_dst;
+	}
+
+	for(i = 0; i < nxs_string_len(text_src); i++) {
+
+		c = nxs_string_get_char(text_src, i);
+
+		switch(c) {
+
+			case(u_char)'*':
+			case(u_char)'_':
+			case(u_char)'`':
+			case(u_char)'[':
+
+				nxs_string_char_add_char(t, (u_char)'\\');
+
+				break;
+		}
+
+		nxs_string_char_add_char(t, c);
+	}
+
+	if(text_dst == NULL) {
+
+		nxs_string_clone(text_src, t);
+
+		nxs_string_free(&text_dst_tmp);
+	}
+}
+
+void nxs_chat_srv_c_tlgrm_format_escape_html(nxs_string_t *text_dst, nxs_string_t *text_src)
+{
+	size_t       i;
+	u_char       c;
+	nxs_string_t text_dst_tmp, *t;
+
+	if(text_dst == NULL) {
+
+		nxs_string_init(&text_dst_tmp);
+
+		t = &text_dst_tmp;
+	}
+	else {
+
+		t = text_dst;
+	}
+
+	for(i = 0; i < nxs_string_len(text_src); i++) {
+
+		c = nxs_string_get_char(text_src, i);
+
+		switch(c) {
+
+			case(u_char)'<':
+
+				nxs_string_char_cat(t, (u_char *)"&lt;");
+
+				break;
+
+			case(u_char)'>':
+
+				nxs_string_char_cat(t, (u_char *)"&gt;");
+
+				break;
+
+			case(u_char)'&':
+
+				nxs_string_char_cat(t, (u_char *)"&amp;");
+
+				break;
+
+			default:
+
+				nxs_string_char_add_char(t, c);
+
+				break;
+		}
+	}
+
+	if(text_dst == NULL) {
+
+		nxs_string_clone(text_src, t);
+
+		nxs_string_free(&text_dst_tmp);
+	}
+}
+
 void nxs_chat_srv_c_tlgrm_update_init(nxs_chat_srv_m_tlgrm_update_t *update)
 {
 

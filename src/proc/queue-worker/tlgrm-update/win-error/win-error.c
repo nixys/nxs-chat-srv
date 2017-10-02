@@ -36,9 +36,7 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module initializations */
 
-static u_char		_s_exclamation[]	= {0xE2, 0x9D, 0x97, 0x0};
-
-static nxs_string_t	_s_msg_error		= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR);
+static u_char		_s_exclamation[]	= {NXS_CHAT_SRV_UTF8_EXCLAMATION};
 
 /* Module global functions */
 
@@ -59,11 +57,13 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(nxs_chat_s
 
 	nxs_string_init(&s);
 
-	nxs_string_printf(&s, (const char *)nxs_string_str(&_s_msg_error), _s_exclamation);
+	nxs_string_printf(&s, NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR, _s_exclamation, &nxs_chat_srv_cfg.rdmn.host);
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
 
-	nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &s, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+	nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &s, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
+
+	nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(tlgrm_sendmessage_ctx);
 
 	if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
 

@@ -69,20 +69,22 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nx
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
+	nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &project);
+	nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &subject);
+
 	nxs_string_printf(&message,
 	                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED,
+	                  &nxs_chat_srv_cfg.rdmn.host,
+	                  new_issue_id,
 	                  &project,
 	                  new_issue_id,
-	                  &subject,
-	                  &nxs_chat_srv_cfg.rdmn.host,
-	                  new_issue_id);
+	                  &subject);
 
 	if(message_id == 0) {
 
 		/* create new comment */
 
-		nxs_chat_srv_u_tlgrm_sendmessage_add(
-		        tlgrm_sendmessage_ctx, chat_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 		nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(tlgrm_sendmessage_ctx);
 
@@ -103,7 +105,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nx
 		/* update existing comment */
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_disable_web_page_preview(tlgrm_editmessagetext_ctx);
 

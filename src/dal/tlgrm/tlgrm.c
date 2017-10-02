@@ -132,7 +132,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_
 
 			nxs_log_write_error(
 			        &process,
-			        "[%s]: lgrm request error: wrong Telegram response code (response code: %d, response body: \"%s\")",
+			        "[%s]: tlgrm request error: wrong Telegram response code (response code: %d, response body: \"%s\")",
 			        nxs_proc_get_name(&process),
 			        ret_code,
 			        nxs_buf_get_subbuf(b, 0));

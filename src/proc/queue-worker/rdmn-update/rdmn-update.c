@@ -204,6 +204,9 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	ids_ctx        = nxs_chat_srv_u_db_ids_init();
 	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
 
+	/* add to receivers array author of issue */
+	receivers_add(&receivers, journal->user.id, update->data.issue.author.id, &update->data.issue.project.members, journal);
+
 	/* add to receivers array 'assigned to' user */
 	receivers_add(&receivers, journal->user.id, update->data.issue.assigned_to.id, &update->data.issue.project.members, journal);
 

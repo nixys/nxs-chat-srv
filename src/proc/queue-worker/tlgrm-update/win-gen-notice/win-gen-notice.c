@@ -42,6 +42,7 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 // clang-format on
 
+/* not escapig format string */
 nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_gen_notice(size_t        chat_id,
                                                                            size_t        message_id,
                                                                            nxs_string_t *message,
@@ -61,8 +62,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_gen_notice(size_
 
 		/* create new comment */
 
-		nxs_chat_srv_u_tlgrm_sendmessage_add(
-		        tlgrm_sendmessage_ctx, chat_id, message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 		nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(tlgrm_sendmessage_ctx);
 
@@ -83,7 +83,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_gen_notice(size_
 		/* update existing comment */
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		        tlgrm_editmessagetext_ctx, chat_id, message_id, message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_disable_web_page_preview(tlgrm_editmessagetext_ctx);
 

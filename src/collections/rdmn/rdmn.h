@@ -5,8 +5,6 @@
 
 /* Prototypes */
 
-void				nxs_chat_srv_c_rdmn				(void);
-
 void				nxs_chat_srv_c_rdmn_access_init			(nxs_chat_srv_m_rdmn_access_t *access);
 void				nxs_chat_srv_c_rdmn_access_free			(nxs_chat_srv_m_rdmn_access_t *access);
 

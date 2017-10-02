@@ -1570,8 +1570,10 @@ static nxs_chat_srv_err_t handler_command_help(nxs_chat_srv_m_tlgrm_update_t *up
 		}
 		else {
 
-			nxs_string_printf2_cat(
-			        &cmd_description, "%r _arguments_ - %r\n", &handlers_command[i].command, &handlers_command[i].description);
+			nxs_string_printf2_cat(&cmd_description,
+			                       "%r <i>arguments</i> - %r\n",
+			                       &handlers_command[i].command,
+			                       &handlers_command[i].description);
 		}
 	}
 

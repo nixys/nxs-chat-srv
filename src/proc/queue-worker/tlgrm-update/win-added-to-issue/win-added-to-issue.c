@@ -60,7 +60,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(n
 
 	nxs_string_init(&msg);
 
-	nxs_string_printf(&msg, NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE, issue_id, &nxs_chat_srv_cfg.rdmn.host, issue_id);
+	nxs_string_printf(&msg, NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE, &nxs_chat_srv_cfg.rdmn.host, issue_id, issue_id);
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
@@ -69,7 +69,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(n
 
 		/* create new comment */
 
-		nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &msg, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &msg, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 		nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(tlgrm_sendmessage_ctx);
 
@@ -90,7 +90,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(n
 		/* update existing comment */
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, &msg, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_MARKDOWN);
+		        tlgrm_editmessagetext_ctx, chat_id, message_id, &msg, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_disable_web_page_preview(tlgrm_editmessagetext_ctx);
 

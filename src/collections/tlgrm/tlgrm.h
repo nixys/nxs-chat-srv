@@ -5,6 +5,9 @@
 
 /* Prototypes */
 
+void					nxs_chat_srv_c_tlgrm_format_escape_markdown	(nxs_string_t *text_dst, nxs_string_t *text_src);
+void					nxs_chat_srv_c_tlgrm_format_escape_html		(nxs_string_t *text_dst, nxs_string_t *text_src);
+
 void					nxs_chat_srv_c_tlgrm_update_init		(nxs_chat_srv_m_tlgrm_update_t *update);
 void					nxs_chat_srv_c_tlgrm_update_free		(nxs_chat_srv_m_tlgrm_update_t *update);
 nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_update_pull_json		(nxs_chat_srv_m_tlgrm_update_t *update, nxs_buf_t *json_buf);
