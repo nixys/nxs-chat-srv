@@ -295,6 +295,13 @@ static size_t check_user(nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_us
 
 		if(f == NXS_NO) {
 
+			nxs_log_write_warn(
+			        &process,
+			        "[%s]: access denied: tlgrm user not in 'dev_accounts' list (tlgrm userid: %zu, tlgrm user name: %r)",
+			        nxs_proc_get_name(&process),
+			        tlgrm_user_id,
+			        tlgrm_username);
+
 			return 0;
 		}
 	}
@@ -305,6 +312,12 @@ static size_t check_user(nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_us
 
 		return tlgrm_user_id;
 	}
+
+	nxs_log_write_warn(&process,
+	                   "[%s]: access denied: tlgrm user not found (tlgrm userid: %zu, tlgrm user name: %r)",
+	                   nxs_proc_get_name(&process),
+	                   tlgrm_user_id,
+	                   tlgrm_username);
 
 	return 0;
 }
