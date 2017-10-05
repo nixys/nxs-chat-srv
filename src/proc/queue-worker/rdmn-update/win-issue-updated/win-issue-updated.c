@@ -185,11 +185,11 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 
 	nxs_chat_srv_c_tlgrm_format_escape_html(&project_fmt, &update->data.issue.project.name);
 	nxs_chat_srv_c_tlgrm_format_escape_html(&subject_fmt, &update->data.issue.subject);
+	nxs_chat_srv_c_tlgrm_format_escape_html(&user_fmt, &journal->user.name);
 
 	if(nxs_string_len(&journal->notes) > 0) {
 
 		nxs_chat_srv_c_tlgrm_format_escape_html(&notes_fmt, &journal->notes);
-		nxs_chat_srv_c_tlgrm_format_escape_html(&user_fmt, &journal->user.name);
 
 		nxs_string_printf(&message,
 		                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED,
@@ -216,7 +216,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 			                  &project_fmt,
 			                  update->data.issue.id,
 			                  &subject_fmt,
-			                  &properties);
+			                  &properties,
+			                  &user_fmt);
 
 			nxs_chat_srv_c_tlgrm_make_message_chunks(&message, NULL, &m_chunks);
 		}

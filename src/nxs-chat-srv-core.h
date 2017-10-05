@@ -4,7 +4,7 @@
 // clang-format off
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.0.5"
+#define NXS_CHAT_SRV_VERSION						"0.0.6"
 
 /* Project basic global definitions */
 
@@ -60,7 +60,7 @@
 
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED				"Создана новая задача <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>Автор:</b> %r\n<b>Статус:</b> %r\n<b>Приоритет:</b> %r\n<b>Назначена:</b> %r\n\n<b>Описание</b>:\n---\n"
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED				"%s<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>%r писал(а):</b>\n---\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE		"%s<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE		"%s<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>%r</b>"
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_TOO_BIG				"<i>Сообщение слишком велико, пожалуйста, ознакомтесь с ним в web-интерфейсе системы задач</i>"
 
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED_IS_PRIVATE		"<b>Частная:</b> да %s\n"
