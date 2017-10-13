@@ -120,6 +120,7 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_user);
 	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_group);
 	nxs_string_init(&nxs_chat_srv_cfg.cache.lock_file);
+	nxs_string_init(&nxs_chat_srv_cfg.attachments.tlgrm_download_tmp_dir);
 
 	nxs_array_init2(&nxs_chat_srv_cfg.dev_accounts, nxs_string_t);
 

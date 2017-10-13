@@ -44,12 +44,11 @@ static nxs_string_t	_s_msg_empty_subject	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                                                nxs_chat_srv_u_db_cache_t *    cache_ctx,
-                                                                                size_t                         chat_id,
-                                                                                size_t                         message_id,
-                                                                                nxs_chat_srv_m_tlgrm_update_t *update,
-                                                                                nxs_buf_t *                    response_buf)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(nxs_chat_srv_u_db_sess_t * sess_ctx,
+                                                                                nxs_chat_srv_u_db_cache_t *cache_ctx,
+                                                                                size_t                     chat_id,
+                                                                                size_t                     message_id,
+                                                                                nxs_buf_t *                response_buf)
 {
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *  tlgrm_editmessagetext_ctx;
 	nxs_string_t                              callback_str, description, subject, project_name, priority_name, message, private_msg;
@@ -85,7 +84,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(
 		nxs_chat_srv_u_db_cache_prio_get(cache_ctx, &priorities);
 
 		nxs_chat_srv_u_db_sess_t_get_new_issue(
-		        sess_ctx, NULL, &project_name, NULL, &priority_name, &subject, &description, &is_private, NULL);
+		        sess_ctx, NULL, &project_name, NULL, &priority_name, &subject, &description, &is_private, NULL, NULL);
 
 		if(is_private == NXS_YES) {
 

@@ -52,6 +52,7 @@ nxs_chat_srv_d_tlgrm_method_t tlgrm_methods[] =
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_MESSAGE,			nxs_string("sendMessage")},
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_EDIT_MESSAGE_TEXT,		nxs_string("editMessageText")},
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_ANSWER_CALLBACK_QUERY,		nxs_string("answerCallbackQuery")},
+	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_FILE,			nxs_string("getFile")},
 
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_NONE, {NULL, 0, 0}}
 };
@@ -136,6 +137,73 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_
 			        nxs_proc_get_name(&process),
 			        ret_code,
 			        nxs_buf_get_subbuf(b, 0));
+
+			rc = NXS_CHAT_SRV_E_WARN;
+
+			break;
+	}
+
+error:
+
+	nxs_curl_free(&curl);
+
+	return rc;
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_download(nxs_string_t *tlgrm_file_name, nxs_string_t *file_save_path, nxs_http_code_t *http_code)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_curl_t         curl;
+	nxs_http_code_t    ret_code;
+	int                ec;
+
+	if(tlgrm_file_name == NULL || file_save_path == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_curl_init(&curl);
+
+	if((ec = nxs_curl_download(&process,
+	                           &curl,
+	                           NXS_REST_API_COMMON_CMD_GET,
+	                           file_save_path,
+	                           0600,
+	                           (u_char *)"%r/file/bot%r/%r",
+	                           &nxs_chat_srv_cfg.tlgrm.bot_api_addr,
+	                           &nxs_chat_srv_cfg.tlgrm.bot_api_key,
+	                           tlgrm_file_name)) != NXS_CURL_E_OK) {
+
+		nxs_log_write_warn(&process, "[%s]: tlgrm file download error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	ret_code = nxs_curl_get_ret_code(&curl);
+
+	if(http_code != NULL) {
+
+		*http_code = ret_code;
+	}
+
+	switch(ret_code) {
+
+		case NXS_HTTP_CODE_200_OK:
+
+			nxs_log_write_debug(&process, "[%s]: tlgrm file download: success", nxs_proc_get_name(&process));
+
+			rc = NXS_CHAT_SRV_E_OK;
+
+			break;
+
+		default:
+
+			nxs_log_write_error(&process,
+			                    "[%s]: tlgrm file download error: wrong Telegram response code (response code: %d)",
+			                    nxs_proc_get_name(&process),
+			                    ret_code);
 
 			rc = NXS_CHAT_SRV_E_WARN;
 

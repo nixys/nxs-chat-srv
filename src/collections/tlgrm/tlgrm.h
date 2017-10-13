@@ -13,12 +13,16 @@ nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_make_message_chunks	(nxs_string_t *mes
 void					nxs_chat_srv_c_tlgrm_update_init		(nxs_chat_srv_m_tlgrm_update_t *update);
 void					nxs_chat_srv_c_tlgrm_update_free		(nxs_chat_srv_m_tlgrm_update_t *update);
 nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_update_pull_json		(nxs_chat_srv_m_tlgrm_update_t *update, nxs_buf_t *json_buf);
+nxs_chat_srv_m_tlgrm_update_type_t	nxs_chat_srv_c_tlgrm_update_get_type		(nxs_chat_srv_m_tlgrm_update_t *update);
 
 void					nxs_chat_srv_c_tlgrm_callback_query_init	(nxs_chat_srv_m_tlgrm_callback_query_t *callback_query);
 void					nxs_chat_srv_c_tlgrm_callback_query_free	(nxs_chat_srv_m_tlgrm_callback_query_t *callback_query);
 
 void					nxs_chat_srv_c_tlgrm_message_entity_init	(nxs_chat_srv_m_tlgrm_message_entity_t *entity);
 void					nxs_chat_srv_c_tlgrm_message_entity_free	(nxs_chat_srv_m_tlgrm_message_entity_t *entity);
+
+void					nxs_chat_srv_c_tlgrm_photo_size_init		(nxs_chat_srv_m_tlgrm_photo_size_t *photo_size);
+void					nxs_chat_srv_c_tlgrm_photo_size_free		(nxs_chat_srv_m_tlgrm_photo_size_t *entity);
 
 void					nxs_chat_srv_c_tlgrm_message_init		(nxs_chat_srv_m_tlgrm_message_t *message);
 void					nxs_chat_srv_c_tlgrm_message_free		(nxs_chat_srv_m_tlgrm_message_t *message);
@@ -33,6 +37,10 @@ nxs_string_t 				*nxs_chat_srv_c_tlgrm_parse_mode_map		(nxs_chat_srv_m_tlgrm_par
 
 void					nxs_chat_srv_c_tlgrm_user_init			(nxs_chat_srv_m_tlgrm_user_t *user);
 void					nxs_chat_srv_c_tlgrm_user_free			(nxs_chat_srv_m_tlgrm_user_t *user);
+
+void					nxs_chat_srv_c_tlgrm_file_init			(nxs_chat_srv_m_tlgrm_file_t *file);
+void					nxs_chat_srv_c_tlgrm_file_free			(nxs_chat_srv_m_tlgrm_file_t *file);
+nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_file_result_pull_json	(nxs_chat_srv_m_tlgrm_file_t *file, nxs_bool_t *status, nxs_buf_t *json_buf);
 
 void					nxs_chat_srv_c_tlgrm_inl_keyboard_init		(nxs_chat_srv_m_tlgrm_inl_keyboard_t *inl_keyboard);
 void					nxs_chat_srv_c_tlgrm_inl_keyboard_free		(nxs_chat_srv_m_tlgrm_inl_keyboard_t *inl_keyboard);

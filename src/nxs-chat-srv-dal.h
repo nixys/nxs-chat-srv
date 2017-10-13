@@ -14,6 +14,7 @@
 #include <dal/rdmn-enums/rdmn-enums-typedefs.h>
 #include <dal/rdmn-projects/rdmn-projects-typedefs.h>
 #include <dal/rdmn-users/rdmn-users-typedefs.h>
+#include <dal/db-queue/db-queue-typedefs.h>
 #include <dal/db-cache/db-cache-typedefs.h>
 /*%%_NXS_TPL_HEADERS_TYPEDEF_END_%%*/
 
@@ -28,6 +29,7 @@
 #include <dal/rdmn-enums/rdmn-enums.h>
 #include <dal/rdmn-projects/rdmn-projects.h>
 #include <dal/rdmn-users/rdmn-users.h>
+#include <dal/db-queue/db-queue.h>
 #include <dal/db-cache/db-cache.h>
 /*%%_NXS_TPL_HEADERS_END_%%*/
 

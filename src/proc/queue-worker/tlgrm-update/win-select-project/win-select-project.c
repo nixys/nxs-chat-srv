@@ -44,18 +44,16 @@ static nxs_string_t	_s_msg_empty_subject	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                                               size_t                         chat_id,
-                                                                               size_t                         message_id,
-                                                                               nxs_chat_srv_m_tlgrm_update_t *update,
-                                                                               nxs_array_t *                  projects,
-                                                                               size_t                         offset,
-                                                                               size_t                         projects_count,
-                                                                               nxs_buf_t *                    response_buf)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(nxs_chat_srv_u_db_sess_t *sess_ctx,
+                                                                               size_t                    chat_id,
+                                                                               size_t                    message_id,
+                                                                               nxs_array_t *             projects,
+                                                                               size_t                    offset,
+                                                                               size_t                    projects_count,
+                                                                               nxs_buf_t *               response_buf)
 {
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
 	nxs_string_t callback_str, description, subject, project_name, priority_name, project_name_regex, message, private_msg;
-	size_t       priority_id, project_id;
 	nxs_buf_t *  b;
 	nxs_chat_srv_m_db_sess_project_t *p;
 	size_t                            i;
@@ -83,15 +81,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(n
 
 		/* update existing comment */
 
-		nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx,
-		                                       &project_id,
-		                                       &project_name,
-		                                       &priority_id,
-		                                       &priority_name,
-		                                       &subject,
-		                                       &description,
-		                                       &is_private,
-		                                       &project_name_regex);
+		nxs_chat_srv_u_db_sess_t_get_new_issue(
+		        sess_ctx, NULL, &project_name, NULL, &priority_name, &subject, &description, &is_private, NULL, NULL);
 
 		if(is_private == NXS_YES) {
 

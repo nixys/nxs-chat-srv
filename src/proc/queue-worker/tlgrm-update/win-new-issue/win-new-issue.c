@@ -45,12 +45,11 @@ static nxs_string_t	_s_msg_empty_subject	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                                          size_t                         chat_id,
-                                                                          size_t                         message_id,
-                                                                          nxs_bool_t                     full_message,
-                                                                          nxs_chat_srv_m_tlgrm_update_t *update,
-                                                                          nxs_buf_t *                    response_buf)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_chat_srv_u_db_sess_t *sess_ctx,
+                                                                          size_t                    chat_id,
+                                                                          size_t                    message_id,
+                                                                          nxs_bool_t                full_message,
+                                                                          nxs_buf_t *               response_buf)
 {
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
 	nxs_string_t                            callback_str, description, subject, project_name, priority_name, message, private_msg;
@@ -80,7 +79,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 		/* update existing comment */
 
 		nxs_chat_srv_u_db_sess_t_get_new_issue(
-		        sess_ctx, NULL, &project_name, NULL, &priority_name, &subject, &description, &is_private, NULL);
+		        sess_ctx, NULL, &project_name, NULL, &priority_name, &subject, &description, &is_private, NULL, NULL);
 
 		if(full_message == NXS_YES) {
 
@@ -132,6 +131,10 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 			        0,
 			        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_PRIORITY);
 
+			/*
+			 * TODO: at the moment change description functionality for new issue is disabled
+			 */
+			/*
 			nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
 			        tlgrm_editmessagetext_ctx,
 			        0,
@@ -139,6 +142,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 			        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CHANGE_DESCRIPTION,
 			        0,
 			        NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESCRIPTION);
+			*/
 
 			nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
 			        tlgrm_editmessagetext_ctx,

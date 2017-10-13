@@ -30,11 +30,17 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module declarations */
 
-
+typedef struct
+{
+	nxs_string_t		ext_name;
+	nxs_string_t		content_type;
+} nxs_chat_srv_u_rdmn_issues_mine_t;
 
 /* Module internal (static) functions prototypes */
 
 // clang-format on
+
+static nxs_string_t *nxs_chat_srv_u_rdmn_issues_mime_get(nxs_string_t *file_name);
 
 static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create_extract(size_t *new_issue_id, nxs_buf_t *json_buf);
 static nxs_cfg_json_state_t
@@ -46,6 +52,10 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_rdmn_issues_get_query_extract_issues(
                                                                                 nxs_cfg_json_par_t *cfg_json_par_el,
                                                                                 nxs_array_t *       cfg_arr);
 
+static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_file_upload_extract(nxs_string_t *upload_token, nxs_buf_t *json_buf);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_u_rdmn_issues_file_upload_token_extract(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+
 // clang-format off
 
 /* Module initializations */
@@ -55,6 +65,19 @@ static nxs_string_t _s_par_issues		= nxs_string("issues");
 static nxs_string_t _s_par_total_count		= nxs_string("total_count");
 static nxs_string_t _s_par_id			= nxs_string("id");
 static nxs_string_t _s_par_subject		= nxs_string("subject");
+static nxs_string_t _s_par_upload		= nxs_string("upload");
+static nxs_string_t _s_par_token		= nxs_string("token");
+
+static nxs_string_t _s_mime_default		= nxs_string("application/octet-stream");
+
+nxs_chat_srv_u_rdmn_issues_mine_t mimes[] =
+{
+	{nxs_string("jpeg"),			nxs_string("image/jpeg")},
+	{nxs_string("jpg"),			nxs_string("image/jpeg")},
+	{nxs_string("png"),			nxs_string("image/png")},
+
+	{NXS_STRING_NULL_STR,			NXS_STRING_NULL_STR},
+};
 
 /* Module global functions */
 
@@ -66,11 +89,16 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create(size_t        project_id,
                                                      nxs_string_t *description,
                                                      nxs_bool_t    is_private,
                                                      size_t *      new_issue_id,
+                                                     nxs_array_t * uploads,
                                                      nxs_string_t *api_key)
 {
-	nxs_buf_t          out_buf;
-	nxs_chat_srv_err_t rc;
-	nxs_http_code_t    http_code;
+	nxs_chat_srv_m_rdmn_issues_upload_t *u;
+	nxs_buf_t                            out_buf;
+	nxs_array_t                          d_uploads;
+	nxs_string_t                         upload_token;
+	nxs_chat_srv_err_t                   rc, ec;
+	nxs_http_code_t                      http_code;
+	size_t                               i;
 
 	if(subject == NULL || description == NULL || new_issue_id == NULL || api_key == NULL) {
 
@@ -81,7 +109,56 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create(size_t        project_id,
 
 	nxs_buf_init2(&out_buf);
 
-	if(nxs_chat_srv_d_rdmn_issues_create(project_id, priority_id, subject, description, is_private, api_key, &http_code, &out_buf) !=
+	nxs_string_init(&upload_token);
+
+	nxs_chat_srv_d_rdmn_issues_uploads_init(&d_uploads);
+
+	if(uploads != NULL && nxs_array_count(uploads) > 0) {
+
+		for(i = 0; i < nxs_array_count(uploads); i++) {
+
+			u = nxs_array_get(uploads, i);
+
+			ec = nxs_chat_srv_d_rdmn_issues_file_upload(api_key, &u->file_path, NULL, &out_buf);
+
+			if(nxs_fs_unlink(&u->file_path) < 0) {
+
+				nxs_log_write_warn(&process,
+				                   "[%s]: rdmn add file to issue note warn: %s (file path: %r)",
+				                   nxs_proc_get_name(&process),
+				                   strerror(errno),
+				                   &u->file_path);
+			}
+
+			switch(ec) {
+
+				case NXS_CHAT_SRV_E_OK:
+
+					if(nxs_chat_srv_u_rdmn_issues_file_upload_extract(&upload_token, &out_buf) != NXS_CHAT_SRV_E_OK) {
+
+						nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+					}
+
+					nxs_chat_srv_d_rdmn_issues_uploads_add(&d_uploads,
+					                                       &upload_token,
+					                                       &u->file_name,
+					                                       nxs_chat_srv_u_rdmn_issues_mime_get(&u->file_path));
+
+					break;
+
+				case NXS_CHAT_SRV_E_ATTR:
+
+					break;
+
+				default:
+
+					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+		}
+	}
+
+	if(nxs_chat_srv_d_rdmn_issues_create(
+	           project_id, priority_id, subject, description, is_private, &d_uploads, api_key, &http_code, &out_buf) !=
 	   NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -96,6 +173,10 @@ error:
 
 	nxs_buf_free(&out_buf);
 
+	nxs_string_free(&upload_token);
+
+	nxs_chat_srv_d_rdmn_issues_uploads_free(&d_uploads);
+
 	return rc;
 }
 
@@ -104,27 +185,100 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t        issue_id,
                                                        nxs_string_t *note,
                                                        nxs_bool_t    private_notes,
                                                        size_t        status_id,
+                                                       nxs_array_t * uploads,
                                                        nxs_array_t * custom_fields,
                                                        nxs_string_t *api_key)
 {
+	nxs_chat_srv_m_rdmn_issues_upload_t *u;
+	nxs_string_t                         upload_token;
+	nxs_buf_t                            out_buf;
+	nxs_array_t                          d_uploads;
+	nxs_chat_srv_err_t                   rc, ec;
+	size_t                               i;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_buf_init2(&out_buf);
+
+	nxs_string_init(&upload_token);
+
+	nxs_chat_srv_d_rdmn_issues_uploads_init(&d_uploads);
+
+	if(uploads != NULL && nxs_array_count(uploads) > 0) {
+
+		for(i = 0; i < nxs_array_count(uploads); i++) {
+
+			u = nxs_array_get(uploads, i);
+
+			ec = nxs_chat_srv_d_rdmn_issues_file_upload(api_key, &u->file_path, NULL, &out_buf);
+
+			if(nxs_fs_unlink(&u->file_path) < 0) {
+
+				nxs_log_write_warn(&process,
+				                   "[%s]: rdmn add file to issue note warn: %s (file path: %r)",
+				                   nxs_proc_get_name(&process),
+				                   strerror(errno),
+				                   &u->file_path);
+			}
+
+			switch(ec) {
+
+				case NXS_CHAT_SRV_E_OK:
+
+					if(nxs_chat_srv_u_rdmn_issues_file_upload_extract(&upload_token, &out_buf) != NXS_CHAT_SRV_E_OK) {
+
+						nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+					}
+
+					nxs_chat_srv_d_rdmn_issues_uploads_add(&d_uploads,
+					                                       &upload_token,
+					                                       &u->file_name,
+					                                       nxs_chat_srv_u_rdmn_issues_mime_get(&u->file_path));
+
+					break;
+
+				case NXS_CHAT_SRV_E_ATTR:
+
+					break;
+
+				default:
+
+					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+		}
+	}
 
 	switch(nxs_chat_srv_d_rdmn_issues_add_comment(
-	        issue_id, assigned_to_id, note, private_notes, status_id, custom_fields, api_key, NULL, NULL)) {
+	        issue_id, assigned_to_id, note, private_notes, status_id, &d_uploads, custom_fields, api_key, NULL, NULL)) {
 
 		case NXS_CHAT_SRV_E_OK:
 
-			return NXS_CHAT_SRV_E_OK;
+			rc = NXS_CHAT_SRV_E_OK;
+
+			break;
 
 		case NXS_CHAT_SRV_E_ATTR:
 
-			return NXS_CHAT_SRV_E_WARN;
+			rc = NXS_CHAT_SRV_E_WARN;
+
+			break;
 
 		default:
+
+			rc = NXS_CHAT_SRV_E_ERR;
 
 			break;
 	}
 
-	return NXS_CHAT_SRV_E_ERR;
+error:
+
+	nxs_buf_free(&out_buf);
+
+	nxs_string_free(&upload_token);
+
+	nxs_chat_srv_d_rdmn_issues_uploads_free(&d_uploads);
+
+	return rc;
 }
 
 nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_get_query(nxs_array_t * issues,
@@ -165,6 +319,39 @@ error:
 }
 
 /* Module internal (static) functions */
+
+static nxs_string_t *nxs_chat_srv_u_rdmn_issues_mime_get(nxs_string_t *file_name)
+{
+	size_t  i;
+	u_char *c;
+
+	if(file_name == NULL || nxs_string_len(file_name) == 0) {
+
+		return &_s_mime_default;
+	}
+
+	if((c = nxs_string_find_char_last(file_name, 0, (u_char)'.')) == NULL) {
+
+		return &_s_mime_default;
+	}
+
+	c++;
+
+	if((size_t)(c - nxs_string_str(file_name)) >= nxs_string_len(file_name)) {
+
+		return &_s_mime_default;
+	}
+
+	for(i = 0; nxs_string_len(&mimes[i].ext_name) > 0; i++) {
+
+		if(nxs_string_char_cmp(&mimes[i].ext_name, 0, c) == NXS_YES) {
+
+			return &mimes[i].content_type;
+		}
+	}
+
+	return &_s_mime_default;
+}
 
 static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create_extract(size_t *new_issue_id, nxs_buf_t *json_buf)
 {
@@ -297,4 +484,74 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_rdmn_issues_get_query_extract_issues(
 	// clang-format on
 
 	return NXS_CFG_JSON_CONF_OK;
+}
+
+static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_file_upload_extract(nxs_string_t *upload_token, nxs_buf_t *json_buf)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_cfg_json_t     cfg_json;
+	nxs_array_t        cfg_arr;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_upload,		upload_token,	&nxs_chat_srv_u_rdmn_issues_file_upload_token_extract,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_buf(&process, cfg_json, json_buf) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_error(
+		        &process, "[%s]: rdmn upload response extract error: parse rdmn upload response", nxs_proc_get_name(&process));
+
+		rc = NXS_CHAT_SRV_E_ERR;
+	}
+
+	nxs_cfg_json_free(&cfg_json);
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_u_rdmn_issues_file_upload_token_extract(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_string_t *       var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t       cfg_json;
+	nxs_array_t          cfg_arr;
+	nxs_cfg_json_state_t rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_token,	var,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "[%s]: rdmn upload response extract error: 'upload' block", nxs_proc_get_name(&process));
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
 }

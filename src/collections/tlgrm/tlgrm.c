@@ -46,6 +46,8 @@ static nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_update_pull_json_extract(nxs_chat
 static nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_message_result_pull_json_extract(nxs_chat_srv_m_tlgrm_message_t *message,
                                                                                 nxs_bool_t *                    status,
                                                                                 nxs_buf_t *                     json_buf);
+static nxs_chat_srv_err_t
+        nxs_chat_srv_c_tlgrm_file_result_pull_json_extract(nxs_chat_srv_m_tlgrm_file_t *file, nxs_bool_t *status, nxs_buf_t *json_buf);
 static nxs_cfg_json_state_t
         nxs_chat_srv_c_tlgrm_extract_json_message(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
@@ -58,6 +60,12 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_tlgrm_extract_json_entity(nxs_process
                                                                      nxs_json_t *        json,
                                                                      nxs_cfg_json_par_t *cfg_json_par_el,
                                                                      nxs_array_t *       cfg_arr);
+static nxs_cfg_json_state_t nxs_chat_srv_c_tlgrm_extract_json_photo_size(nxs_process_t *     proc,
+                                                                         nxs_json_t *        json,
+                                                                         nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                         nxs_array_t *       cfg_arr);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_tlgrm_extract_json_file(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 
 // clang-format off
 
@@ -87,6 +95,13 @@ static nxs_string_t	_s_par_o_id		= nxs_string("o_id");
 static nxs_string_t	_s_par_offset		= nxs_string("offset");
 static nxs_string_t	_s_par_length		= nxs_string("length");
 static nxs_string_t	_s_par_url		= nxs_string("url");
+static nxs_string_t	_s_par_caption		= nxs_string("caption");
+static nxs_string_t	_s_par_photo		= nxs_string("photo");
+static nxs_string_t	_s_par_file_id		= nxs_string("file_id");
+static nxs_string_t	_s_par_width		= nxs_string("width");
+static nxs_string_t	_s_par_height		= nxs_string("height");
+static nxs_string_t	_s_par_file_size	= nxs_string("file_size");
+static nxs_string_t	_s_par_file_path	= nxs_string("file_path");
 
 
 static nxs_chat_srv_c_tlgrm_types_t chat_types[] =
@@ -360,6 +375,26 @@ nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_update_pull_json(nxs_chat_srv_m_tlgrm_up
 
 	return nxs_chat_srv_c_tlgrm_update_pull_json_extract(update, json_buf);
 }
+nxs_chat_srv_m_tlgrm_update_type_t nxs_chat_srv_c_tlgrm_update_get_type(nxs_chat_srv_m_tlgrm_update_t *update)
+{
+
+	if(update == NULL) {
+
+		return NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_NONE;
+	}
+
+	if(update->callback_query._is_used == NXS_YES) {
+
+		return NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_CALLBACK;
+	}
+
+	if(update->message._is_used == NXS_YES) {
+
+		return NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE;
+	}
+
+	return NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_NONE;
+}
 
 void nxs_chat_srv_c_tlgrm_callback_query_init(nxs_chat_srv_m_tlgrm_callback_query_t *callback_query)
 {
@@ -370,9 +405,9 @@ void nxs_chat_srv_c_tlgrm_callback_query_init(nxs_chat_srv_m_tlgrm_callback_quer
 
 	callback_query->_is_used = NXS_NO;
 
-	nxs_string_init2(&callback_query->id, 0, NXS_STRING_EMPTY_STR);
-	nxs_string_init2(&callback_query->chat_instance, 0, NXS_STRING_EMPTY_STR);
-	nxs_string_init2(&callback_query->data, 0, NXS_STRING_EMPTY_STR);
+	nxs_string_init_empty(&callback_query->id);
+	nxs_string_init_empty(&callback_query->chat_instance);
+	nxs_string_init_empty(&callback_query->data);
 
 	nxs_chat_srv_c_tlgrm_user_init(&callback_query->from);
 	nxs_chat_srv_c_tlgrm_message_init(&callback_query->message);
@@ -429,6 +464,40 @@ void nxs_chat_srv_c_tlgrm_message_entity_free(nxs_chat_srv_m_tlgrm_message_entit
 	nxs_string_free(&entity->url);
 }
 
+void nxs_chat_srv_c_tlgrm_photo_size_init(nxs_chat_srv_m_tlgrm_photo_size_t *photo_size)
+{
+
+	if(photo_size == NULL) {
+
+		return;
+	}
+
+	photo_size->_is_used = NXS_NO;
+
+	photo_size->width     = 0;
+	photo_size->height    = 0;
+	photo_size->file_size = 0;
+
+	nxs_string_init_empty(&photo_size->file_id);
+}
+
+void nxs_chat_srv_c_tlgrm_photo_size_free(nxs_chat_srv_m_tlgrm_photo_size_t *photo_size)
+{
+
+	if(photo_size == NULL) {
+
+		return;
+	}
+
+	photo_size->_is_used = NXS_NO;
+
+	photo_size->width     = 0;
+	photo_size->height    = 0;
+	photo_size->file_size = 0;
+
+	nxs_string_free(&photo_size->file_id);
+}
+
 void nxs_chat_srv_c_tlgrm_message_init(nxs_chat_srv_m_tlgrm_message_t *message)
 {
 
@@ -440,7 +509,8 @@ void nxs_chat_srv_c_tlgrm_message_init(nxs_chat_srv_m_tlgrm_message_t *message)
 	message->_is_used   = NXS_NO;
 	message->message_id = 0;
 
-	nxs_string_init2(&message->text, 0, NXS_STRING_EMPTY_STR);
+	nxs_string_init_empty(&message->text);
+	nxs_string_init_empty(&message->caption);
 
 	nxs_chat_srv_c_tlgrm_user_init(&message->from);
 	nxs_chat_srv_c_tlgrm_chat_init(&message->chat);
@@ -448,11 +518,13 @@ void nxs_chat_srv_c_tlgrm_message_init(nxs_chat_srv_m_tlgrm_message_t *message)
 	message->reply_to_message = NULL;
 
 	nxs_array_init2(&message->entities, nxs_chat_srv_m_tlgrm_message_entity_t);
+	nxs_array_init2(&message->photo, nxs_chat_srv_m_tlgrm_photo_size_t);
 }
 
 void nxs_chat_srv_c_tlgrm_message_free(nxs_chat_srv_m_tlgrm_message_t *message)
 {
 	nxs_chat_srv_m_tlgrm_message_entity_t *e;
+	nxs_chat_srv_m_tlgrm_photo_size_t *    p;
 	size_t                                 i;
 
 	if(message == NULL) {
@@ -464,6 +536,7 @@ void nxs_chat_srv_c_tlgrm_message_free(nxs_chat_srv_m_tlgrm_message_t *message)
 	message->message_id = 0;
 
 	nxs_string_free(&message->text);
+	nxs_string_free(&message->caption);
 
 	nxs_chat_srv_c_tlgrm_user_free(&message->from);
 	nxs_chat_srv_c_tlgrm_chat_free(&message->chat);
@@ -480,7 +553,15 @@ void nxs_chat_srv_c_tlgrm_message_free(nxs_chat_srv_m_tlgrm_message_t *message)
 		nxs_chat_srv_c_tlgrm_message_entity_free(e);
 	}
 
+	for(i = 0; i < nxs_array_count(&message->photo); i++) {
+
+		p = nxs_array_get(&message->photo, i);
+
+		nxs_chat_srv_c_tlgrm_photo_size_free(p);
+	}
+
 	nxs_array_free(&message->entities);
+	nxs_array_free(&message->photo);
 }
 
 nxs_chat_srv_err_t
@@ -531,7 +612,7 @@ void nxs_chat_srv_c_tlgrm_chat_init(nxs_chat_srv_m_tlgrm_chat_t *chat)
 	chat->id       = 0;
 	chat->type     = NXS_CHAT_SRV_M_TLGRM_CHAT_TYPE_NONE;
 
-	nxs_string_init2(&chat->username, 0, NXS_STRING_EMPTY_STR);
+	nxs_string_init_empty(&chat->username);
 }
 
 void nxs_chat_srv_c_tlgrm_chat_free(nxs_chat_srv_m_tlgrm_chat_t *chat)
@@ -588,12 +669,13 @@ void nxs_chat_srv_c_tlgrm_user_init(nxs_chat_srv_m_tlgrm_user_t *user)
 	}
 
 	user->_is_used = NXS_NO;
-	user->id       = 0;
 
-	nxs_string_init2(&user->first_name, 0, NXS_STRING_EMPTY_STR);
-	nxs_string_init2(&user->last_name, 0, NXS_STRING_EMPTY_STR);
-	nxs_string_init2(&user->username, 0, NXS_STRING_EMPTY_STR);
-	nxs_string_init2(&user->language_code, 0, NXS_STRING_EMPTY_STR);
+	user->id = 0;
+
+	nxs_string_init_empty(&user->first_name);
+	nxs_string_init_empty(&user->last_name);
+	nxs_string_init_empty(&user->username);
+	nxs_string_init_empty(&user->language_code);
 }
 
 void nxs_chat_srv_c_tlgrm_user_free(nxs_chat_srv_m_tlgrm_user_t *user)
@@ -605,12 +687,56 @@ void nxs_chat_srv_c_tlgrm_user_free(nxs_chat_srv_m_tlgrm_user_t *user)
 	}
 
 	user->_is_used = NXS_NO;
-	user->id       = 0;
+
+	user->id = 0;
 
 	nxs_string_free(&user->first_name);
 	nxs_string_free(&user->last_name);
 	nxs_string_free(&user->username);
 	nxs_string_free(&user->language_code);
+}
+
+void nxs_chat_srv_c_tlgrm_file_init(nxs_chat_srv_m_tlgrm_file_t *file)
+{
+
+	if(file == NULL) {
+
+		return;
+	}
+
+	file->_is_used = NXS_NO;
+
+	file->file_size = 0;
+
+	nxs_string_init_empty(&file->file_id);
+	nxs_string_init_empty(&file->file_path);
+}
+
+void nxs_chat_srv_c_tlgrm_file_free(nxs_chat_srv_m_tlgrm_file_t *file)
+{
+
+	if(file == NULL) {
+
+		return;
+	}
+
+	file->_is_used = NXS_NO;
+
+	file->file_size = 0;
+
+	nxs_string_free(&file->file_id);
+	nxs_string_free(&file->file_path);
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_file_result_pull_json(nxs_chat_srv_m_tlgrm_file_t *file, nxs_bool_t *status, nxs_buf_t *json_buf)
+{
+
+	if(file == NULL || status == NULL || json_buf == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	return nxs_chat_srv_c_tlgrm_file_result_pull_json_extract(file, status, json_buf);
 }
 
 void nxs_chat_srv_c_tlgrm_inl_keyboard_init(nxs_chat_srv_m_tlgrm_inl_keyboard_t *inl_keyboard)
@@ -813,9 +939,9 @@ void nxs_chat_srv_c_tlgrm_inl_keybutton_init(nxs_chat_srv_m_tlgrm_inl_keybutton_
 
 	inl_keybutton->_is_used = NXS_NO;
 
-	nxs_string_init2(&inl_keybutton->text, 0, NXS_STRING_EMPTY_STR);
-	nxs_string_init2(&inl_keybutton->url, 0, NXS_STRING_EMPTY_STR);
-	nxs_string_init2(&inl_keybutton->callback_data, 0, NXS_STRING_EMPTY_STR);
+	nxs_string_init_empty(&inl_keybutton->text);
+	nxs_string_init_empty(&inl_keybutton->url);
+	nxs_string_init_empty(&inl_keybutton->callback_data);
 }
 
 void nxs_chat_srv_c_tlgrm_inl_keybutton_free(nxs_chat_srv_m_tlgrm_inl_keybutton_t *inl_keybutton)
@@ -1011,6 +1137,41 @@ static nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_message_result_pull_json_extract(
 	return rc;
 }
 
+static nxs_chat_srv_err_t
+        nxs_chat_srv_c_tlgrm_file_result_pull_json_extract(nxs_chat_srv_m_tlgrm_file_t *file, nxs_bool_t *status, nxs_buf_t *json_buf)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_cfg_json_t     cfg_json;
+	nxs_array_t        cfg_arr;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_result,		file,		&nxs_chat_srv_c_tlgrm_extract_json_file,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ok,		status,		NULL,						NULL,	NXS_CFG_JSON_TYPE_BOOL,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_buf(&process, cfg_json, json_buf) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_error(&process, "[%s]: tlgrm file result json pull error: parse json_buf error", nxs_proc_get_name(&process));
+
+		rc = NXS_CHAT_SRV_E_ERR;
+	}
+
+	nxs_cfg_json_free(&cfg_json);
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
 static nxs_cfg_json_state_t
         nxs_chat_srv_c_tlgrm_extract_json_message(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
 {
@@ -1035,8 +1196,10 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_from,			&var->from,		&nxs_chat_srv_c_tlgrm_extract_json_user,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_chat,			&var->chat,		&nxs_chat_srv_c_tlgrm_extract_json_chat,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_text,			&var->text,		NULL,						NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_caption,		&var->caption,		NULL,						NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_reply_to_message,	m,			&nxs_chat_srv_c_tlgrm_extract_json_message,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_entities,		&var->entities,		NULL,						&nxs_chat_srv_c_tlgrm_extract_json_entity,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_photo,			&var->photo,		NULL,						&nxs_chat_srv_c_tlgrm_extract_json_photo_size,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -1230,4 +1393,74 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_tlgrm_extract_json_entity(nxs_process
 	// clang-format on
 
 	return NXS_CFG_JSON_CONF_OK;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_c_tlgrm_extract_json_photo_size(nxs_process_t *     proc,
+                                                                         nxs_json_t *        json,
+                                                                         nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                         nxs_array_t *       cfg_arr)
+{
+	nxs_array_t *                      photo_sizes = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_chat_srv_m_tlgrm_photo_size_t *p;
+
+	p = nxs_array_add(photo_sizes);
+
+	nxs_chat_srv_c_tlgrm_photo_size_init(p);
+
+	p->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_skip_undef(cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_file_id,	&p->file_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_width,		&p->width,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_height,		&p->height,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_file_size,	&p->file_size,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_NO,	NULL);
+
+	// clang-format on
+
+	return NXS_CFG_JSON_CONF_OK;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_tlgrm_extract_json_file(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_m_tlgrm_file_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t               cfg_json;
+	nxs_array_t                  cfg_arr;
+	nxs_cfg_json_state_t         rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	var->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_id,	&var->file_id,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_size,	&var->file_size,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_path,	&var->file_path,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "json read error: 'file' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
 }

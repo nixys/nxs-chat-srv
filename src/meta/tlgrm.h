@@ -5,14 +5,17 @@
 
 // clang-format off
 
+typedef enum			nxs_chat_srv_m_tlgrm_update_type_e		nxs_chat_srv_m_tlgrm_update_type_t;
 typedef enum			nxs_chat_srv_m_tlgrm_chat_type_e		nxs_chat_srv_m_tlgrm_chat_type_t;
 typedef enum			nxs_chat_srv_m_tlgrm_reply_markup_type_e	nxs_chat_srv_m_tlgrm_reply_markup_type_t;
 typedef enum			nxs_chat_srv_m_tlgrm_parse_mode_e		nxs_chat_srv_m_tlgrm_parse_mode_t;
 typedef enum			nxs_chat_srv_m_tlgrm_bttn_callback_type_e	nxs_chat_srv_m_tlgrm_bttn_callback_type_t;
 
+typedef struct			nxs_chat_srv_m_tlgrm_file_s			nxs_chat_srv_m_tlgrm_file_t;
 typedef struct			nxs_chat_srv_m_tlgrm_update_s			nxs_chat_srv_m_tlgrm_update_t;
 typedef struct			nxs_chat_srv_m_tlgrm_callback_query_s		nxs_chat_srv_m_tlgrm_callback_query_t;
 typedef struct			nxs_chat_srv_m_tlgrm_message_entity_s		nxs_chat_srv_m_tlgrm_message_entity_t;
+typedef struct			nxs_chat_srv_m_tlgrm_photo_size_s		nxs_chat_srv_m_tlgrm_photo_size_t;
 typedef struct			nxs_chat_srv_m_tlgrm_message_s			nxs_chat_srv_m_tlgrm_message_t;
 typedef struct			nxs_chat_srv_m_tlgrm_chat_s			nxs_chat_srv_m_tlgrm_chat_t;
 typedef struct			nxs_chat_srv_m_tlgrm_user_s			nxs_chat_srv_m_tlgrm_user_t;
@@ -20,6 +23,14 @@ typedef struct			nxs_chat_srv_m_tlgrm_inl_keyboard_s		nxs_chat_srv_m_tlgrm_inl_k
 typedef struct			nxs_chat_srv_m_tlgrm_inl_keybutton_s		nxs_chat_srv_m_tlgrm_inl_keybutton_t;
 typedef struct			nxs_chat_srv_m_tlgrm_force_reply_s		nxs_chat_srv_m_tlgrm_force_reply_t;
 typedef struct			nxs_chat_srv_m_tlgrm_bttn_callback_s		nxs_chat_srv_m_tlgrm_bttn_callback_t;
+
+enum nxs_chat_srv_m_tlgrm_update_type_e
+{
+	NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_NONE,
+	NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE,
+	NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_CALLBACK,
+	NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_COMMAND,
+};
 
 enum nxs_chat_srv_m_tlgrm_chat_type_e
 {
@@ -66,6 +77,15 @@ enum nxs_chat_srv_m_tlgrm_bttn_callback_type_e
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_CHANGE_DESCRIPTION,		/* change issue description */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SESSION_DESTROY,		/* destroy current session */
 	NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK				/* back to previous 'window' */
+};
+
+struct nxs_chat_srv_m_tlgrm_file_s
+{
+	nxs_bool_t				_is_used;
+
+	nxs_string_t				file_id;
+	size_t					file_size;		/* Optional */
+	nxs_string_t				file_path;
 };
 
 struct nxs_chat_srv_m_tlgrm_force_reply_s
@@ -121,6 +141,16 @@ struct nxs_chat_srv_m_tlgrm_message_entity_s
 	nxs_string_t				url;			/* Optional */
 };
 
+struct nxs_chat_srv_m_tlgrm_photo_size_s
+{
+	nxs_bool_t				_is_used;
+
+	nxs_string_t				file_id;
+	size_t					width;
+	size_t					height;
+	size_t					file_size;		/* Optional */
+};
+
 struct nxs_chat_srv_m_tlgrm_message_s
 {
 	nxs_bool_t				_is_used;
@@ -130,6 +160,9 @@ struct nxs_chat_srv_m_tlgrm_message_s
 	nxs_chat_srv_m_tlgrm_chat_t		chat;
 	nxs_chat_srv_m_tlgrm_message_t		*reply_to_message;	/* Optional */
 	nxs_string_t				text;			/* Optional */
+	nxs_string_t				caption;		/* Optional */
+
+	nxs_array_t				photo;			/* type: nxs_chat_srv_m_tlgrm_photo_size_t. Optional */
 
 	nxs_array_t				entities;		/* type: nxs_chat_srv_m_tlgrm_message_entity_t. Optional */
 };

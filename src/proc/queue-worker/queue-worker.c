@@ -47,7 +47,7 @@ static void nxs_chat_srv_p_queue_worker_sighandler_usr1(int sig, void *data);
 
 nxs_chat_srv_p_queue_worker_type_handler_t type_handlers[] =
 {
-	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_UPDATE,	&nxs_chat_srv_p_queue_worker_tlgrm_update_runtime},
+	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_UPDATE,	&nxs_chat_srv_p_queue_worker_tlgrm_update_add},
 	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_RDMN_UPDATE,	&nxs_chat_srv_p_queue_worker_rdmn_update_runtime},
 
 	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_NONE,	NULL}
@@ -89,6 +89,12 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_runtime(void)
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
+
+		/* processing received signals */
+		nxs_proc_signal_unblock(&process, SIGUSR1, SIGTERM, NXS_PROCESS_SIG_END_ARGS);
+		nxs_proc_signal_block(&process, SIGTERM, SIGUSR1, NXS_PROCESS_SIG_END_ARGS);
+
+		nxs_chat_srv_p_queue_worker_tlgrm_update_runtime_queue();
 
 		nxs_proc_signal_unblock(&process, SIGUSR1, SIGTERM, NXS_PROCESS_SIG_END_ARGS);
 	}

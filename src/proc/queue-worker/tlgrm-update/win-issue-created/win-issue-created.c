@@ -42,12 +42,11 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nxs_chat_srv_u_db_sess_t *     sess_ctx,
-                                                                              size_t                         chat_id,
-                                                                              size_t                         message_id,
-                                                                              nxs_chat_srv_m_tlgrm_update_t *update,
-                                                                              size_t                         new_issue_id,
-                                                                              nxs_buf_t *                    response_buf)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nxs_chat_srv_u_db_sess_t *sess_ctx,
+                                                                              size_t                    chat_id,
+                                                                              size_t                    message_id,
+                                                                              size_t                    new_issue_id,
+                                                                              nxs_buf_t *               response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
@@ -64,7 +63,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nx
 	nxs_string_init(&message);
 	nxs_string_init(&project);
 
-	if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, &project, NULL, NULL, &subject, NULL, NULL, NULL) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_u_db_sess_t_get_new_issue(sess_ctx, NULL, &project, NULL, NULL, &subject, NULL, NULL, NULL, NULL) !=
+	   NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}

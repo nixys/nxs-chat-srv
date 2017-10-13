@@ -42,13 +42,12 @@ static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t                         chat_id,
-                                                                      size_t                         message_id,
-                                                                      size_t                         rdmn_userid,
-                                                                      nxs_string_t *                 user_api_key,
-                                                                      nxs_chat_srv_m_tlgrm_update_t *update,
-                                                                      nxs_bool_t                     private_notes,
-                                                                      nxs_buf_t *                    response_buf)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t        chat_id,
+                                                                      size_t        message_id,
+                                                                      size_t        rdmn_userid,
+                                                                      nxs_string_t *user_api_key,
+                                                                      nxs_bool_t    private_notes,
+                                                                      nxs_buf_t *   response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;

@@ -4,8 +4,6 @@
 
 // clang-format off
 
-#include <hiredis/hiredis.h>
-
 #include <nxs-core/nxs-core.h>
 
 /* Project core include */

@@ -3,6 +3,8 @@
 
 // clang-format off
 
+#include <hiredis/hiredis.h>
+
 /* Project version */
 #define NXS_CHAT_SRV_VERSION						"0.0.6"
 
@@ -47,15 +49,15 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_SUBJECT			"Напишите название задачи?"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT			"<i>Будет задана при создании задачи</i>"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR				"%s Произошла внутрення ошибка сервера, мы уже получили уведомление об этом и работаем над решением проблемы. Пожалуйста, <a href=\"%r\">воспользуйтесь web-версией системы задач</a> или повторите свой запрос позже."
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_ACTION				"Не верное действие. Вам необходимо либо следовать указаниям мастера, либо Вы можете отменить текущий диалог"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_ACTION				"Не верное действие. Вам необходимо либо следовать указаниям мастера, либо Вы можете завершить текущий диалог"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_REPLY				"К сожалению, не удалось определить номер задачи в которую необходимо отправить Ваше сообщение"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SESSION_DESTROYED			"Предыдущий диалог завершён"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_DESCRIPTION_CHANGED			"Описание изменено"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_DESCRIPTION			"Напишите новое описание задачи?"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_DESCRIPTION			"Напишите новое описание задачи? Все новые файлы будут добавлены к уже существующим"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED			"Задача <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a> создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE			"Ваш комментарий отправлен в задачу <a href=\"%r/issues/%zu\">#%zu</a>"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE				"Пожалуйста, выберите задачу в которую необходимо отправить Ваш комментарий"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_PRIVACY			"*Приватная задача %s*\n"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_PRIVACY			"<b>Приватная задача %s</b>\n"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ADD_NOTE_EXT				"Для добавления комментария необходимо выбрать одно из следующих действий"
 
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED				"Создана новая задача <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>Автор:</b> %r\n<b>Статус:</b> %r\n<b>Приоритет:</b> %r\n<b>Назначена:</b> %r\n\n<b>Описание</b>:\n---\n"
@@ -80,7 +82,7 @@
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_CREATE_ISSUE			(u_char *)"Создать задачу %s"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_BACK				(u_char *)"<< Назад"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_FORWARD			(u_char *)"Вперёд >>"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESTROY_SESSION		(u_char *)"Начать диалог заново"
+#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESTROY_SESSION		(u_char *)"Завершить текущий диалог"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_CANCEL			(u_char *)"Отмена"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TO_STATUS_IN_PROGRESS		(u_char *)"Перевести в статус \"В работе\""
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TO_STATUS_NEED_FEEDBACK	(u_char *)"Перевести в статус \"Ожидание клиента\""
@@ -100,7 +102,8 @@ typedef enum
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_NONE,
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_MESSAGE,
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_EDIT_MESSAGE_TEXT,
-	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_ANSWER_CALLBACK_QUERY
+	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_ANSWER_CALLBACK_QUERY,
+	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_FILE,
 } nxs_chat_srv_tlgrm_request_type_t;
 
 /* Project errors */
@@ -208,6 +211,11 @@ typedef struct
 
 typedef struct
 {
+	nxs_string_t				tlgrm_download_tmp_dir;
+} nxs_chat_srv_cfg_attachments_t;
+
+typedef struct
+{
 	nxs_chat_srv_cfg_proc_t			proc;
 	nxs_chat_srv_cfg_log_t			log;
 	nxs_chat_srv_cfg_bind_t			bind;
@@ -218,6 +226,7 @@ typedef struct
 	nxs_chat_srv_cfg_queue_worker_t		queue_worker;
 	nxs_chat_srv_cfg_cache_t		cache;
 	nxs_array_t				dev_accounts;
+	nxs_chat_srv_cfg_attachments_t		attachments;
 } nxs_chat_srv_cfg_t;
 
 /* Project includes */

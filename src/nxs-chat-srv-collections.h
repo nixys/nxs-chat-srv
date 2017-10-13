@@ -9,6 +9,7 @@
 #include <collections/rdmn-issues/rdmn-issues.h>
 #include <collections/tlgrm/tlgrm.h>
 #include <collections/unix-sock/unix-sock.h>
+#include <collections/redis/redis.h>
 #include <collections/user-ctx/user-ctx.h>
 #include <collections/queue-com/queue-com.h>
 #include <collections/notes/notes.h>

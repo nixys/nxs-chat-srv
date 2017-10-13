@@ -51,9 +51,11 @@ typedef struct
 	nxs_string_t					subject;		/* redmine issue subject */
 	nxs_string_t					description;		/* redmine issue description */
 	nxs_bool_t					is_private;		/* if new issue is private */
+	nxs_bool_t					is_ext;			/* if new issue need extended actions */
 	nxs_string_t					project_name_regex;	/* regex to filter redmine projects name */
 	nxs_list_t					available_projects;	/* type: nxs_chat_srv_u_db_sess_project_t. All available active projects for user */
 	nxs_array_t					selected_projects;	/* type: nxs_chat_srv_u_db_sess_project_t. Selected projects (by specified regex) for user */
+	nxs_array_t					file_ids;		/* type: nxs_string_t. Telegram 'file_id' array */
 } nxs_chat_srv_u_db_sess_t_new_issue_t;
 
 /*
@@ -63,6 +65,8 @@ typedef struct
 {
 	nxs_string_t					message;		/* message to append into redmine issue */
 	nxs_bool_t					is_private;		/* if message is private */
+	nxs_bool_t					is_ext;			/* if message need extended actions */
+	nxs_array_t					file_ids;		/* type: nxs_string_t. Telegram 'file_id' array */
 } nxs_chat_srv_u_db_sess_t_message_t;
 
 typedef struct
@@ -169,6 +173,8 @@ static nxs_string_t _s_par_user			= nxs_string("user");
 static nxs_string_t _s_par_memberships		= nxs_string("memberships");
 static nxs_string_t _s_par_project		= nxs_string("project");
 static nxs_string_t _s_par_is_private		= nxs_string("is_private");
+static nxs_string_t _s_par_is_ext		= nxs_string("is_ext");
+static nxs_string_t _s_par_file_ids		= nxs_string("file_ids");
 
 /* Module global functions */
 
@@ -395,6 +401,44 @@ nxs_chat_srv_m_db_sess_wait_for_type_t nxs_chat_srv_u_db_sess_get_wait_for(nxs_c
 	return u_ctx->value.wait_for;
 }
 
+nxs_array_t *nxs_chat_srv_u_db_sess_get_files(nxs_chat_srv_u_db_sess_t *u_ctx)
+{
+
+	if(u_ctx == NULL) {
+
+		return NULL;
+	}
+
+	if(nxs_chat_srv_u_db_sess_check_exist(u_ctx) == NXS_NO) {
+
+		return NULL;
+	}
+
+	switch(u_ctx->value.type) {
+
+		case NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE:
+
+			return &u_ctx->value.message.file_ids;
+
+		case NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE:
+
+			return &u_ctx->value.new_issue.file_ids;
+
+		default:
+
+			nxs_log_write_warn(
+			        &process,
+			        "[%s]: can't get session file_ids: session type incorrect (tlgrm user id: %zu, session type: %d)",
+			        nxs_proc_get_name(&process),
+			        u_ctx->tlgrm_userid,
+			        u_ctx->value.type);
+
+			break;
+	}
+
+	return NULL;
+}
+
 nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_set_wait_for(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_chat_srv_m_db_sess_wait_for_type_t wait_for)
 {
 	nxs_chat_srv_err_t rc;
@@ -475,6 +519,52 @@ nxs_chat_srv_err_t
 	return nxs_chat_srv_u_db_sess_s_value_put(u_ctx);
 }
 
+nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_add_file(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_string_t *file_id)
+{
+	nxs_string_t *s;
+
+	if(u_ctx == NULL || file_id == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if(nxs_chat_srv_u_db_sess_check_exist(u_ctx) == NXS_NO) {
+
+		return NXS_CHAT_SRV_E_EXIST;
+	}
+
+	switch(u_ctx->value.type) {
+
+		case NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE:
+
+			s = nxs_array_add(&u_ctx->value.message.file_ids);
+
+			nxs_string_init3(s, file_id);
+
+			return nxs_chat_srv_u_db_sess_s_value_put(u_ctx);
+
+		case NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE:
+
+			s = nxs_array_add(&u_ctx->value.new_issue.file_ids);
+
+			nxs_string_init3(s, file_id);
+
+			return nxs_chat_srv_u_db_sess_s_value_put(u_ctx);
+
+		default:
+
+			nxs_log_write_warn(&process,
+			                   "[%s]: can't add session file_id: session type incorrect (tlgrm user id: %zu, session type: %d)",
+			                   nxs_proc_get_name(&process),
+			                   u_ctx->tlgrm_userid,
+			                   u_ctx->value.type);
+
+			break;
+	}
+
+	return NXS_CHAT_SRV_E_TYPE;
+}
+
 nxs_string_t *nxs_chat_srv_u_db_sess_t_get_message(nxs_chat_srv_u_db_sess_t *u_ctx)
 {
 
@@ -533,6 +623,35 @@ nxs_bool_t nxs_chat_srv_u_db_sess_t_get_message_is_private(nxs_chat_srv_u_db_ses
 	return u_ctx->value.message.is_private;
 }
 
+nxs_bool_t nxs_chat_srv_u_db_sess_t_get_message_is_ext(nxs_chat_srv_u_db_sess_t *u_ctx)
+{
+
+	if(u_ctx == NULL) {
+
+		return NXS_NO;
+	}
+
+	if(nxs_chat_srv_u_db_sess_check_exist(u_ctx) == NXS_NO) {
+
+		return NXS_NO;
+	}
+
+	if(u_ctx->value.type != NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE) {
+
+		nxs_log_write_warn(&process,
+		                   "[%s]: can't get session message is extended: session type incorrect (tlgrm user id: %zu, session type: "
+		                   "%d, expected type: %d)",
+		                   nxs_proc_get_name(&process),
+		                   u_ctx->tlgrm_userid,
+		                   u_ctx->value.type,
+		                   NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE);
+
+		return NXS_NO;
+	}
+
+	return u_ctx->value.message.is_ext;
+}
+
 nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_set_message(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_string_t *message)
 {
 
@@ -560,6 +679,51 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_set_message(nxs_chat_srv_u_db_sess_t
 	}
 
 	u_ctx->value.message.is_private = nxs_chat_srv_c_notes_check_private(message, &u_ctx->value.message.message);
+	u_ctx->value.message.is_ext     = nxs_chat_srv_c_notes_check_ext(&u_ctx->value.message.message, &u_ctx->value.message.message);
+
+	return nxs_chat_srv_u_db_sess_s_value_put(u_ctx);
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_cat_message(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_string_t *message)
+{
+
+	if(u_ctx == NULL || message == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if(nxs_chat_srv_u_db_sess_check_exist(u_ctx) == NXS_NO) {
+
+		return NXS_CHAT_SRV_E_EXIST;
+	}
+
+	if(u_ctx->value.type != NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE) {
+
+		nxs_log_write_warn(
+		        &process,
+		        "[%s]: can't set session message: session type incorrect (tlgrm user id: %zu, session type: %d, expected type: %d)",
+		        nxs_proc_get_name(&process),
+		        u_ctx->tlgrm_userid,
+		        u_ctx->value.type,
+		        NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE);
+
+		return NXS_CHAT_SRV_E_TYPE;
+	}
+
+	if(nxs_string_len(message) == 0) {
+
+		return NXS_CHAT_SRV_E_OK;
+	}
+
+	if(nxs_string_len(&u_ctx->value.message.message) == 0) {
+
+		u_ctx->value.message.is_private = nxs_chat_srv_c_notes_check_private(message, &u_ctx->value.message.message);
+		u_ctx->value.message.is_ext = nxs_chat_srv_c_notes_check_ext(&u_ctx->value.message.message, &u_ctx->value.message.message);
+	}
+	else {
+
+		nxs_string_printf2_cat(&u_ctx->value.message.message, "\n%r", message);
+	}
 
 	return nxs_chat_srv_u_db_sess_s_value_put(u_ctx);
 }
@@ -572,6 +736,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_get_new_issue(nxs_chat_srv_u_db_sess
                                                           nxs_string_t *            subject,
                                                           nxs_string_t *            description,
                                                           nxs_bool_t *              is_private,
+                                                          nxs_bool_t *              is_ext,
                                                           nxs_string_t *            project_name_regex)
 {
 
@@ -631,6 +796,11 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_get_new_issue(nxs_chat_srv_u_db_sess
 	if(is_private != NULL) {
 
 		*is_private = u_ctx->value.new_issue.is_private;
+	}
+
+	if(is_ext != NULL) {
+
+		*is_ext = u_ctx->value.new_issue.is_ext;
 	}
 
 	if(project_name_regex != NULL) {
@@ -766,6 +936,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_set_new_issue(nxs_chat_srv_u_db_sess
 	if(description != NULL) {
 
 		u_ctx->value.new_issue.is_private = nxs_chat_srv_c_notes_check_private(description, &u_ctx->value.new_issue.description);
+		u_ctx->value.new_issue.is_ext =
+		        nxs_chat_srv_c_notes_check_ext(&u_ctx->value.new_issue.description, &u_ctx->value.new_issue.description);
 	}
 
 	if(project_name_regex != NULL) {
@@ -789,6 +961,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_new_issue(nxs_chat_srv_u_db_
                                                               nxs_string_t *            project_name_regex)
 {
 	nxs_chat_srv_err_t rc;
+	nxs_string_t *     s_f, *s_t;
+	size_t             i;
 
 	if(u_ctx == NULL || cache_projects == NULL) {
 
@@ -802,6 +976,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_new_issue(nxs_chat_srv_u_db_
 
 	rc = NXS_CHAT_SRV_E_OK;
 
+	/* u_ctx->value.type - current type ("from" type) */
 	switch(u_ctx->value.type) {
 
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE:
@@ -817,6 +992,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_new_issue(nxs_chat_srv_u_db_
 			u_ctx->value.new_issue.priority_id = priority_id;
 
 			u_ctx->value.new_issue.is_private = u_ctx->value.message.is_private;
+			u_ctx->value.new_issue.is_ext     = u_ctx->value.message.is_ext;
 
 			nxs_string_clone(&u_ctx->value.new_issue.priority_name, priority_name);
 			nxs_string_clone(&u_ctx->value.new_issue.subject, subject);
@@ -825,6 +1001,15 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_new_issue(nxs_chat_srv_u_db_
 			if(nxs_chat_srv_u_db_sess_s_new_issue_regex_set(&u_ctx->value.new_issue, project_name_regex) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+
+			for(i = 0; i < nxs_array_count(&u_ctx->value.message.file_ids); i++) {
+
+				s_f = nxs_array_get(&u_ctx->value.message.file_ids, i);
+
+				s_t = nxs_array_add(&u_ctx->value.new_issue.file_ids);
+
+				nxs_string_init3(s_t, s_f);
 			}
 
 			nxs_chat_srv_u_db_sess_s_new_issue_set_selected_project_first(&u_ctx->value.new_issue);
@@ -851,6 +1036,8 @@ error:
 nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_message(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_string_t *message)
 {
 	nxs_chat_srv_err_t rc;
+	nxs_string_t *     s_f, *s_t;
+	size_t             i;
 
 	if(u_ctx == NULL) {
 
@@ -864,6 +1051,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_message(nxs_chat_srv_u_db_se
 
 	rc = NXS_CHAT_SRV_E_OK;
 
+	/* u_ctx->value.type - current type ("from" type) */
 	switch(u_ctx->value.type) {
 
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE:
@@ -872,8 +1060,18 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_message(nxs_chat_srv_u_db_se
 			u_ctx->value.wait_for = NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE;
 
 			u_ctx->value.message.is_private = u_ctx->value.new_issue.is_private;
+			u_ctx->value.message.is_ext     = u_ctx->value.new_issue.is_ext;
 
 			nxs_string_clone(&u_ctx->value.message.message, &u_ctx->value.new_issue.description);
+
+			for(i = 0; i < nxs_array_count(&u_ctx->value.new_issue.file_ids); i++) {
+
+				s_f = nxs_array_get(&u_ctx->value.new_issue.file_ids, i);
+
+				s_t = nxs_array_add(&u_ctx->value.message.file_ids);
+
+				nxs_string_init3(s_t, s_f);
+			}
 
 			nxs_chat_srv_u_db_sess_s_new_issue_clear(&u_ctx->value.new_issue);
 
@@ -1411,12 +1609,17 @@ static void nxs_chat_srv_u_db_sess_s_message_init(nxs_chat_srv_u_db_sess_t_messa
 	}
 
 	message->is_private = NXS_NO;
+	message->is_ext     = NXS_NO;
 
 	nxs_string_init_empty(&message->message);
+
+	nxs_array_init2(&message->file_ids, nxs_string_t);
 }
 
 static void nxs_chat_srv_u_db_sess_s_message_free(nxs_chat_srv_u_db_sess_t_message_t *message)
 {
+	nxs_string_t *s;
+	size_t        i;
 
 	if(message == NULL) {
 
@@ -1424,12 +1627,24 @@ static void nxs_chat_srv_u_db_sess_s_message_free(nxs_chat_srv_u_db_sess_t_messa
 	}
 
 	message->is_private = NXS_NO;
+	message->is_ext     = NXS_NO;
 
 	nxs_string_free(&message->message);
+
+	for(i = 0; i < nxs_array_count(&message->file_ids); i++) {
+
+		s = nxs_array_get(&message->file_ids, i);
+
+		nxs_string_free(s);
+	}
+
+	nxs_array_free(&message->file_ids);
 }
 
 static void nxs_chat_srv_u_db_sess_s_message_clear(nxs_chat_srv_u_db_sess_t_message_t *message)
 {
+	nxs_string_t *s;
+	size_t        i;
 
 	if(message == NULL) {
 
@@ -1437,13 +1652,24 @@ static void nxs_chat_srv_u_db_sess_s_message_clear(nxs_chat_srv_u_db_sess_t_mess
 	}
 
 	message->is_private = NXS_NO;
+	message->is_ext     = NXS_NO;
 
 	nxs_string_clear(&message->message);
+
+	for(i = 0; i < nxs_array_count(&message->file_ids); i++) {
+
+		s = nxs_array_get(&message->file_ids, i);
+
+		nxs_string_free(s);
+	}
+
+	nxs_array_clear(&message->file_ids);
 }
 
 static void nxs_chat_srv_u_db_sess_s_message_serialize(nxs_chat_srv_u_db_sess_t_message_t *message, nxs_string_t *out_str)
 {
-	nxs_string_t message_encoded;
+	nxs_string_t message_encoded, files, *s;
+	size_t       i;
 
 	if(message == NULL || out_str == NULL) {
 
@@ -1451,13 +1677,31 @@ static void nxs_chat_srv_u_db_sess_s_message_serialize(nxs_chat_srv_u_db_sess_t_
 	}
 
 	nxs_string_init(&message_encoded);
+	nxs_string_init(&files);
+
+	for(i = 0; i < nxs_array_count(&message->file_ids); i++) {
+
+		s = nxs_array_get(&message->file_ids, i);
+
+		if(i > 0) {
+
+			nxs_string_char_add_char(&files, (u_char)',');
+		}
+
+		nxs_string_printf2_cat(&files, "\"%r\"", s);
+	}
 
 	nxs_base64_encode_string(&message_encoded, &message->message);
 
-	nxs_string_printf(
-	        out_str, "{\"message\":\"%r\",\"is_private\":%s}", &message_encoded, message->is_private == NXS_YES ? "true" : "false");
+	nxs_string_printf(out_str,
+	                  "{\"message\":\"%r\",\"is_private\":%s,\"is_ext\":%s,\"file_ids\":[%r]}",
+	                  &message_encoded,
+	                  message->is_private == NXS_YES ? "true" : "false",
+	                  message->is_ext == NXS_YES ? "true" : "false",
+	                  &files);
 
 	nxs_string_free(&message_encoded);
+	nxs_string_free(&files);
 }
 
 static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_message_deserialize(nxs_chat_srv_u_db_sess_t_message_t *message, nxs_json_t *json_data)
@@ -1482,6 +1726,8 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_message_deserialize(nxs_chat_
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_message,	&message_encoded,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,	&message->is_private,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_ext,		&message->is_ext,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_ids,	&message->file_ids,	NULL,	NULL,	NXS_CFG_JSON_TYPE_ARRAY_STRING,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -1517,6 +1763,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_init(nxs_chat_srv_u_db_sess_t_new
 	new_issue->priority_id = 0;
 	new_issue->project_id  = 0;
 	new_issue->is_private  = NXS_NO;
+	new_issue->is_ext      = NXS_NO;
 
 	nxs_string_init_empty(&new_issue->description);
 	nxs_string_init_empty(&new_issue->priority_name);
@@ -1526,11 +1773,13 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_init(nxs_chat_srv_u_db_sess_t_new
 
 	nxs_list_init2(&new_issue->available_projects, nxs_chat_srv_u_db_sess_project_t);
 	nxs_array_init2(&new_issue->selected_projects, nxs_chat_srv_u_db_sess_project_t);
+	nxs_array_init2(&new_issue->file_ids, nxs_string_t);
 }
 
 static void nxs_chat_srv_u_db_sess_s_new_issue_free(nxs_chat_srv_u_db_sess_t_new_issue_t *new_issue)
 {
 	nxs_chat_srv_u_db_sess_project_t *p;
+	nxs_string_t *                    s;
 	size_t                            i;
 
 	if(new_issue == NULL) {
@@ -1541,6 +1790,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_free(nxs_chat_srv_u_db_sess_t_new
 	new_issue->priority_id = 0;
 	new_issue->project_id  = 0;
 	new_issue->is_private  = NXS_NO;
+	new_issue->is_ext      = NXS_NO;
 
 	nxs_string_free(&new_issue->description);
 	nxs_string_free(&new_issue->priority_name);
@@ -1565,13 +1815,22 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_free(nxs_chat_srv_u_db_sess_t_new
 		nxs_string_free(&p->name);
 	}
 
+	for(i = 0; i < nxs_array_count(&new_issue->file_ids); i++) {
+
+		s = nxs_array_get(&new_issue->file_ids, i);
+
+		nxs_string_free(s);
+	}
+
 	nxs_list_free(&new_issue->available_projects);
 	nxs_array_free(&new_issue->selected_projects);
+	nxs_array_free(&new_issue->file_ids);
 }
 
 static void nxs_chat_srv_u_db_sess_s_new_issue_clear(nxs_chat_srv_u_db_sess_t_new_issue_t *new_issue)
 {
 	nxs_chat_srv_u_db_sess_project_t *p;
+	nxs_string_t *                    s;
 	size_t                            i;
 
 	if(new_issue == NULL) {
@@ -1582,6 +1841,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_clear(nxs_chat_srv_u_db_sess_t_ne
 	new_issue->priority_id = 0;
 	new_issue->project_id  = 0;
 	new_issue->is_private  = NXS_NO;
+	new_issue->is_ext      = NXS_NO;
 
 	nxs_string_clear(&new_issue->description);
 	nxs_string_clear(&new_issue->priority_name);
@@ -1606,7 +1866,15 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_clear(nxs_chat_srv_u_db_sess_t_ne
 		nxs_string_free(&p->name);
 	}
 
+	for(i = 0; i < nxs_array_count(&new_issue->file_ids); i++) {
+
+		s = nxs_array_get(&new_issue->file_ids, i);
+
+		nxs_string_free(s);
+	}
+
 	nxs_array_clear(&new_issue->selected_projects);
+	nxs_array_clear(&new_issue->file_ids);
 }
 
 static void nxs_chat_srv_u_db_sess_s_new_issue_set_selected_project_first(nxs_chat_srv_u_db_sess_t_new_issue_t *new_issue)
@@ -1760,7 +2028,7 @@ error:
 static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_t_new_issue_t *new_issue, nxs_string_t *out_str)
 {
 	nxs_string_t description_encoded, priority_name_encoded, project_name_encoded, subject_encoded, project_name_regex_encoded,
-	        available_projects, selected_projects;
+	        available_projects, selected_projects, files, *s;
 	nxs_chat_srv_u_db_sess_project_t *p;
 	size_t                            i;
 	nxs_bool_t                        f;
@@ -1809,6 +2077,20 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_
 		nxs_string_printf2_cat(&selected_projects, "{\"id\":%zu,\"name\":\"%r\"}", p->id, &project_name_encoded);
 	}
 
+	nxs_string_init(&files);
+
+	for(i = 0; i < nxs_array_count(&new_issue->file_ids); i++) {
+
+		s = nxs_array_get(&new_issue->file_ids, i);
+
+		if(i > 0) {
+
+			nxs_string_char_add_char(&files, (u_char)',');
+		}
+
+		nxs_string_printf2_cat(&files, "\"%r\"", s);
+	}
+
 	nxs_base64_encode_string(&description_encoded, &new_issue->description);
 	nxs_base64_encode_string(&priority_name_encoded, &new_issue->priority_name);
 	nxs_base64_encode_string(&project_name_encoded, &new_issue->project_name);
@@ -1823,9 +2105,11 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_
 	                  "\"subject\":\"%r\","
 	                  "\"description\":\"%r\","
 	                  "\"is_private\":%s,"
+	                  "\"is_ext\":%s,"
 	                  "\"project_name_regex\":\"%r\","
 	                  "\"available_projects\":[%r],"
-	                  "\"selected_projects\":[%r]}",
+	                  "\"selected_projects\":[%r],"
+	                  "\"file_ids\":[%r]}",
 	                  new_issue->project_id,
 	                  &project_name_encoded,
 	                  new_issue->priority_id,
@@ -1833,9 +2117,11 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_
 	                  &subject_encoded,
 	                  &description_encoded,
 	                  new_issue->is_private == NXS_YES ? "true" : "false",
+	                  new_issue->is_ext == NXS_YES ? "true" : "false",
 	                  &project_name_regex_encoded,
 	                  &available_projects,
-	                  &selected_projects);
+	                  &selected_projects,
+	                  &files);
 
 	nxs_string_free(&available_projects);
 	nxs_string_free(&selected_projects);
@@ -1878,9 +2164,11 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize(nxs_cha
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,		&subject,			NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,		&description,			NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,		&new_issue->is_private,		NULL,	NULL,									NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_ext,			&new_issue->is_ext,		NULL,	NULL,									NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_name_regex,	&project_name_regex,		NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_available_projects,	&new_issue->available_projects,	NULL,	&nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_available,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_selected_projects,	&new_issue->selected_projects,	NULL,	&nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_selected,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_ids,		&new_issue->file_ids,		NULL,	NULL,									NXS_CFG_JSON_TYPE_ARRAY_STRING,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 

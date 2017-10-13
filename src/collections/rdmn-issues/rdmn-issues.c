@@ -112,7 +112,7 @@ void nxs_chat_srv_c_rdmn_issues_cf_add(nxs_array_t *custom_fields, size_t id, nx
 {
 	nxs_chat_srv_m_rdmn_issues_cf_t *cf;
 
-	if(custom_fields == NULL) {
+	if(custom_fields == NULL || value == NULL) {
 
 		return;
 	}
@@ -127,6 +127,53 @@ void nxs_chat_srv_c_rdmn_issues_cf_add(nxs_array_t *custom_fields, size_t id, nx
 	cf->id = id;
 
 	nxs_string_init3(&cf->value, value);
+}
+
+void nxs_chat_srv_c_rdmn_issues_uploads_init(nxs_array_t *uploads)
+{
+
+	if(uploads == NULL) {
+
+		return;
+	}
+
+	nxs_array_init2(uploads, nxs_chat_srv_m_rdmn_issues_upload_t);
+}
+
+void nxs_chat_srv_c_rdmn_issues_uploads_free(nxs_array_t *uploads)
+{
+	nxs_chat_srv_m_rdmn_issues_upload_t *u;
+	size_t                               i;
+
+	if(uploads == NULL) {
+
+		return;
+	}
+
+	for(i = 0; i < nxs_array_count(uploads); i++) {
+
+		u = nxs_array_get(uploads, i);
+
+		nxs_string_free(&u->file_path);
+		nxs_string_free(&u->file_name);
+	}
+
+	nxs_array_free(uploads);
+}
+
+void nxs_chat_srv_c_rdmn_issues_uploads_add(nxs_array_t *uploads, nxs_string_t *file_path, nxs_string_t *file_name)
+{
+	nxs_chat_srv_m_rdmn_issues_upload_t *u;
+
+	if(uploads == NULL || file_path == NULL || file_name == NULL) {
+
+		return;
+	}
+
+	u = nxs_array_add(uploads);
+
+	nxs_string_init3(&u->file_path, file_path);
+	nxs_string_init3(&u->file_name, file_name);
 }
 
 /* Module internal (static) functions */

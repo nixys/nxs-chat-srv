@@ -55,6 +55,8 @@ static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_queue_worker(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_cache(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_conf_file_json_read_attachments(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 
 // clang-format off
 
@@ -106,6 +108,8 @@ static nxs_string_t _s_par_cf_ignore_status		= nxs_string("cf_ignore_status");
 static nxs_string_t _s_par_status_in_progress		= nxs_string("status_in_progress");
 static nxs_string_t _s_par_status_resolved		= nxs_string("status_resolved");
 static nxs_string_t _s_par_status_need_feedback		= nxs_string("status_need_feedback");
+static nxs_string_t _s_par_attachments			= nxs_string("attachments");
+static nxs_string_t _s_par_tlgrm_download_tmp_dir	= nxs_string("tlgrm_download_tmp_dir");
 
 /* Module global functions */
 
@@ -137,6 +141,7 @@ nxs_chat_srv_err_t nxs_chat_srv_conf_file_json_runtime(nxs_chat_srv_cfg_ctx_t *c
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_queue_worker,	&nxs_chat_srv_cfg.queue_worker,	&nxs_chat_srv_conf_file_json_read_queue_worker,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_cache,		&nxs_chat_srv_cfg.cache,	&nxs_chat_srv_conf_file_json_read_cache,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_dev_accounts,	&nxs_chat_srv_cfg.dev_accounts,	NULL,						NULL,	NXS_CFG_JSON_TYPE_ARRAY_STRING,	0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_attachments,	&nxs_chat_srv_cfg.attachments,	&nxs_chat_srv_conf_file_json_read_attachments,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -580,6 +585,42 @@ static nxs_cfg_json_state_t
 	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
 
 		nxs_log_write_raw(&process, "config read error: 'cache' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_conf_file_json_read_attachments(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_cfg_attachments_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t                  cfg_json;
+	nxs_array_t                     cfg_arr;
+	nxs_cfg_json_state_t            rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_tlgrm_download_tmp_dir,	&var->tlgrm_download_tmp_dir,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "config read error: 'attachments' block");
 
 		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
 	}
