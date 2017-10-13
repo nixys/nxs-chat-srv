@@ -42,18 +42,18 @@ static nxs_string_t _s_msg_select_issue	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_issue(nxs_chat_srv_u_db_sess_t *sess_ctx,
-                                                                             size_t                    chat_id,
-                                                                             size_t                    message_id,
-                                                                             nxs_array_t *             issues,
-                                                                             size_t                    offset,
-                                                                             size_t                    issues_count,
-                                                                             nxs_buf_t *               response_buf)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_issue(nxs_chat_srv_u_db_sess_t *    sess_ctx,
+                                                                             nxs_chat_srv_u_rdmn_issues_t *rdmn_issues_ctx,
+                                                                             size_t                        chat_id,
+                                                                             size_t                        message_id,
+                                                                             size_t                        offset,
+                                                                             size_t                        issues_count,
+                                                                             nxs_buf_t *                   response_buf)
 {
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
 	nxs_buf_t *                             b;
-	nxs_chat_srv_m_rdmn_issues_query_t *    iss;
-	size_t                                  i;
+	nxs_string_t *                          issue_subject;
+	size_t                                  i, issue_id;
 	nxs_chat_srv_err_t                      rc;
 
 	rc = NXS_CHAT_SRV_E_OK;
@@ -73,18 +73,16 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_issue(nxs
 		nxs_chat_srv_u_tlgrm_editmessagetext_add(
 		        tlgrm_editmessagetext_ctx, chat_id, message_id, &_s_msg_select_issue, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE);
 
-		for(i = 0; i < nxs_array_count(issues); i++) {
-
-			iss = nxs_array_get(issues, i);
+		for(i = 0; (issue_subject = nxs_chat_srv_u_rdmn_issues_shorts_get(rdmn_issues_ctx, i, &issue_id)) != NULL; i++) {
 
 			nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(tlgrm_editmessagetext_ctx,
 			                                                                   i,
 			                                                                   0,
 			                                                                   NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE,
-			                                                                   iss->id,
+			                                                                   issue_id,
 			                                                                   (u_char *)"#%zu - %r",
-			                                                                   iss->id,
-			                                                                   &iss->subject);
+			                                                                   issue_id,
+			                                                                   issue_subject);
 		}
 
 		if(offset > 0) {

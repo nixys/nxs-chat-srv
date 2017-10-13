@@ -6,7 +6,7 @@
 #include <hiredis/hiredis.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.0.6"
+#define NXS_CHAT_SRV_VERSION						"0.0.7"
 
 /* Project basic global definitions */
 

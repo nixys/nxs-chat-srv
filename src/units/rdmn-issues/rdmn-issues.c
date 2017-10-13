@@ -36,6 +36,25 @@ typedef struct
 	nxs_string_t		content_type;
 } nxs_chat_srv_u_rdmn_issues_mine_t;
 
+typedef struct
+{
+	nxs_string_t		file_path;
+	nxs_string_t		file_name;
+} nxs_chat_srv_u_rdmn_issues_upload_t;
+
+typedef struct
+{
+	size_t			id;
+	nxs_string_t		subject;
+} nxs_chat_srv_u_rdmn_issues_short_t;
+
+struct nxs_chat_srv_u_rdmn_issues_s
+{
+	nxs_array_t		shorts;			/* type: nxs_chat_srv_u_rdmn_issues_short_t */
+	nxs_array_t		custom_fields;		/* type: nxs_chat_srv_d_rdmn_issues_cf_t */
+	nxs_array_t		uploads;		/* type: nxs_chat_srv_u_rdmn_issues_upload_t */
+};
+
 /* Module internal (static) functions prototypes */
 
 // clang-format on
@@ -52,6 +71,10 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_rdmn_issues_get_query_extract_issues(
                                                                                 nxs_cfg_json_par_t *cfg_json_par_el,
                                                                                 nxs_array_t *       cfg_arr);
 
+void nxs_chat_srv_u_rdmn_issues_shorts_init(nxs_array_t *shorts);
+void nxs_chat_srv_u_rdmn_issues_shorts_free(nxs_array_t *shorts);
+static void nxs_chat_srv_u_rdmn_issues_uploads_init(nxs_array_t *uploads);
+static void nxs_chat_srv_u_rdmn_issues_uploads_free(nxs_array_t *uploads);
 static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_file_upload_extract(nxs_string_t *upload_token, nxs_buf_t *json_buf);
 static nxs_cfg_json_state_t
         nxs_chat_srv_u_rdmn_issues_file_upload_token_extract(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
@@ -83,16 +106,46 @@ nxs_chat_srv_u_rdmn_issues_mine_t mimes[] =
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create(size_t        project_id,
-                                                     size_t        priority_id,
-                                                     nxs_string_t *subject,
-                                                     nxs_string_t *description,
-                                                     nxs_bool_t    is_private,
-                                                     size_t *      new_issue_id,
-                                                     nxs_array_t * uploads,
-                                                     nxs_string_t *api_key)
+nxs_chat_srv_u_rdmn_issues_t *nxs_chat_srv_u_rdmn_issues_init(void)
 {
-	nxs_chat_srv_m_rdmn_issues_upload_t *u;
+	nxs_chat_srv_u_rdmn_issues_t *u_ctx;
+
+	u_ctx = (nxs_chat_srv_u_rdmn_issues_t *)nxs_malloc(NULL, sizeof(nxs_chat_srv_u_rdmn_issues_t));
+
+	nxs_chat_srv_u_rdmn_issues_shorts_init(&u_ctx->shorts);
+	nxs_chat_srv_u_rdmn_issues_uploads_init(&u_ctx->uploads);
+
+	nxs_chat_srv_d_rdmn_issues_cf_init(&u_ctx->custom_fields);
+
+	return u_ctx;
+}
+
+nxs_chat_srv_u_rdmn_issues_t *nxs_chat_srv_u_rdmn_issues_free(nxs_chat_srv_u_rdmn_issues_t *u_ctx)
+{
+
+	if(u_ctx == NULL) {
+
+		return NULL;
+	}
+
+	nxs_chat_srv_u_rdmn_issues_shorts_free(&u_ctx->shorts);
+	nxs_chat_srv_u_rdmn_issues_uploads_free(&u_ctx->uploads);
+
+	nxs_chat_srv_d_rdmn_issues_cf_free(&u_ctx->custom_fields);
+
+	return (nxs_chat_srv_u_rdmn_issues_t *)nxs_free(u_ctx);
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create(nxs_chat_srv_u_rdmn_issues_t *u_ctx,
+                                                     size_t                        project_id,
+                                                     size_t                        priority_id,
+                                                     nxs_string_t *                subject,
+                                                     nxs_string_t *                description,
+                                                     nxs_bool_t                    is_private,
+                                                     size_t *                      new_issue_id,
+                                                     nxs_string_t *                api_key)
+{
+	nxs_chat_srv_u_rdmn_issues_upload_t *u;
 	nxs_buf_t                            out_buf;
 	nxs_array_t                          d_uploads;
 	nxs_string_t                         upload_token;
@@ -100,7 +153,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create(size_t        project_id,
 	nxs_http_code_t                      http_code;
 	size_t                               i;
 
-	if(subject == NULL || description == NULL || new_issue_id == NULL || api_key == NULL) {
+	if(u_ctx == NULL || subject == NULL || description == NULL || new_issue_id == NULL || api_key == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
@@ -113,11 +166,11 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_create(size_t        project_id,
 
 	nxs_chat_srv_d_rdmn_issues_uploads_init(&d_uploads);
 
-	if(uploads != NULL && nxs_array_count(uploads) > 0) {
+	if(nxs_array_count(&u_ctx->uploads) > 0) {
 
-		for(i = 0; i < nxs_array_count(uploads); i++) {
+		for(i = 0; i < nxs_array_count(&u_ctx->uploads); i++) {
 
-			u = nxs_array_get(uploads, i);
+			u = nxs_array_get(&u_ctx->uploads, i);
 
 			ec = nxs_chat_srv_d_rdmn_issues_file_upload(api_key, &u->file_path, NULL, &out_buf);
 
@@ -180,21 +233,25 @@ error:
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t        issue_id,
-                                                       size_t        assigned_to_id,
-                                                       nxs_string_t *note,
-                                                       nxs_bool_t    private_notes,
-                                                       size_t        status_id,
-                                                       nxs_array_t * uploads,
-                                                       nxs_array_t * custom_fields,
-                                                       nxs_string_t *api_key)
+nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(nxs_chat_srv_u_rdmn_issues_t *u_ctx,
+                                                       size_t                        issue_id,
+                                                       size_t                        assigned_to_id,
+                                                       nxs_string_t *                note,
+                                                       nxs_bool_t                    private_notes,
+                                                       size_t                        status_id,
+                                                       nxs_string_t *                api_key)
 {
-	nxs_chat_srv_m_rdmn_issues_upload_t *u;
+	nxs_chat_srv_u_rdmn_issues_upload_t *u;
 	nxs_string_t                         upload_token;
 	nxs_buf_t                            out_buf;
 	nxs_array_t                          d_uploads;
 	nxs_chat_srv_err_t                   rc, ec;
 	size_t                               i;
+
+	if(u_ctx == NULL || note == NULL || api_key == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -204,11 +261,11 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t        issue_id,
 
 	nxs_chat_srv_d_rdmn_issues_uploads_init(&d_uploads);
 
-	if(uploads != NULL && nxs_array_count(uploads) > 0) {
+	if(nxs_array_count(&u_ctx->uploads) > 0) {
 
-		for(i = 0; i < nxs_array_count(uploads); i++) {
+		for(i = 0; i < nxs_array_count(&u_ctx->uploads); i++) {
 
-			u = nxs_array_get(uploads, i);
+			u = nxs_array_get(&u_ctx->uploads, i);
 
 			ec = nxs_chat_srv_d_rdmn_issues_file_upload(api_key, &u->file_path, NULL, &out_buf);
 
@@ -249,7 +306,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_add_note(size_t        issue_id,
 	}
 
 	switch(nxs_chat_srv_d_rdmn_issues_add_comment(
-	        issue_id, assigned_to_id, note, private_notes, status_id, &d_uploads, custom_fields, api_key, NULL, NULL)) {
+	        issue_id, assigned_to_id, note, private_notes, status_id, &d_uploads, &u_ctx->custom_fields, api_key, NULL, NULL)) {
 
 		case NXS_CHAT_SRV_E_OK:
 
@@ -281,18 +338,18 @@ error:
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_get_query(nxs_array_t * issues,
-                                                        size_t        issue_query_id,
-                                                        size_t        offset,
-                                                        size_t        limit,
-                                                        nxs_string_t *api_key,
-                                                        size_t *      total_count)
+nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_get_query(nxs_chat_srv_u_rdmn_issues_t *u_ctx,
+                                                        size_t                        issue_query_id,
+                                                        size_t                        offset,
+                                                        size_t                        limit,
+                                                        nxs_string_t *                api_key,
+                                                        size_t *                      total_count)
 {
 	nxs_buf_t          out_buf;
 	nxs_chat_srv_err_t rc;
 	nxs_http_code_t    http_code;
 
-	if(api_key == NULL) {
+	if(u_ctx == NULL || api_key == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
@@ -306,7 +363,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_get_query(nxs_array_t * issues,
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(nxs_chat_srv_u_rdmn_issues_get_query_extract(issues, &out_buf, total_count) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_u_rdmn_issues_get_query_extract(&u_ctx->shorts, &out_buf, total_count) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -316,6 +373,54 @@ error:
 	nxs_buf_free(&out_buf);
 
 	return rc;
+}
+
+nxs_string_t *nxs_chat_srv_u_rdmn_issues_shorts_get(nxs_chat_srv_u_rdmn_issues_t *u_ctx, size_t i, size_t *issue_id)
+{
+	nxs_chat_srv_u_rdmn_issues_short_t *iss;
+
+	if(u_ctx == NULL) {
+
+		return NULL;
+	}
+
+	if((iss = nxs_array_get(&u_ctx->shorts, i)) == NULL) {
+
+		return NULL;
+	}
+
+	if(issue_id != NULL) {
+
+		*issue_id = iss->id;
+	}
+
+	return &iss->subject;
+}
+
+void nxs_chat_srv_u_rdmn_issues_cf_add(nxs_chat_srv_u_rdmn_issues_t *u_ctx, size_t id, nxs_string_t *value)
+{
+
+	if(u_ctx == NULL || value == NULL) {
+
+		return;
+	}
+
+	nxs_chat_srv_d_rdmn_issues_cf_add(&u_ctx->custom_fields, id, value);
+}
+
+void nxs_chat_srv_u_rdmn_issues_uploads_add(nxs_chat_srv_u_rdmn_issues_t *u_ctx, nxs_string_t *file_path, nxs_string_t *file_name)
+{
+	nxs_chat_srv_u_rdmn_issues_upload_t *u;
+
+	if(u_ctx == NULL || file_path == NULL || file_name == NULL) {
+
+		return;
+	}
+
+	u = nxs_array_add(&u_ctx->uploads);
+
+	nxs_string_init3(&u->file_path, file_path);
+	nxs_string_init3(&u->file_name, file_name);
 }
 
 /* Module internal (static) functions */
@@ -466,7 +571,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_rdmn_issues_get_query_extract_issues(
                                                                                 nxs_array_t *       cfg_arr)
 {
 	nxs_array_t *                       issues = nxs_cfg_json_get_val(cfg_json_par_el);
-	nxs_chat_srv_m_rdmn_issues_query_t *iss;
+	nxs_chat_srv_u_rdmn_issues_short_t *iss;
 
 	iss = nxs_array_add(issues);
 
@@ -484,6 +589,71 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_rdmn_issues_get_query_extract_issues(
 	// clang-format on
 
 	return NXS_CFG_JSON_CONF_OK;
+}
+
+void nxs_chat_srv_u_rdmn_issues_shorts_init(nxs_array_t *shorts)
+{
+
+	if(shorts == NULL) {
+
+		return;
+	}
+
+	nxs_array_init2(shorts, nxs_chat_srv_u_rdmn_issues_short_t);
+}
+
+void nxs_chat_srv_u_rdmn_issues_shorts_free(nxs_array_t *shorts)
+{
+	nxs_chat_srv_u_rdmn_issues_short_t *iss;
+	size_t                              i;
+
+	if(shorts == NULL) {
+
+		return;
+	}
+
+	for(i = 0; i < nxs_array_count(shorts); i++) {
+
+		iss = nxs_array_get(shorts, i);
+
+		iss->id = 0;
+
+		nxs_string_free(&iss->subject);
+	}
+
+	nxs_array_free(shorts);
+}
+
+static void nxs_chat_srv_u_rdmn_issues_uploads_init(nxs_array_t *uploads)
+{
+
+	if(uploads == NULL) {
+
+		return;
+	}
+
+	nxs_array_init2(uploads, nxs_chat_srv_u_rdmn_issues_upload_t);
+}
+
+static void nxs_chat_srv_u_rdmn_issues_uploads_free(nxs_array_t *uploads)
+{
+	nxs_chat_srv_u_rdmn_issues_upload_t *u;
+	size_t                               i;
+
+	if(uploads == NULL) {
+
+		return;
+	}
+
+	for(i = 0; i < nxs_array_count(uploads); i++) {
+
+		u = nxs_array_get(uploads, i);
+
+		nxs_string_free(&u->file_path);
+		nxs_string_free(&u->file_name);
+	}
+
+	nxs_array_free(uploads);
 }
 
 static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_file_upload_extract(nxs_string_t *upload_token, nxs_buf_t *json_buf)

@@ -31,6 +31,12 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 typedef struct
 {
+	size_t			id;
+	nxs_string_t		value;
+} nxs_chat_srv_d_rdmn_issues_cf_t;
+
+typedef struct
+{
 	nxs_string_t		token;
 	nxs_string_t		filename;
 	nxs_string_t		content_type;
@@ -66,7 +72,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 	nxs_curl_t                       curl;
 	nxs_string_t                     data, api_key, note_escaped, status, assigned_to, uploads_str, uploads_str_els, cf_str, cf_str_els;
 	size_t                           i;
-	nxs_chat_srv_m_rdmn_issues_cf_t *cf;
+	nxs_chat_srv_d_rdmn_issues_cf_t *cf;
 	nxs_http_code_t                  ret_code;
 	nxs_chat_srv_d_rdmn_issues_upload_t *u;
 	nxs_buf_t *                          b;
@@ -721,6 +727,60 @@ error:
 	nxs_curl_free(&curl);
 
 	return rc;
+}
+
+void nxs_chat_srv_d_rdmn_issues_cf_init(nxs_array_t *custom_fields)
+{
+
+	if(custom_fields == NULL) {
+
+		return;
+	}
+
+	nxs_array_init2(custom_fields, nxs_chat_srv_d_rdmn_issues_cf_t);
+}
+
+void nxs_chat_srv_d_rdmn_issues_cf_free(nxs_array_t *custom_fields)
+{
+	nxs_chat_srv_d_rdmn_issues_cf_t *cf;
+	size_t                           i;
+
+	if(custom_fields == NULL) {
+
+		return;
+	}
+
+	for(i = 0; i < nxs_array_count(custom_fields); i++) {
+
+		cf = nxs_array_get(custom_fields, i);
+
+		cf->id = 0;
+
+		nxs_string_free(&cf->value);
+	}
+
+	nxs_array_free(custom_fields);
+}
+
+void nxs_chat_srv_d_rdmn_issues_cf_add(nxs_array_t *custom_fields, size_t id, nxs_string_t *value)
+{
+	nxs_chat_srv_d_rdmn_issues_cf_t *cf;
+
+	if(custom_fields == NULL || value == NULL) {
+
+		return;
+	}
+
+	if(id == 0) {
+
+		return;
+	}
+
+	cf = nxs_array_add(custom_fields);
+
+	cf->id = id;
+
+	nxs_string_init3(&cf->value, value);
 }
 
 void nxs_chat_srv_d_rdmn_issues_uploads_init(nxs_array_t *uploads)

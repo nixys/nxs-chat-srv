@@ -640,12 +640,12 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 {
 	nxs_chat_srv_err_t                       rc;
 	nxs_chat_srv_m_db_cache_issue_priority_t issue_priority;
-	nxs_array_t                              cache_projects, custom_fields, *file_ids, uploads;
+	nxs_array_t                              cache_projects, *file_ids;
 	nxs_string_t *                           api_key, *message, *s, file_name, file_path;
 	nxs_chat_srv_u_db_issues_t *             db_issue_ctx;
 	nxs_chat_srv_u_last_issues_t *           last_issue_ctx;
 	nxs_chat_srv_u_tlgrm_attachments_t *     tlgrm_attachments_ctx;
-	nxs_array_t                              issues;
+	nxs_chat_srv_u_rdmn_issues_t *           rdmn_issues_ctx;
 	nxs_bool_t                               private_notes;
 	size_t                                   chat_id, bot_message_id, usr_message_id, issues_count, status_id, assigned_to_id, i;
 
@@ -657,13 +657,10 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 	nxs_string_init(&file_name);
 	nxs_string_init(&file_path);
 
-	nxs_chat_srv_c_rdmn_issues_init(&issues);
-	nxs_chat_srv_c_rdmn_issues_cf_init(&custom_fields);
-	nxs_chat_srv_c_rdmn_issues_uploads_init(&uploads);
-
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_init();
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_init();
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
+	rdmn_issues_ctx       = nxs_chat_srv_u_rdmn_issues_init();
 
 	api_key        = nxs_chat_srv_u_db_sess_get_rdmn_api_key(sess_ctx);
 	chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
@@ -743,8 +740,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_WF_IGNORE:
 
-					nxs_chat_srv_c_rdmn_issues_cf_add(
-					        &custom_fields, nxs_chat_srv_cfg.rdmn.cf_ignore_status, &_s_cf_ignore_value);
+					nxs_chat_srv_u_rdmn_issues_cf_add(
+					        rdmn_issues_ctx, nxs_chat_srv_cfg.rdmn.cf_ignore_status, &_s_cf_ignore_value);
 
 					break;
 
@@ -781,17 +778,11 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
 
-				nxs_chat_srv_c_rdmn_issues_uploads_add(&uploads, &file_path, &file_name);
+				nxs_chat_srv_u_rdmn_issues_uploads_add(rdmn_issues_ctx, &file_path, &file_name);
 			}
 
-			switch(nxs_chat_srv_u_rdmn_issues_add_note(callback->object_id,
-			                                           assigned_to_id,
-			                                           message,
-			                                           private_notes,
-			                                           status_id,
-			                                           &uploads,
-			                                           &custom_fields,
-			                                           api_key)) {
+			switch(nxs_chat_srv_u_rdmn_issues_add_note(
+			        rdmn_issues_ctx, callback->object_id, assigned_to_id, message, private_notes, status_id, api_key)) {
 
 				case NXS_CHAT_SRV_E_OK:
 
@@ -851,7 +842,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECT_ISSUE:
 
-			if(nxs_chat_srv_u_rdmn_issues_get_query(&issues,
+			if(nxs_chat_srv_u_rdmn_issues_get_query(rdmn_issues_ctx,
 			                                        nxs_chat_srv_cfg.rdmn.issue_list_query_id,
 			                                        callback->object_id,
 			                                        NXS_CHAT_SRV_TLGRM_ISSUES_LIMIT,
@@ -862,9 +853,9 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 			}
 
 			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_issue(sess_ctx,
+			                                                             rdmn_issues_ctx,
 			                                                             update->callback_query.message.chat.id,
 			                                                             bot_message_id,
-			                                                             &issues,
 			                                                             callback->object_id,
 			                                                             issues_count,
 			                                                             NULL) != NXS_CHAT_SRV_E_OK) {
@@ -914,10 +905,6 @@ error:
 		                   rc);
 	}
 
-	nxs_chat_srv_c_rdmn_issues_free(&issues);
-	nxs_chat_srv_c_rdmn_issues_cf_free(&custom_fields);
-	nxs_chat_srv_c_rdmn_issues_uploads_free(&uploads);
-
 	nxs_string_free(&file_name);
 	nxs_string_free(&file_path);
 
@@ -926,6 +913,7 @@ error:
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_free(tlgrm_attachments_ctx);
+	rdmn_issues_ctx       = nxs_chat_srv_u_rdmn_issues_free(rdmn_issues_ctx);
 
 	return rc;
 }
@@ -1319,10 +1307,11 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	nxs_chat_srv_u_db_issues_t *  db_issue_ctx;
 	nxs_chat_srv_u_last_issues_t *last_issue_ctx;
 	nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx;
+	nxs_chat_srv_u_rdmn_issues_t *      rdmn_issues_ctx;
 	nxs_chat_srv_m_tlgrm_message_t      response_message;
 	nxs_chat_srv_m_tlgrm_update_t *     update;
 	nxs_bool_t                          response_status, is_private;
-	nxs_array_t                         projects, *file_ids, uploads;
+	nxs_array_t                         projects, *file_ids;
 	nxs_buf_t                           response_buf;
 	nxs_chat_srv_err_t                  rc;
 
@@ -1339,7 +1328,6 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	nxs_array_init2(&projects, nxs_chat_srv_m_db_sess_project_t);
 
 	nxs_chat_srv_c_tlgrm_message_init(&response_message);
-	nxs_chat_srv_c_rdmn_issues_uploads_init(&uploads);
 
 	api_key        = nxs_chat_srv_u_db_sess_get_rdmn_api_key(sess_ctx);
 	chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
@@ -1350,6 +1338,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_init();
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_init();
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
+	rdmn_issues_ctx       = nxs_chat_srv_u_rdmn_issues_init();
 
 	switch(nxs_chat_srv_u_db_sess_get_wait_for(sess_ctx)) {
 
@@ -1400,11 +1389,11 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
 
-				nxs_chat_srv_c_rdmn_issues_uploads_add(&uploads, &file_path, &file_name);
+				nxs_chat_srv_u_rdmn_issues_uploads_add(rdmn_issues_ctx, &file_path, &file_name);
 			}
 
 			if(nxs_chat_srv_u_rdmn_issues_create(
-			           project_id, priority_id, &subject, &description, is_private, &new_issue_id, &uploads, api_key) !=
+			           rdmn_issues_ctx, project_id, priority_id, &subject, &description, is_private, &new_issue_id, api_key) !=
 			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -1556,9 +1545,9 @@ error:
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_free(tlgrm_attachments_ctx);
+	rdmn_issues_ctx       = nxs_chat_srv_u_rdmn_issues_free(rdmn_issues_ctx);
 
 	nxs_chat_srv_c_tlgrm_message_free(&response_message);
-	nxs_chat_srv_c_rdmn_issues_uploads_free(&uploads);
 
 	nxs_array_free(&projects);
 
@@ -1582,10 +1571,11 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 	nxs_chat_srv_u_rdmn_user_t *        rdmn_user_ctx;
 	nxs_chat_srv_u_last_issues_t *      last_issue_ctx;
 	nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx;
+	nxs_chat_srv_u_rdmn_issues_t *      rdmn_issues_ctx;
 	nxs_chat_srv_m_tlgrm_update_t *     update;
 	nxs_string_t *                      rdmn_api_key, *message, *s, file_name, file_path;
 	nxs_chat_srv_err_t                  rc;
-	nxs_array_t *                       file_ids, uploads;
+	nxs_array_t *                       file_ids;
 	nxs_bool_t                          private_notes;
 	size_t                              issue_id, reply_to_message, message_id, i;
 
@@ -1600,8 +1590,7 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 	rdmn_user_ctx         = nxs_chat_srv_u_rdmn_user_init();
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_init();
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
-
-	nxs_chat_srv_c_rdmn_issues_uploads_init(&uploads);
+	rdmn_issues_ctx       = nxs_chat_srv_u_rdmn_issues_init();
 
 	issue_id         = 0;
 	reply_to_message = update->message.reply_to_message->message_id;
@@ -1716,10 +1705,10 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			nxs_chat_srv_c_rdmn_issues_uploads_add(&uploads, &file_path, &file_name);
+			nxs_chat_srv_u_rdmn_issues_uploads_add(rdmn_issues_ctx, &file_path, &file_name);
 		}
 
-		switch(nxs_chat_srv_u_rdmn_issues_add_note(issue_id, 0, message, private_notes, 0, &uploads, NULL, rdmn_api_key) !=
+		switch(nxs_chat_srv_u_rdmn_issues_add_note(rdmn_issues_ctx, issue_id, 0, message, private_notes, 0, rdmn_api_key) !=
 		       NXS_CHAT_SRV_E_OK) {
 
 			case NXS_CHAT_SRV_E_OK:
@@ -1771,8 +1760,7 @@ error:
 	rdmn_user_ctx         = nxs_chat_srv_u_rdmn_user_free(rdmn_user_ctx);
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_free(tlgrm_attachments_ctx);
-
-	nxs_chat_srv_c_rdmn_issues_uploads_free(&uploads);
+	rdmn_issues_ctx       = nxs_chat_srv_u_rdmn_issues_free(rdmn_issues_ctx);
 
 	nxs_string_free(&file_name);
 	nxs_string_free(&file_path);

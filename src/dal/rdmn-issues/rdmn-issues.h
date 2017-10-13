@@ -17,6 +17,10 @@ nxs_chat_srv_err_t			nxs_chat_srv_d_rdmn_issues_get_issue		(size_t issue_id, nxs
 
 nxs_chat_srv_err_t			nxs_chat_srv_d_rdmn_issues_file_upload		(nxs_string_t *user_api_key, nxs_string_t *file_path, nxs_http_code_t *http_code, nxs_buf_t *out_buf);
 
+void					nxs_chat_srv_d_rdmn_issues_cf_init		(nxs_array_t *custom_fields);
+void					nxs_chat_srv_d_rdmn_issues_cf_free		(nxs_array_t *custom_fields);
+void					nxs_chat_srv_d_rdmn_issues_cf_add		(nxs_array_t *custom_fields, size_t id, nxs_string_t *value);
+
 void					nxs_chat_srv_d_rdmn_issues_uploads_init		(nxs_array_t *uploads);
 void					nxs_chat_srv_d_rdmn_issues_uploads_free		(nxs_array_t *uploads);
 void					nxs_chat_srv_d_rdmn_issues_uploads_add		(nxs_array_t *uploads, nxs_string_t *token, nxs_string_t *filename, nxs_string_t *content_type);
