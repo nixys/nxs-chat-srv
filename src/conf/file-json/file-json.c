@@ -110,6 +110,7 @@ static nxs_string_t _s_par_status_resolved		= nxs_string("status_resolved");
 static nxs_string_t _s_par_status_need_feedback		= nxs_string("status_need_feedback");
 static nxs_string_t _s_par_attachments			= nxs_string("attachments");
 static nxs_string_t _s_par_tlgrm_download_tmp_dir	= nxs_string("tlgrm_download_tmp_dir");
+static nxs_string_t _s_par_rdmn_download_tmp_dir	= nxs_string("rdmn_download_tmp_dir");
 
 /* Module global functions */
 
@@ -613,6 +614,7 @@ static nxs_cfg_json_state_t
 	// clang-format off
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_tlgrm_download_tmp_dir,	&var->tlgrm_download_tmp_dir,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_rdmn_download_tmp_dir,	&var->rdmn_download_tmp_dir,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 

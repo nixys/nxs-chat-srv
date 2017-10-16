@@ -3,6 +3,7 @@
 
 // clang-format off
 
+typedef enum			nxs_chat_srv_m_rdmn_detail_type_e		nxs_chat_srv_m_rdmn_detail_type_t;
 typedef enum			nxs_chat_srv_m_rdmn_issues_visibility_e		nxs_chat_srv_m_rdmn_issues_visibility_t;
 
 typedef struct			nxs_chat_srv_m_rdmn_access_s			nxs_chat_srv_m_rdmn_access_t;
@@ -14,11 +15,21 @@ typedef struct			nxs_chat_srv_m_rdmn_tracker_s			nxs_chat_srv_m_rdmn_tracker_t;
 typedef struct			nxs_chat_srv_m_rdmn_status_s			nxs_chat_srv_m_rdmn_status_t;
 typedef struct			nxs_chat_srv_m_rdmn_priority_s			nxs_chat_srv_m_rdmn_priority_t;
 typedef struct			nxs_chat_srv_m_rdmn_user_s			nxs_chat_srv_m_rdmn_user_t;
+typedef struct			nxs_chat_srv_m_rdmn_detail_attachment_s		nxs_chat_srv_m_rdmn_detail_attachment_t;
+typedef struct			nxs_chat_srv_m_rdmn_detail_attr_s		nxs_chat_srv_m_rdmn_detail_attr_t;
 typedef struct			nxs_chat_srv_m_rdmn_detail_s			nxs_chat_srv_m_rdmn_detail_t;
 typedef struct			nxs_chat_srv_m_rdmn_journal_s			nxs_chat_srv_m_rdmn_journal_t;
 typedef struct			nxs_chat_srv_m_rdmn_issue_s			nxs_chat_srv_m_rdmn_issue_t;
 typedef struct			nxs_chat_srv_m_rdmn_data_s			nxs_chat_srv_m_rdmn_data_t;
 typedef struct			nxs_chat_srv_m_rdmn_update_s			nxs_chat_srv_m_rdmn_update_t;
+typedef struct			nxs_chat_srv_m_rdmn_attachment_s		nxs_chat_srv_m_rdmn_attachment_t;
+
+enum nxs_chat_srv_m_rdmn_detail_type_e
+{
+	NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_NONE,
+	NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_ATTR,
+	NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_ATTACHMENT
+};
 
 enum nxs_chat_srv_m_rdmn_issues_visibility_e
 {
@@ -104,12 +115,28 @@ struct nxs_chat_srv_m_rdmn_user_s
 	nxs_string_t				name;
 };
 
+struct nxs_chat_srv_m_rdmn_detail_attachment_s
+{
+	nxs_bool_t				_is_used;
+
+	size_t					name;
+};
+
+struct nxs_chat_srv_m_rdmn_detail_attr_s
+{
+	nxs_bool_t				_is_used;
+
+	nxs_string_t				name;
+};
+
 struct nxs_chat_srv_m_rdmn_detail_s
 {
 	nxs_bool_t				_is_used;
 
-	nxs_string_t				property;
-	nxs_string_t				name;
+	nxs_chat_srv_m_rdmn_detail_type_t	type;
+
+	nxs_chat_srv_m_rdmn_detail_attachment_t	attachment;
+	nxs_chat_srv_m_rdmn_detail_attr_t	attr;
 };
 
 struct nxs_chat_srv_m_rdmn_journal_s
@@ -123,6 +150,20 @@ struct nxs_chat_srv_m_rdmn_journal_s
 	nxs_chat_srv_m_rdmn_user_t		user;
 
 	nxs_array_t				details;		/* type: nxs_chat_srv_m_rdmn_detail_t. */
+};
+
+struct nxs_chat_srv_m_rdmn_attachment_s
+{
+	nxs_bool_t				_is_used;
+
+	size_t					id;
+	nxs_string_t				filename;
+	size_t					filesize;
+	nxs_string_t				content_type;
+	nxs_string_t				description;
+	nxs_string_t				content_url;
+	nxs_chat_srv_m_rdmn_user_t		author;
+	nxs_string_t				created_on;
 };
 
 struct nxs_chat_srv_m_rdmn_issue_s
@@ -139,6 +180,7 @@ struct nxs_chat_srv_m_rdmn_issue_s
 	nxs_array_t				journals;		/* type: nxs_chat_srv_m_rdmn_journal_t. */
 	nxs_array_t				watchers;		/* type: nxs_chat_srv_m_rdmn_user_t. */
 	nxs_array_t				cf_watchers;		/* type: size_t. */
+	nxs_array_t				attachments;		/* type: nxs_chat_srv_m_rdmn_attachment_t */
 
 	nxs_chat_srv_m_rdmn_project_t		project;
 	nxs_chat_srv_m_rdmn_tracker_t		tracker;

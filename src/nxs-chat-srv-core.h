@@ -104,6 +104,7 @@ typedef enum
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_EDIT_MESSAGE_TEXT,
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_ANSWER_CALLBACK_QUERY,
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_FILE,
+	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO,
 } nxs_chat_srv_tlgrm_request_type_t;
 
 /* Project errors */
@@ -212,6 +213,7 @@ typedef struct
 typedef struct
 {
 	nxs_string_t				tlgrm_download_tmp_dir;
+	nxs_string_t				rdmn_download_tmp_dir;
 } nxs_chat_srv_cfg_attachments_t;
 
 typedef struct

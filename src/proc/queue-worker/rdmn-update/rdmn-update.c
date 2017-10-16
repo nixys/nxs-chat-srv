@@ -107,17 +107,21 @@ error:
 
 static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update_t *update)
 {
-	nxs_chat_srv_u_db_ids_t *     ids_ctx;
-	nxs_chat_srv_m_rdmn_user_t *  u;
-	nxs_chat_srv_u_last_issues_t *last_issue_ctx;
-	nxs_chat_srv_err_t            rc;
-	nxs_array_t                   receivers;
-	size_t                        i, tlgrm_userid, *id;
+	nxs_chat_srv_u_db_ids_t *           ids_ctx;
+	nxs_chat_srv_m_rdmn_user_t *        u;
+	nxs_chat_srv_u_last_issues_t *      last_issue_ctx;
+	nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx;
+	nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx;
+	nxs_chat_srv_err_t                  rc;
+	nxs_array_t                         receivers;
+	size_t                              i, tlgrm_userid, *id;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	ids_ctx        = nxs_chat_srv_u_db_ids_init();
-	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
+	ids_ctx               = nxs_chat_srv_u_db_ids_init();
+	last_issue_ctx        = nxs_chat_srv_u_last_issues_init();
+	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_init();
+	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
 
 	nxs_array_init2(&receivers, size_t);
 
@@ -155,7 +159,8 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 			/* set issue 'update->data.issue.id' as last for telegram user 'tlgrm_userid' */
 			nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, update->data.issue.id);
 
-			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_runtime(update, tlgrm_userid) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_runtime(
+			           update, tlgrm_userid, rdmn_attachments_ctx, tlgrm_attachments_ctx) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_log_write_error(&process,
 				                    "[%s]: error while sending tlgrm message to user (issue id: %d, "
@@ -169,8 +174,10 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 
 error:
 
-	ids_ctx        = nxs_chat_srv_u_db_ids_free(ids_ctx);
-	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
+	ids_ctx               = nxs_chat_srv_u_db_ids_free(ids_ctx);
+	last_issue_ctx        = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
+	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_free(rdmn_attachments_ctx);
+	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_free(tlgrm_attachments_ctx);
 
 	nxs_array_free(&receivers);
 
@@ -179,13 +186,15 @@ error:
 
 static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t *update)
 {
-	nxs_chat_srv_u_db_ids_t *      ids_ctx;
-	nxs_chat_srv_m_rdmn_user_t *   u;
-	nxs_chat_srv_m_rdmn_journal_t *journal;
-	nxs_chat_srv_u_last_issues_t * last_issue_ctx;
-	nxs_chat_srv_err_t             rc;
-	nxs_array_t                    receivers;
-	size_t                         i, tlgrm_userid, *id;
+	nxs_chat_srv_u_db_ids_t *           ids_ctx;
+	nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx;
+	nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx;
+	nxs_chat_srv_m_rdmn_user_t *        u;
+	nxs_chat_srv_m_rdmn_journal_t *     journal;
+	nxs_chat_srv_u_last_issues_t *      last_issue_ctx;
+	nxs_chat_srv_err_t                  rc;
+	nxs_array_t                         receivers;
+	size_t                              i, tlgrm_userid, *id;
 
 	if((journal = nxs_array_get(&update->data.issue.journals, 0)) == NULL) {
 
@@ -201,8 +210,10 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 
 	nxs_array_init2(&receivers, size_t);
 
-	ids_ctx        = nxs_chat_srv_u_db_ids_init();
-	last_issue_ctx = nxs_chat_srv_u_last_issues_init();
+	ids_ctx               = nxs_chat_srv_u_db_ids_init();
+	last_issue_ctx        = nxs_chat_srv_u_last_issues_init();
+	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_init();
+	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
 
 	/* add to receivers array author of issue */
 	receivers_add(&receivers, journal->user.id, update->data.issue.author.id, &update->data.issue.project.members, journal);
@@ -241,8 +252,8 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 			/* set issue 'update->data.issue.id' as last for telegram user 'tlgrm_userid' */
 			nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, update->data.issue.id);
 
-			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(update, tlgrm_userid, journal) !=
-			   NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(
+			           update, tlgrm_userid, journal, rdmn_attachments_ctx, tlgrm_attachments_ctx) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_log_write_error(&process,
 				                    "[%s]: error while sending tlgrm message to user (issue id: %d, "
@@ -256,8 +267,10 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 
 error:
 
-	ids_ctx        = nxs_chat_srv_u_db_ids_free(ids_ctx);
-	last_issue_ctx = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
+	ids_ctx               = nxs_chat_srv_u_db_ids_free(ids_ctx);
+	last_issue_ctx        = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
+	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_free(rdmn_attachments_ctx);
+	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_free(tlgrm_attachments_ctx);
 
 	nxs_array_free(&receivers);
 

@@ -79,6 +79,12 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_roles(nxs_process_t
                                                                    nxs_array_t *       cfg_arr);
 static nxs_cfg_json_state_t
         nxs_chat_srv_c_rdmn_extract_json_permissions(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_rdmn_extract_json_attachment(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_attachments(nxs_process_t *     proc,
+                                                                         nxs_json_t *        json,
+                                                                         nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                         nxs_array_t *       cfg_arr);
 
 // clang-format off
 
@@ -116,6 +122,8 @@ static nxs_string_t	_s_par_assigned_to		= nxs_string("assigned_to");
 static nxs_string_t	_s_par_details			= nxs_string("details");
 static nxs_string_t	_s_par_property			= nxs_string("property");
 static nxs_string_t	_s_par_attr			= nxs_string("attr");
+static nxs_string_t	_s_par_attachment		= nxs_string("attachment");
+static nxs_string_t	_s_par_attachments		= nxs_string("attachments");
 static nxs_string_t	_s_par_private_notes		= nxs_string("private_notes");
 static nxs_string_t	_s_par_custom_fields		= nxs_string("custom_fields");
 static nxs_string_t	_s_par_value			= nxs_string("value");
@@ -126,6 +134,11 @@ static nxs_string_t	_s_par_view_current_issue	= nxs_string("view_current_issue")
 static nxs_string_t	_s_par_view_private_notes	= nxs_string("view_private_notes");
 static nxs_string_t	_s_par_permissions		= nxs_string("permissions");
 static nxs_string_t	_s_par_issues_visibility	= nxs_string("issues_visibility");
+static nxs_string_t	_s_par_filename			= nxs_string("filename");
+static nxs_string_t	_s_par_filesize			= nxs_string("filesize");
+static nxs_string_t	_s_par_content_type		= nxs_string("content_type");
+static nxs_string_t	_s_par_content_url		= nxs_string("content_url");
+static nxs_string_t	_s_par_created_on		= nxs_string("created_on");
 
 /* Module global functions */
 
@@ -439,10 +452,15 @@ void nxs_chat_srv_c_rdmn_detail_init(nxs_chat_srv_m_rdmn_detail_t *detail)
 		return;
 	}
 
-	detail->_is_used = NXS_NO;
+	detail->_is_used            = NXS_NO;
+	detail->attr._is_used       = NXS_NO;
+	detail->attachment._is_used = NXS_NO;
 
-	nxs_string_init_empty(&detail->property);
-	nxs_string_init_empty(&detail->name);
+	detail->type = NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_NONE;
+
+	detail->attachment.name = 0;
+
+	nxs_string_init_empty(&detail->attr.name);
 }
 
 void nxs_chat_srv_c_rdmn_detail_free(nxs_chat_srv_m_rdmn_detail_t *detail)
@@ -453,10 +471,15 @@ void nxs_chat_srv_c_rdmn_detail_free(nxs_chat_srv_m_rdmn_detail_t *detail)
 		return;
 	}
 
-	detail->_is_used = NXS_NO;
+	detail->_is_used            = NXS_NO;
+	detail->attr._is_used       = NXS_NO;
+	detail->attachment._is_used = NXS_NO;
 
-	nxs_string_free(&detail->property);
-	nxs_string_free(&detail->name);
+	detail->type = NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_NONE;
+
+	detail->attachment.name = 0;
+
+	nxs_string_free(&detail->attr.name);
 }
 
 void nxs_chat_srv_c_rdmn_journal_init(nxs_chat_srv_m_rdmn_journal_t *journal)
@@ -529,6 +552,7 @@ void nxs_chat_srv_c_rdmn_issue_init(nxs_chat_srv_m_rdmn_issue_t *issue)
 	nxs_array_init2(&issue->journals, nxs_chat_srv_m_rdmn_issue_t);
 	nxs_array_init2(&issue->watchers, nxs_chat_srv_m_rdmn_user_t);
 	nxs_array_init2(&issue->cf_watchers, size_t);
+	nxs_array_init2(&issue->attachments, nxs_chat_srv_m_rdmn_attachment_t);
 
 	nxs_chat_srv_c_rdmn_project_init(&issue->project);
 	nxs_chat_srv_c_rdmn_tracker_init(&issue->tracker);
@@ -540,9 +564,10 @@ void nxs_chat_srv_c_rdmn_issue_init(nxs_chat_srv_m_rdmn_issue_t *issue)
 
 void nxs_chat_srv_c_rdmn_issue_free(nxs_chat_srv_m_rdmn_issue_t *issue)
 {
-	nxs_chat_srv_m_rdmn_journal_t *j;
-	nxs_chat_srv_m_rdmn_user_t *   u;
-	size_t                         i;
+	nxs_chat_srv_m_rdmn_journal_t *   j;
+	nxs_chat_srv_m_rdmn_user_t *      u;
+	nxs_chat_srv_m_rdmn_attachment_t *a;
+	size_t                            i;
 
 	if(issue == NULL) {
 
@@ -573,9 +598,17 @@ void nxs_chat_srv_c_rdmn_issue_free(nxs_chat_srv_m_rdmn_issue_t *issue)
 		nxs_chat_srv_c_rdmn_user_free(u);
 	}
 
+	for(i = 0; i < nxs_array_count(&issue->attachments); i++) {
+
+		a = nxs_array_get(&issue->attachments, i);
+
+		nxs_chat_srv_c_rdmn_attachment_free(a);
+	}
+
 	nxs_array_free(&issue->journals);
 	nxs_array_free(&issue->watchers);
 	nxs_array_free(&issue->cf_watchers);
+	nxs_array_free(&issue->attachments);
 
 	nxs_chat_srv_c_rdmn_project_free(&issue->project);
 	nxs_chat_srv_c_rdmn_tracker_free(&issue->tracker);
@@ -676,6 +709,88 @@ nxs_chat_srv_err_t nxs_chat_srv_c_rdmn_update_pull_json(nxs_chat_srv_m_rdmn_upda
 	return rc;
 }
 
+void nxs_chat_srv_c_rdmn_attachment_init(nxs_chat_srv_m_rdmn_attachment_t *attachment)
+{
+
+	if(attachment == NULL) {
+
+		return;
+	}
+
+	attachment->_is_used = NXS_NO;
+
+	attachment->id       = 0;
+	attachment->filesize = 0;
+
+	nxs_string_init_empty(&attachment->filename);
+	nxs_string_init_empty(&attachment->content_type);
+	nxs_string_init_empty(&attachment->description);
+	nxs_string_init_empty(&attachment->content_url);
+	nxs_string_init_empty(&attachment->created_on);
+
+	nxs_chat_srv_c_rdmn_user_init(&attachment->author);
+}
+
+void nxs_chat_srv_c_rdmn_attachment_free(nxs_chat_srv_m_rdmn_attachment_t *attachment)
+{
+
+	if(attachment == NULL) {
+
+		return;
+	}
+
+	attachment->_is_used = NXS_NO;
+
+	attachment->id       = 0;
+	attachment->filesize = 0;
+
+	nxs_string_free(&attachment->filename);
+	nxs_string_free(&attachment->content_type);
+	nxs_string_free(&attachment->description);
+	nxs_string_free(&attachment->content_url);
+	nxs_string_free(&attachment->created_on);
+
+	nxs_chat_srv_c_rdmn_user_free(&attachment->author);
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_c_rdmn_attachment_pull_json(nxs_chat_srv_m_rdmn_attachment_t *attachment, nxs_buf_t *json_buf)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_cfg_json_t     cfg_json;
+	nxs_array_t        cfg_arr;
+
+	if(attachment == NULL || json_buf == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_attachment,	attachment,		&nxs_chat_srv_c_rdmn_extract_json_attachment,		NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_buf(&process, cfg_json, json_buf) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_error(&process, "[%s]: rdmn attachment json extract error: parse data error", nxs_proc_get_name(&process));
+
+		rc = NXS_CHAT_SRV_E_ERR;
+	}
+
+	nxs_cfg_json_free(&cfg_json);
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
 /* Module internal (static) functions */
 
 static nxs_cfg_json_state_t
@@ -751,6 +866,7 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_author,		&var->author,		&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,							NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_assigned_to,	&var->assigned_to,	&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,							NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_custom_fields,	var,			NULL,						&nxs_chat_srv_c_rdmn_extract_json_custom_fields,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_attachments,	&var->attachments,	NULL,						&nxs_chat_srv_c_rdmn_extract_json_attachments,		NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -876,7 +992,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_details(nxs_process
 	nxs_array_t *                 details = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_chat_srv_m_rdmn_detail_t *d;
 	nxs_json_t *                  j;
-	nxs_string_t *                p, *n;
+	nxs_string_t *                p;
 
 	if((j = nxs_json_child_get_by_key(json, nxs_string_str(&_s_par_property))) == NULL) {
 
@@ -902,36 +1018,83 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_details(nxs_process
 
 	if(nxs_string_cmp(p, 0, &_s_par_attr, 0) == NXS_YES) {
 
-		if((j = nxs_json_child_get_by_key(json, nxs_string_str(&_s_par_name))) == NULL) {
-
-			nxs_log_write_error(&process,
-			                    "[%s]: rdmn json read error: parse rdmn details error, missing filed \"%r\"",
-			                    nxs_proc_get_name(&process),
-			                    &_s_par_name);
-
-			return NXS_CFG_JSON_CONF_ERROR;
-		}
-
-		if(nxs_json_type_get(j) != NXS_JSON_TYPE_STRING) {
-
-			nxs_log_write_error(&process,
-			                    "[%s]: rdmn json read error: parse rdmn details error, expected string type for filed \"%r\"",
-			                    nxs_proc_get_name(&process),
-			                    &_s_par_name);
-
-			return NXS_CFG_JSON_CONF_ERROR;
-		}
-
-		n = nxs_json_string_val(j);
-
 		d = nxs_array_add(details);
 
 		nxs_chat_srv_c_rdmn_detail_init(d);
 
-		d->_is_used = NXS_YES;
+		d->_is_used      = NXS_YES;
+		d->attr._is_used = NXS_YES;
 
-		nxs_string_clone(&d->property, p);
-		nxs_string_clone(&d->name, n);
+		d->type = NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_ATTR;
+	}
+	else {
+
+		if(nxs_string_cmp(p, 0, &_s_par_attachment, 0) == NXS_YES) {
+
+			d = nxs_array_add(details);
+
+			nxs_chat_srv_c_rdmn_detail_init(d);
+
+			d->_is_used            = NXS_YES;
+			d->attachment._is_used = NXS_YES;
+
+			d->type = NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_ATTACHMENT;
+		}
+		else {
+
+			return NXS_CFG_JSON_CONF_OK;
+		}
+	}
+
+	if((j = nxs_json_child_get_by_key(json, nxs_string_str(&_s_par_name))) == NULL) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: rdmn json read error: parse rdmn details error, missing filed \"%r\"",
+		                    nxs_proc_get_name(&process),
+		                    &_s_par_name);
+
+		return NXS_CFG_JSON_CONF_ERROR;
+	}
+
+	switch(d->type) {
+
+		case NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_ATTR:
+
+			if(nxs_json_type_get(j) != NXS_JSON_TYPE_STRING) {
+
+				nxs_log_write_error(
+				        &process,
+				        "[%s]: rdmn json read error: parse rdmn details error, expected string type for filed \"%r\"",
+				        nxs_proc_get_name(&process),
+				        &_s_par_name);
+
+				return NXS_CFG_JSON_CONF_ERROR;
+			}
+
+			nxs_string_clone(&d->attr.name, nxs_json_string_val(j));
+
+			break;
+
+		case NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_ATTACHMENT:
+
+			if(nxs_json_type_get(j) != NXS_JSON_TYPE_INTEGER) {
+
+				nxs_log_write_error(
+				        &process,
+				        "[%s]: rdmn json read error: parse rdmn details error, expected integer type for filed \"%r\"",
+				        nxs_proc_get_name(&process),
+				        &_s_par_name);
+
+				return NXS_CFG_JSON_CONF_ERROR;
+			}
+
+			d->attachment.name = (size_t)nxs_json_integer_val(j);
+
+			break;
+
+		default:
+
+			break;
 	}
 
 	return NXS_CFG_JSON_CONF_OK;
@@ -1345,4 +1508,83 @@ error:
 	nxs_cfg_json_conf_array_free(&cfg_arr);
 
 	return rc;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_rdmn_extract_json_attachment(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_m_rdmn_attachment_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t                    cfg_json;
+	nxs_array_t                       cfg_arr;
+	nxs_cfg_json_state_t              rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	var->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_filename,	&var->filename,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_filesize,	&var->filesize,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_content_type,	&var->content_type,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,	&var->description,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_content_url,	&var->content_url,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_created_on,	&var->created_on,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_author,		&var->author,		&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "rdmn json read error: 'attachment' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_attachments(nxs_process_t *     proc,
+                                                                         nxs_json_t *        json,
+                                                                         nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                         nxs_array_t *       cfg_arr)
+{
+	nxs_array_t *                     attachments = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_chat_srv_m_rdmn_attachment_t *a;
+
+	a = nxs_array_add(attachments);
+
+	nxs_chat_srv_c_rdmn_attachment_init(a);
+
+	a->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_skip_undef(cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&a->id,			NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_filename,	&a->filename,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_filesize,	&a->filesize,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_content_type,	&a->content_type,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_description,	&a->description,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_content_url,	&a->content_url,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_created_on,	&a->created_on,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_author,		&a->author,		&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	return NXS_CFG_JSON_CONF_OK;
 }

@@ -45,7 +45,8 @@ typedef struct
 
 // clang-format on
 
-static journal_property_t journal_property_get(nxs_string_t *property_name);
+static journal_property_t journal_attr_property_get(nxs_chat_srv_m_rdmn_detail_t *detail);
+static size_t journal_attachment_id_get(nxs_chat_srv_m_rdmn_detail_t *detail);
 
 // clang-format off
 
@@ -67,21 +68,24 @@ static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(nxs_chat_srv_m_rdmn_update_t * update,
-                                                                                     size_t                         tlgrm_userid,
-                                                                                     nxs_chat_srv_m_rdmn_journal_t *journal)
+nxs_chat_srv_err_t
+        nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(nxs_chat_srv_m_rdmn_update_t *      update,
+                                                                          size_t                              tlgrm_userid,
+                                                                          nxs_chat_srv_m_rdmn_journal_t *     journal,
+                                                                          nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx,
+                                                                          nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
 	nxs_chat_srv_m_rdmn_detail_t *      d;
 	nxs_string_t message, properties, property_is_private, property_status, property_priority, property_assigned_to, notes_fmt,
-	        project_fmt, subject_fmt, user_fmt, status_fmt, priority_fmt, assigned_to_fmt, *s;
+	        project_fmt, subject_fmt, user_fmt, status_fmt, priority_fmt, assigned_to_fmt, *s, file_name, file_path, description;
 	nxs_buf_t *                    out_buf;
-	nxs_array_t                    m_chunks;
+	nxs_array_t                    m_chunks, attachments;
 	nxs_bool_t                     response_status;
 	nxs_chat_srv_m_tlgrm_message_t tlgrm_message;
 	nxs_chat_srv_u_db_issues_t *   db_issue_ctx;
 	nxs_bool_t                     use_property;
-	size_t                         i;
+	size_t                         i, attachment_id, message_id, *a_id;
 
 	if(update == NULL || journal == NULL) {
 
@@ -105,8 +109,12 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 	nxs_string_init_empty(&status_fmt);
 	nxs_string_init_empty(&priority_fmt);
 	nxs_string_init_empty(&assigned_to_fmt);
+	nxs_string_init_empty(&file_name);
+	nxs_string_init_empty(&file_path);
+	nxs_string_init_empty(&description);
 
 	nxs_array_init2(&m_chunks, nxs_string_t);
+	nxs_array_init2(&attachments, size_t);
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_init();
@@ -123,57 +131,70 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 
 		d = nxs_array_get(&journal->details, i);
 
-		switch(journal_property_get(&d->name)) {
+		if((attachment_id = journal_attachment_id_get(d)) != 0) {
 
-			case JOURNAL_PROPERTY_IS_PRIVATE:
+			a_id = nxs_array_add(&attachments);
 
-				use_property = NXS_YES;
+			*a_id = attachment_id;
+		}
+		else {
 
-				if(update->data.issue.is_private == NXS_YES) {
+			switch(journal_attr_property_get(d)) {
 
-					nxs_string_printf(&property_is_private, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_IS_PRIVATE_YES);
-				}
-				else {
+				case JOURNAL_PROPERTY_IS_PRIVATE:
 
-					nxs_string_printf(&property_is_private, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_IS_PRIVATE_NO);
-				}
+					use_property = NXS_YES;
 
-				break;
+					if(update->data.issue.is_private == NXS_YES) {
 
-			case JOURNAL_PROPERTY_STATUS_ID:
+						nxs_string_printf(&property_is_private,
+						                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_IS_PRIVATE_YES);
+					}
+					else {
 
-				use_property = NXS_YES;
+						nxs_string_printf(&property_is_private,
+						                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_IS_PRIVATE_NO);
+					}
 
-				nxs_chat_srv_c_tlgrm_format_escape_html(&status_fmt, &update->data.issue.status.name);
+					break;
 
-				nxs_string_printf(&property_status, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_STATUS, &status_fmt);
+				case JOURNAL_PROPERTY_STATUS_ID:
 
-				break;
+					use_property = NXS_YES;
 
-			case JOURNAL_PROPERTY_PRIORITY_ID:
+					nxs_chat_srv_c_tlgrm_format_escape_html(&status_fmt, &update->data.issue.status.name);
 
-				use_property = NXS_YES;
+					nxs_string_printf(&property_status, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_STATUS, &status_fmt);
 
-				nxs_chat_srv_c_tlgrm_format_escape_html(&priority_fmt, &update->data.issue.priority.name);
+					break;
 
-				nxs_string_printf(&property_priority, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_PRIORITY, &priority_fmt);
+				case JOURNAL_PROPERTY_PRIORITY_ID:
 
-				break;
+					use_property = NXS_YES;
 
-			case JOURNAL_PROPERTY_ASSIGNED_TO_ID:
+					nxs_chat_srv_c_tlgrm_format_escape_html(&priority_fmt, &update->data.issue.priority.name);
 
-				use_property = NXS_YES;
+					nxs_string_printf(
+					        &property_priority, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_PRIORITY, &priority_fmt);
 
-				nxs_chat_srv_c_tlgrm_format_escape_html(&assigned_to_fmt, &update->data.issue.assigned_to.name);
+					break;
 
-				nxs_string_printf(
-				        &property_assigned_to, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_ASSIGNED_TO, &assigned_to_fmt);
+				case JOURNAL_PROPERTY_ASSIGNED_TO_ID:
 
-				break;
+					use_property = NXS_YES;
 
-			default:
+					nxs_chat_srv_c_tlgrm_format_escape_html(&assigned_to_fmt, &update->data.issue.assigned_to.name);
 
-				break;
+					nxs_string_printf(&property_assigned_to,
+					                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_ASSIGNED_TO,
+					                  &assigned_to_fmt);
+
+					break;
+
+				default:
+
+					break;
+			}
 		}
 	}
 
@@ -206,25 +227,23 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 	}
 	else {
 
-		if(use_property == NXS_YES) {
-
-			nxs_string_printf(&message,
-			                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE,
-			                  journal->private_notes == NXS_YES ? (char *)_s_private_message : "",
-			                  &nxs_chat_srv_cfg.rdmn.host,
-			                  update->data.issue.id,
-			                  &project_fmt,
-			                  update->data.issue.id,
-			                  &subject_fmt,
-			                  &properties,
-			                  &user_fmt);
-
-			nxs_chat_srv_c_tlgrm_make_message_chunks(&message, NULL, &m_chunks);
-		}
-		else {
+		if(use_property == NXS_NO && nxs_array_count(&attachments) == 0) {
 
 			nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
 		}
+
+		nxs_string_printf(&message,
+		                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE,
+		                  journal->private_notes == NXS_YES ? (char *)_s_private_message : "",
+		                  &nxs_chat_srv_cfg.rdmn.host,
+		                  update->data.issue.id,
+		                  &project_fmt,
+		                  update->data.issue.id,
+		                  &subject_fmt,
+		                  &properties,
+		                  &user_fmt);
+
+		nxs_chat_srv_c_tlgrm_make_message_chunks(&message, NULL, &m_chunks);
 	}
 
 	/* create new comment: send message chunks */
@@ -249,6 +268,23 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_run
 		}
 	}
 
+	/* sending attachments to user */
+
+	for(i = 0; i < nxs_array_count(&attachments); i++) {
+
+		a_id = nxs_array_get(&attachments, i);
+
+		if(nxs_chat_srv_u_rdmn_attachments_download(rdmn_attachments_ctx, *a_id, &file_name, &file_path, &description) ==
+		   NXS_CHAT_SRV_E_OK) {
+
+			if(nxs_chat_srv_u_tlgrm_attachments_send_photo(
+			           tlgrm_attachments_ctx, tlgrm_userid, &file_path, &description, &message_id) == NXS_CHAT_SRV_E_OK) {
+
+				nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, message_id, update->data.issue.id);
+			}
+		}
+	}
+
 error:
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
@@ -264,6 +300,7 @@ error:
 	}
 
 	nxs_array_free(&m_chunks);
+	nxs_array_free(&attachments);
 
 	nxs_string_free(&message);
 	nxs_string_free(&properties);
@@ -278,23 +315,44 @@ error:
 	nxs_string_free(&status_fmt);
 	nxs_string_free(&priority_fmt);
 	nxs_string_free(&assigned_to_fmt);
+	nxs_string_free(&file_name);
+	nxs_string_free(&file_path);
+	nxs_string_free(&description);
 
 	return rc;
 }
 
 /* Module internal (static) functions */
 
-static journal_property_t journal_property_get(nxs_string_t *property_name)
+static journal_property_t journal_attr_property_get(nxs_chat_srv_m_rdmn_detail_t *detail)
 {
 	size_t i;
 
+	if(detail == NULL || detail->_is_used == NXS_NO || detail->type != NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_ATTR ||
+	   detail->attr._is_used == NXS_NO) {
+
+		return JOURNAL_PROPERTY_NONE;
+	}
+
 	for(i = 0; journal_properties[i].property != JOURNAL_PROPERTY_NONE; i++) {
 
-		if(nxs_string_cmp(&journal_properties[i].name, 0, property_name, 0) == NXS_YES) {
+		if(nxs_string_cmp(&journal_properties[i].name, 0, &detail->attr.name, 0) == NXS_YES) {
 
 			return journal_properties[i].property;
 		}
 	}
 
 	return JOURNAL_PROPERTY_NONE;
+}
+
+static size_t journal_attachment_id_get(nxs_chat_srv_m_rdmn_detail_t *detail)
+{
+
+	if(detail == NULL || detail->_is_used == NXS_NO || detail->type != NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_ATTACHMENT ||
+	   detail->attachment._is_used == NXS_NO) {
+
+		return 0;
+	}
+
+	return detail->attachment.name;
 }

@@ -42,18 +42,22 @@ static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_runtime(nxs_chat_srv_m_rdmn_update_t *update,
-                                                                                     size_t                        tlgrm_userid)
+nxs_chat_srv_err_t
+        nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_runtime(nxs_chat_srv_m_rdmn_update_t *      update,
+                                                                          size_t                              tlgrm_userid,
+                                                                          nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx,
+                                                                          nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
 	nxs_string_t *s, message, private_issue, description_fmt, project_fmt, subject_fmt, author_fmt, status_fmt, priority_fmt,
-	        assigned_to_fmt;
-	nxs_buf_t *                    out_buf;
-	nxs_array_t                    d_chunks;
-	nxs_bool_t                     response_status;
-	nxs_chat_srv_m_tlgrm_message_t tlgrm_message;
-	nxs_chat_srv_u_db_issues_t *   db_issue_ctx;
-	size_t                         i;
+	        assigned_to_fmt, file_name, file_path, description;
+	nxs_buf_t *                       out_buf;
+	nxs_array_t                       d_chunks;
+	nxs_bool_t                        response_status;
+	nxs_chat_srv_m_tlgrm_message_t    tlgrm_message;
+	nxs_chat_srv_m_rdmn_attachment_t *rdmn_attachment;
+	nxs_chat_srv_u_db_issues_t *      db_issue_ctx;
+	size_t                            i, message_id;
 
 	nxs_chat_srv_err_t rc;
 
@@ -68,6 +72,9 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_run
 	nxs_string_init_empty(&status_fmt);
 	nxs_string_init_empty(&priority_fmt);
 	nxs_string_init_empty(&assigned_to_fmt);
+	nxs_string_init_empty(&file_name);
+	nxs_string_init_empty(&file_path);
+	nxs_string_init_empty(&description);
 
 	nxs_array_init2(&d_chunks, nxs_string_t);
 
@@ -126,6 +133,23 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_run
 		}
 	}
 
+	/* sending attachments to user */
+
+	for(i = 0; i < nxs_array_count(&update->data.issue.attachments); i++) {
+
+		rdmn_attachment = nxs_array_get(&update->data.issue.attachments, i);
+
+		if(nxs_chat_srv_u_rdmn_attachments_download(
+		           rdmn_attachments_ctx, rdmn_attachment->id, &file_name, &file_path, &description) == NXS_CHAT_SRV_E_OK) {
+
+			if(nxs_chat_srv_u_tlgrm_attachments_send_photo(
+			           tlgrm_attachments_ctx, tlgrm_userid, &file_path, &description, &message_id) == NXS_CHAT_SRV_E_OK) {
+
+				nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, message_id, update->data.issue.id);
+			}
+		}
+	}
+
 error:
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
@@ -151,6 +175,9 @@ error:
 	nxs_string_free(&status_fmt);
 	nxs_string_free(&priority_fmt);
 	nxs_string_free(&assigned_to_fmt);
+	nxs_string_free(&file_name);
+	nxs_string_free(&file_path);
+	nxs_string_free(&description);
 
 	return rc;
 }

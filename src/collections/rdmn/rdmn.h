@@ -48,5 +48,8 @@ void				nxs_chat_srv_c_rdmn_update_init			(nxs_chat_srv_m_rdmn_update_t *update)
 void				nxs_chat_srv_c_rdmn_update_free			(nxs_chat_srv_m_rdmn_update_t *update);
 nxs_chat_srv_err_t		nxs_chat_srv_c_rdmn_update_pull_json		(nxs_chat_srv_m_rdmn_update_t *update, nxs_buf_t *json_buf);
 
+void				nxs_chat_srv_c_rdmn_attachment_init		(nxs_chat_srv_m_rdmn_attachment_t *attachment);
+void				nxs_chat_srv_c_rdmn_attachment_free		(nxs_chat_srv_m_rdmn_attachment_t *attachment);
+nxs_chat_srv_err_t		nxs_chat_srv_c_rdmn_attachment_pull_json	(nxs_chat_srv_m_rdmn_attachment_t *attachment, nxs_buf_t *json_buf);
 
 #endif /* _INCLUDE_NXS_CHAT_SRV_C_RDMN_H */
