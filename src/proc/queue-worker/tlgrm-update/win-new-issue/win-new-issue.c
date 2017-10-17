@@ -56,6 +56,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 	nxs_buf_t *                             b;
 	nxs_chat_srv_err_t                      rc;
 	nxs_bool_t                              is_private;
+	size_t                                  files_count;
 	char *                                  msg;
 
 	rc = NXS_CHAT_SRV_E_OK;
@@ -69,6 +70,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 	nxs_string_init_empty(&private_msg);
 
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
+
+	files_count = nxs_chat_srv_u_db_sess_get_files_count(sess_ctx);
 
 	if(message_id == 0) {
 
@@ -106,7 +109,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(nxs_ch
 		                  &priority_name,
 		                  nxs_string_len(&subject) > 0 ? &subject : &_s_msg_empty_subject,
 		                  &private_msg,
-		                  &description);
+		                  &description,
+		                  files_count);
 
 		tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
 

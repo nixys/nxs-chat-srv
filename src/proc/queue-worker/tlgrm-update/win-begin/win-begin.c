@@ -47,6 +47,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t    
                                                                       size_t        rdmn_userid,
                                                                       nxs_string_t *user_api_key,
                                                                       nxs_bool_t    private_notes,
+                                                                      size_t        files_count,
                                                                       nxs_buf_t *   response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
@@ -87,6 +88,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t    
 	nxs_string_printf(&message,
 	                  NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN,
 	                  &private_message,
+	                  files_count,
 	                  &nxs_chat_srv_cfg.rdmn.host,
 	                  issue_id,
 	                  &issue_project_name,
@@ -119,6 +121,13 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t    
 		                                                               NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_NEW_ISSUE,
 		                                                               0,
 		                                                               NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_NEW_ISSUE);
+
+		nxs_chat_srv_u_tlgrm_sendmessage_inline_keybutton_callback_add(tlgrm_sendmessage_ctx,
+		                                                               3,
+		                                                               0,
+		                                                               NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SESSION_DESTROY,
+		                                                               0,
+		                                                               NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESTROY_SESSION);
 
 		nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(tlgrm_sendmessage_ctx);
 
@@ -161,6 +170,13 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(size_t    
 		                                                                   NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_NEW_ISSUE,
 		                                                                   0,
 		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_NEW_ISSUE);
+
+		nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(tlgrm_editmessagetext_ctx,
+		                                                                   3,
+		                                                                   0,
+		                                                                   NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SESSION_DESTROY,
+		                                                                   0,
+		                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESTROY_SESSION);
 
 		nxs_chat_srv_u_tlgrm_editmessagetext_disable_web_page_preview(tlgrm_editmessagetext_ctx);
 

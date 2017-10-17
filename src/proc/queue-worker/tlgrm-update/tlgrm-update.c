@@ -110,7 +110,7 @@ static nxs_chat_srv_err_t handler_command_dummy(nxs_chat_srv_m_tlgrm_update_t *u
                                                 nxs_chat_srv_u_db_cache_t *    cache_ctx,
                                                 nxs_chat_srv_m_user_ctx_t *    user_ctx);
 
-static void messages_queue_clean_all(nxs_chat_srv_u_db_queue_t *queue_ctx);
+static void messages_queue_clean_text_messages(nxs_chat_srv_u_db_queue_t *queue_ctx);
 static void messages_queue_clean_reply(nxs_chat_srv_u_db_queue_t *queue_ctx);
 static nxs_chat_srv_err_t messages_queue_elt_parse(nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_m_tlgrm_update_t *update);
 
@@ -302,7 +302,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime_queue(void)
 
 		case NXS_CHAT_SRV_E_OK:
 
-			/* got queue */
+			/* got (locked) queue */
 
 			update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx);
 
@@ -647,7 +647,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 	nxs_chat_srv_u_tlgrm_attachments_t *     tlgrm_attachments_ctx;
 	nxs_chat_srv_u_rdmn_issues_t *           rdmn_issues_ctx;
 	nxs_bool_t                               private_notes;
-	size_t                                   chat_id, bot_message_id, usr_message_id, issues_count, status_id, assigned_to_id, i;
+	size_t chat_id, bot_message_id, usr_message_id, issues_count, status_id, assigned_to_id, i, files_count;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -667,6 +667,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 	bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
 	usr_message_id = nxs_chat_srv_u_db_sess_get_usr_message_id(sess_ctx);
 	file_ids       = nxs_chat_srv_u_db_sess_get_files(sess_ctx);
+	files_count    = nxs_chat_srv_u_db_sess_get_files_count(sess_ctx);
 	message        = nxs_chat_srv_u_db_sess_t_get_message(sess_ctx);
 	private_notes  = nxs_chat_srv_u_db_sess_t_get_message_is_private(sess_ctx);
 
@@ -868,7 +869,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK:
 
 			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
-			           chat_id, bot_message_id, user_ctx->r_userid, api_key, private_notes, NULL) != NXS_CHAT_SRV_E_OK) {
+			           chat_id, bot_message_id, user_ctx->r_userid, api_key, private_notes, files_count, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -924,7 +926,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
                                                                nxs_chat_srv_u_db_cache_t *           cache_ctx,
                                                                nxs_chat_srv_m_user_ctx_t *           user_ctx)
 {
-	size_t                                   chat_id, bot_message_id, projects_count;
+	size_t                                   chat_id, bot_message_id, projects_count, files_count;
 	nxs_string_t *                           api_key;
 	nxs_array_t                              projects;
 	nxs_chat_srv_err_t                       rc;
@@ -938,6 +940,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 	api_key        = nxs_chat_srv_u_db_sess_get_rdmn_api_key(sess_ctx);
 	chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
 	bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
+	files_count    = nxs_chat_srv_u_db_sess_get_files_count(sess_ctx);
 
 	switch(callback->type) {
 
@@ -1091,7 +1094,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 			private_notes = nxs_chat_srv_u_db_sess_t_get_message_is_private(sess_ctx);
 
 			if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
-			           chat_id, bot_message_id, user_ctx->r_userid, api_key, private_notes, NULL) != NXS_CHAT_SRV_E_OK) {
+			           chat_id, bot_message_id, user_ctx->r_userid, api_key, private_notes, files_count, NULL) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -1145,7 +1149,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_u_db_queu
 	nxs_string_t *                 rdmn_api_key;
 	nxs_buf_t                      response_buf;
 	nxs_chat_srv_err_t             rc;
-	size_t                         message_id, chat_id;
+	size_t                         message_id, chat_id, files_count;
 
 	if(queue_ctx == NULL || sess_ctx == NULL || cache_ctx == NULL || user_ctx == NULL) {
 
@@ -1217,9 +1221,10 @@ static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_u_db_queu
 	}
 
 	private_message = nxs_chat_srv_u_db_sess_t_get_message_is_private(sess_ctx);
+	files_count     = nxs_chat_srv_u_db_sess_get_files_count(sess_ctx);
 
 	if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
-	           chat_id, 0, user_ctx->r_userid, rdmn_api_key, private_message, &response_buf) != NXS_CHAT_SRV_E_OK) {
+	           chat_id, 0, user_ctx->r_userid, rdmn_api_key, private_message, files_count, &response_buf) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -1263,22 +1268,65 @@ static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_u_db_qu
                                                             nxs_chat_srv_u_db_cache_t *cache_ctx,
                                                             nxs_chat_srv_m_user_ctx_t *user_ctx)
 {
+	nxs_chat_srv_m_tlgrm_update_t *    update;
+	nxs_chat_srv_m_tlgrm_photo_size_t *p;
+
 	nxs_chat_srv_err_t rc;
-	size_t             tlgrm_userid;
+	nxs_string_t *     api_key;
+	size_t             tlgrm_userid, bot_message_id, files_count;
+	nxs_bool_t         f, private_notes;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	tlgrm_userid = nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx);
+	tlgrm_userid   = nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx);
+	bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
+	api_key        = nxs_chat_srv_u_db_sess_get_rdmn_api_key(sess_ctx);
+	private_notes  = nxs_chat_srv_u_db_sess_t_get_message_is_private(sess_ctx);
 
-	switch(nxs_chat_srv_u_db_sess_get_wait_for(sess_ctx)) {
+	/*
+	 * Processing queue and add all files into existing session (updating windown on client).
+	 * Messages withot attachments will be removed from queue.
+	 */
 
-		default:
+	for(f = NXS_NO, update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx); update != NULL;
+	    update = nxs_chat_srv_u_db_queue_list_del_head(queue_ctx)) {
 
-			messages_queue_clean_all(queue_ctx);
+		if(nxs_chat_srv_c_tlgrm_update_get_type(update) == NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE) {
 
-			nxs_error(rc, nxs_chat_srv_p_queue_worker_tlgrm_update_win_wrong_action(sess_ctx, tlgrm_userid, NULL), error);
+			if(nxs_array_count(&update->message.photo) > 0) {
+
+				f = NXS_YES;
+
+				p = nxs_array_get(&update->message.photo, nxs_array_count(&update->message.photo) - 1);
+
+				if(nxs_chat_srv_u_db_sess_add_file(sess_ctx, &p->file_id) != NXS_CHAT_SRV_E_OK) {
+
+					return NXS_CHAT_SRV_E_ERR;
+				}
+			}
+			else {
+
+				continue;
+			}
+		}
+		else {
 
 			break;
+		}
+	}
+
+	if(f == NXS_YES) {
+
+		files_count = nxs_chat_srv_u_db_sess_get_files_count(sess_ctx);
+
+		nxs_error(rc,
+		          nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
+		                  tlgrm_userid, bot_message_id, user_ctx->r_userid, api_key, private_notes, files_count, NULL),
+		          error);
+	}
+	else {
+
+		nxs_error(rc, nxs_chat_srv_p_queue_worker_tlgrm_update_win_wrong_action(sess_ctx, tlgrm_userid, NULL), error);
 	}
 
 error:
@@ -1310,10 +1358,54 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	nxs_chat_srv_u_rdmn_issues_t *      rdmn_issues_ctx;
 	nxs_chat_srv_m_tlgrm_message_t      response_message;
 	nxs_chat_srv_m_tlgrm_update_t *     update;
-	nxs_bool_t                          response_status, is_private;
+	nxs_chat_srv_m_tlgrm_photo_size_t * p;
+	nxs_bool_t                          response_status, is_private, f;
 	nxs_array_t                         projects, *file_ids;
 	nxs_buf_t                           response_buf;
 	nxs_chat_srv_err_t                  rc;
+
+	/*
+	 * Processing queue and add all files into existing session (updating windown on client).
+	 */
+	for(f = NXS_NO, update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx); update != NULL;
+	    update = nxs_chat_srv_u_db_queue_list_del_head(queue_ctx)) {
+
+		if(nxs_chat_srv_c_tlgrm_update_get_type(update) == NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE &&
+		   nxs_array_count(&update->message.photo) > 0) {
+
+			f = NXS_YES;
+
+			p = nxs_array_get(&update->message.photo, nxs_array_count(&update->message.photo) - 1);
+
+			if(nxs_chat_srv_u_db_sess_add_file(sess_ctx, &p->file_id) != NXS_CHAT_SRV_E_OK) {
+
+				return NXS_CHAT_SRV_E_ERR;
+			}
+		}
+		else {
+
+			break;
+		}
+	}
+
+	if(f == NXS_YES) {
+
+		chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
+		bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
+
+		if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(sess_ctx, chat_id, bot_message_id, NXS_YES, NULL) !=
+		   NXS_CHAT_SRV_E_OK) {
+
+			return NXS_CHAT_SRV_E_ERR;
+		}
+
+		if(nxs_chat_srv_u_db_sess_set_wait_for(sess_ctx, NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) != NXS_CHAT_SRV_E_OK) {
+
+			return NXS_CHAT_SRV_E_ERR;
+		}
+
+		return NXS_CHAT_SRV_E_OK;
+	}
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -1520,7 +1612,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 
 		default:
 
-			messages_queue_clean_all(queue_ctx);
+			messages_queue_clean_text_messages(queue_ctx);
 
 			nxs_error(rc, nxs_chat_srv_p_queue_worker_tlgrm_update_win_wrong_action(sess_ctx, chat_id, NULL), error);
 
@@ -1929,14 +2021,19 @@ static nxs_chat_srv_err_t handler_command_dummy(nxs_chat_srv_m_tlgrm_update_t *u
 	return rc;
 }
 
-static void messages_queue_clean_all(nxs_chat_srv_u_db_queue_t *queue_ctx)
+static void messages_queue_clean_text_messages(nxs_chat_srv_u_db_queue_t *queue_ctx)
 {
 	nxs_chat_srv_m_tlgrm_update_t *update;
 
 	for(update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx); update != NULL;
 	    update = nxs_chat_srv_u_db_queue_list_del_head(queue_ctx)) {
 
-		if(nxs_chat_srv_c_tlgrm_update_get_type(update) != NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE) {
+		if(nxs_chat_srv_c_tlgrm_update_get_type(update) == NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE &&
+		   nxs_array_count(&update->message.photo) == 0) {
+
+			continue;
+		}
+		else {
 
 			break;
 		}

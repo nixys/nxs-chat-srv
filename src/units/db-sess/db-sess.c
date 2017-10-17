@@ -439,6 +439,43 @@ nxs_array_t *nxs_chat_srv_u_db_sess_get_files(nxs_chat_srv_u_db_sess_t *u_ctx)
 	return NULL;
 }
 
+size_t nxs_chat_srv_u_db_sess_get_files_count(nxs_chat_srv_u_db_sess_t *u_ctx)
+{
+	if(u_ctx == NULL) {
+
+		return 0;
+	}
+
+	if(nxs_chat_srv_u_db_sess_check_exist(u_ctx) == NXS_NO) {
+
+		return 0;
+	}
+
+	switch(u_ctx->value.type) {
+
+		case NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE:
+
+			return nxs_array_count(&u_ctx->value.message.file_ids);
+
+		case NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE:
+
+			return nxs_array_count(&u_ctx->value.new_issue.file_ids);
+
+		default:
+
+			nxs_log_write_warn(
+			        &process,
+			        "[%s]: can't get session files count: session type incorrect (tlgrm user id: %zu, session type: %d)",
+			        nxs_proc_get_name(&process),
+			        u_ctx->tlgrm_userid,
+			        u_ctx->value.type);
+
+			break;
+	}
+
+	return 0;
+}
+
 nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_set_wait_for(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_chat_srv_m_db_sess_wait_for_type_t wait_for)
 {
 	nxs_chat_srv_err_t rc;
