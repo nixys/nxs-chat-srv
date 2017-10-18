@@ -38,7 +38,8 @@ typedef struct
 typedef struct
 {
 	nxs_string_t		token;
-	nxs_string_t		filename;
+	nxs_string_t		file_path;
+	nxs_string_t		file_name;
 	nxs_string_t		content_type;
 } nxs_chat_srv_d_rdmn_issues_upload_t;
 
@@ -116,26 +117,23 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 		nxs_string_printf(&assigned_to, ",\"assigned_to_id\":%zu", assigned_to_id);
 	}
 
-	if(uploads != NULL && nxs_array_count(uploads) > 0) {
+	for(i = 0; i < nxs_array_count(uploads); i++) {
 
-		for(i = 0; i < nxs_array_count(uploads); i++) {
+		u = nxs_array_get(uploads, i);
 
-			u = nxs_array_get(uploads, i);
+		if(i > 0) {
 
-			if(i > 0) {
-
-				nxs_string_char_add_char(&uploads_str_els, (u_char)',');
-			}
-
-			nxs_string_printf2_cat(&uploads_str_els,
-			                       "{\"token\":\"%r\",\"filename\":\"%r\",\"content_type\":\"%r\"}",
-			                       &u->token,
-			                       &u->filename,
-			                       &u->content_type);
+			nxs_string_char_add_char(&uploads_str_els, (u_char)',');
 		}
 
-		nxs_string_printf(&uploads_str, ",\"uploads\":[%r]", &uploads_str_els);
+		nxs_string_printf2_cat(&uploads_str_els,
+		                       "{\"token\":\"%r\",\"filename\":\"%r\",\"content_type\":\"%r\"}",
+		                       &u->token,
+		                       &u->file_name,
+		                       &u->content_type);
 	}
+
+	nxs_string_printf(&uploads_str, ",\"uploads\":[%r]", &uploads_str_els);
 
 	if(custom_fields != NULL && nxs_array_count(custom_fields) > 0) {
 
@@ -303,26 +301,23 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_create(size_t           project_id
 	nxs_string_escape(&subject_escaped, subject, NXS_STRING_ESCAPE_TYPE_JSON);
 	nxs_string_escape(&description_escaped, description, NXS_STRING_ESCAPE_TYPE_JSON);
 
-	if(uploads != NULL && nxs_array_count(uploads) > 0) {
+	for(i = 0; i < nxs_array_count(uploads); i++) {
 
-		for(i = 0; i < nxs_array_count(uploads); i++) {
+		u = nxs_array_get(uploads, i);
 
-			u = nxs_array_get(uploads, i);
+		if(i > 0) {
 
-			if(i > 0) {
-
-				nxs_string_char_add_char(&uploads_str_els, (u_char)',');
-			}
-
-			nxs_string_printf2_cat(&uploads_str_els,
-			                       "{\"token\":\"%r\",\"filename\":\"%r\",\"content_type\":\"%r\"}",
-			                       &u->token,
-			                       &u->filename,
-			                       &u->content_type);
+			nxs_string_char_add_char(&uploads_str_els, (u_char)',');
 		}
 
-		nxs_string_printf(&uploads_str, ",\"uploads\":[%r]", &uploads_str_els);
+		nxs_string_printf2_cat(&uploads_str_els,
+		                       "{\"token\":\"%r\",\"filename\":\"%r\",\"content_type\":\"%r\"}",
+		                       &u->token,
+		                       &u->file_name,
+		                       &u->content_type);
 	}
+
+	nxs_string_printf(&uploads_str, ",\"uploads\":[%r]", &uploads_str_els);
 
 	nxs_string_printf(&data,
 	                  "{"
@@ -621,10 +616,119 @@ error:
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_file_upload(nxs_string_t *   user_api_key,
-                                                          nxs_string_t *   file_path,
-                                                          nxs_http_code_t *http_code,
-                                                          nxs_buf_t *      out_buf)
+void nxs_chat_srv_d_rdmn_issues_cf_init(nxs_array_t *custom_fields)
+{
+
+	if(custom_fields == NULL) {
+
+		return;
+	}
+
+	nxs_array_init2(custom_fields, nxs_chat_srv_d_rdmn_issues_cf_t);
+}
+
+void nxs_chat_srv_d_rdmn_issues_cf_free(nxs_array_t *custom_fields)
+{
+	nxs_chat_srv_d_rdmn_issues_cf_t *cf;
+	size_t                           i;
+
+	if(custom_fields == NULL) {
+
+		return;
+	}
+
+	for(i = 0; i < nxs_array_count(custom_fields); i++) {
+
+		cf = nxs_array_get(custom_fields, i);
+
+		cf->id = 0;
+
+		nxs_string_free(&cf->value);
+	}
+
+	nxs_array_free(custom_fields);
+}
+
+void nxs_chat_srv_d_rdmn_issues_cf_add(nxs_array_t *custom_fields, size_t id, nxs_string_t *value)
+{
+	nxs_chat_srv_d_rdmn_issues_cf_t *cf;
+
+	if(custom_fields == NULL || value == NULL) {
+
+		return;
+	}
+
+	if(id == 0) {
+
+		return;
+	}
+
+	cf = nxs_array_add(custom_fields);
+
+	cf->id = id;
+
+	nxs_string_init3(&cf->value, value);
+}
+
+void nxs_chat_srv_d_rdmn_issues_uploads_init(nxs_array_t *uploads)
+{
+
+	if(uploads == NULL) {
+
+		return;
+	}
+
+	nxs_array_init2(uploads, nxs_chat_srv_d_rdmn_issues_upload_t);
+}
+
+void nxs_chat_srv_d_rdmn_issues_uploads_free(nxs_array_t *uploads)
+{
+	nxs_chat_srv_d_rdmn_issues_upload_t *u;
+	size_t                               i;
+
+	if(uploads == NULL) {
+
+		return;
+	}
+
+	for(i = 0; i < nxs_array_count(uploads); i++) {
+
+		u = nxs_array_get(uploads, i);
+
+		nxs_string_free(&u->token);
+		nxs_string_free(&u->file_name);
+		nxs_string_free(&u->file_path);
+		nxs_string_free(&u->content_type);
+	}
+
+	nxs_array_free(uploads);
+}
+
+void nxs_chat_srv_d_rdmn_issues_uploads_add(nxs_array_t * uploads,
+                                            nxs_string_t *token,
+                                            nxs_string_t *file_name,
+                                            nxs_string_t *file_path,
+                                            nxs_string_t *content_type)
+{
+	nxs_chat_srv_d_rdmn_issues_upload_t *u;
+
+	if(uploads == NULL || token == NULL || file_name == NULL || content_type == NULL) {
+
+		return;
+	}
+
+	u = nxs_array_add(uploads);
+
+	nxs_string_init3(&u->token, token);
+	nxs_string_init3(&u->file_name, file_name);
+	nxs_string_init3(&u->file_path, file_path);
+	nxs_string_init3(&u->content_type, content_type);
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_uploads_push(nxs_string_t *   user_api_key,
+                                                           nxs_string_t *   file_path,
+                                                           nxs_http_code_t *http_code,
+                                                           nxs_buf_t *      out_buf)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_curl_t         curl;
@@ -727,109 +831,6 @@ error:
 	nxs_curl_free(&curl);
 
 	return rc;
-}
-
-void nxs_chat_srv_d_rdmn_issues_cf_init(nxs_array_t *custom_fields)
-{
-
-	if(custom_fields == NULL) {
-
-		return;
-	}
-
-	nxs_array_init2(custom_fields, nxs_chat_srv_d_rdmn_issues_cf_t);
-}
-
-void nxs_chat_srv_d_rdmn_issues_cf_free(nxs_array_t *custom_fields)
-{
-	nxs_chat_srv_d_rdmn_issues_cf_t *cf;
-	size_t                           i;
-
-	if(custom_fields == NULL) {
-
-		return;
-	}
-
-	for(i = 0; i < nxs_array_count(custom_fields); i++) {
-
-		cf = nxs_array_get(custom_fields, i);
-
-		cf->id = 0;
-
-		nxs_string_free(&cf->value);
-	}
-
-	nxs_array_free(custom_fields);
-}
-
-void nxs_chat_srv_d_rdmn_issues_cf_add(nxs_array_t *custom_fields, size_t id, nxs_string_t *value)
-{
-	nxs_chat_srv_d_rdmn_issues_cf_t *cf;
-
-	if(custom_fields == NULL || value == NULL) {
-
-		return;
-	}
-
-	if(id == 0) {
-
-		return;
-	}
-
-	cf = nxs_array_add(custom_fields);
-
-	cf->id = id;
-
-	nxs_string_init3(&cf->value, value);
-}
-
-void nxs_chat_srv_d_rdmn_issues_uploads_init(nxs_array_t *uploads)
-{
-
-	if(uploads == NULL) {
-
-		return;
-	}
-
-	nxs_array_init2(uploads, nxs_chat_srv_d_rdmn_issues_upload_t);
-}
-
-void nxs_chat_srv_d_rdmn_issues_uploads_free(nxs_array_t *uploads)
-{
-	nxs_chat_srv_d_rdmn_issues_upload_t *u;
-	size_t                               i;
-
-	if(uploads == NULL) {
-
-		return;
-	}
-
-	for(i = 0; i < nxs_array_count(uploads); i++) {
-
-		u = nxs_array_get(uploads, i);
-
-		nxs_string_free(&u->token);
-		nxs_string_free(&u->filename);
-		nxs_string_free(&u->content_type);
-	}
-
-	nxs_array_free(uploads);
-}
-
-void nxs_chat_srv_d_rdmn_issues_uploads_add(nxs_array_t *uploads, nxs_string_t *token, nxs_string_t *filename, nxs_string_t *content_type)
-{
-	nxs_chat_srv_d_rdmn_issues_upload_t *u;
-
-	if(uploads == NULL || token == NULL || filename == NULL || content_type == NULL) {
-
-		return;
-	}
-
-	u = nxs_array_add(uploads);
-
-	nxs_string_init3(&u->token, token);
-	nxs_string_init3(&u->filename, filename);
-	nxs_string_init3(&u->content_type, content_type);
 }
 
 /* Module internal (static) functions */

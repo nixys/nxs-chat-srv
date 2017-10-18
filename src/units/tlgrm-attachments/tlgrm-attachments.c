@@ -32,15 +32,23 @@ extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 
 typedef struct
 {
-
 	nxs_string_t		file_path;
 	nxs_string_t		file_id;
 } nxs_chat_srv_u_tlgrm_attachments_upload_t;
 
+typedef struct
+{
+	size_t			tlgrm_userid;
+	nxs_string_t		file_name;
+	nxs_string_t		file_path;
+	nxs_string_t		file_id;
+} nxs_chat_srv_u_tlgrm_attachments_download_t;
+
 struct nxs_chat_srv_u_tlgrm_attachments_s
 {
 	nxs_buf_t		response_buf;
-	nxs_array_t		uploaded_files;		/* type: nxs_chat_srv_u_tlgrm_attachments_upload_t */
+	nxs_array_t		uploads;		/* type: nxs_chat_srv_u_tlgrm_attachments_upload_t */
+	nxs_array_t		downloads;		/* type: nxs_chat_srv_u_tlgrm_attachments_download_t */
 };
 
 /* Module internal (static) functions prototypes */
@@ -65,30 +73,53 @@ nxs_chat_srv_u_tlgrm_attachments_t *nxs_chat_srv_u_tlgrm_attachments_init(void)
 
 	nxs_buf_init2(&u_ctx->response_buf);
 
-	nxs_array_init2(&u_ctx->uploaded_files, nxs_chat_srv_u_tlgrm_attachments_upload_t);
+	nxs_array_init2(&u_ctx->uploads, nxs_chat_srv_u_tlgrm_attachments_upload_t);
+	nxs_array_init2(&u_ctx->downloads, nxs_chat_srv_u_tlgrm_attachments_download_t);
 
 	return u_ctx;
 }
 
 nxs_chat_srv_u_tlgrm_attachments_t *nxs_chat_srv_u_tlgrm_attachments_free(nxs_chat_srv_u_tlgrm_attachments_t *u_ctx)
 {
-	nxs_chat_srv_u_tlgrm_attachments_upload_t *u;
-	size_t                                     i;
+	nxs_chat_srv_u_tlgrm_attachments_upload_t *  u;
+	nxs_chat_srv_u_tlgrm_attachments_download_t *d;
+	size_t                                       i;
 
 	if(u_ctx == NULL) {
 
 		return NULL;
 	}
 
-	for(i = 0; i < nxs_array_count(&u_ctx->uploaded_files); i++) {
+	for(i = 0; i < nxs_array_count(&u_ctx->uploads); i++) {
 
-		u = nxs_array_get(&u_ctx->uploaded_files, i);
+		u = nxs_array_get(&u_ctx->uploads, i);
 
 		nxs_string_free(&u->file_id);
 		nxs_string_free(&u->file_path);
 	}
 
-	nxs_array_free(&u_ctx->uploaded_files);
+	for(i = 0; i < nxs_array_count(&u_ctx->downloads); i++) {
+
+		d = nxs_array_get(&u_ctx->downloads, i);
+
+		if(nxs_fs_unlink(&d->file_path) < 0) {
+
+			nxs_log_write_warn(&process,
+			                   "[%s]: can't remove downloaded tlgrm file: %s (file path: %r)",
+			                   nxs_proc_get_name(&process),
+			                   strerror(errno),
+			                   &d->file_path);
+		}
+
+		d->tlgrm_userid = 0;
+
+		nxs_string_free(&d->file_id);
+		nxs_string_free(&d->file_name);
+		nxs_string_free(&d->file_path);
+	}
+
+	nxs_array_free(&u_ctx->uploads);
+	nxs_array_free(&u_ctx->downloads);
 
 	nxs_buf_free(&u_ctx->response_buf);
 
@@ -101,14 +132,31 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_attachments_download(nxs_chat_srv_u_tlgr
                                                              nxs_string_t *                      file_name,
                                                              nxs_string_t *                      file_path)
 {
-	nxs_string_t                message;
-	nxs_chat_srv_m_tlgrm_file_t file;
-	nxs_chat_srv_err_t          rc;
-	nxs_bool_t                  response_status;
+	nxs_chat_srv_u_tlgrm_attachments_download_t *d;
+	nxs_string_t                                 message;
+	nxs_chat_srv_m_tlgrm_file_t                  file;
+	nxs_chat_srv_err_t                           rc;
+	nxs_bool_t                                   response_status;
+	size_t                                       i;
 
 	if(u_ctx == NULL || file_id == NULL || file_name == NULL || file_path == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	for(i = 0; i < nxs_array_count(&u_ctx->downloads); i++) {
+
+		d = nxs_array_get(&u_ctx->downloads, i);
+
+		if(d->tlgrm_userid == tlgrm_userid && nxs_string_cmp(&d->file_id, 0, file_id, 0) == NXS_YES) {
+
+			/* if file already has been downloaded */
+
+			nxs_string_clone(file_name, &d->file_name);
+			nxs_string_clone(file_path, &d->file_path);
+
+			return NXS_CHAT_SRV_E_OK;
+		}
 	}
 
 	rc = NXS_CHAT_SRV_E_OK;
@@ -159,6 +207,14 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_attachments_download(nxs_chat_srv_u_tlgr
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
+	d = nxs_array_add(&u_ctx->downloads);
+
+	d->tlgrm_userid = tlgrm_userid;
+
+	nxs_string_init3(&d->file_id, file_id);
+	nxs_string_init3(&d->file_name, file_name);
+	nxs_string_init3(&d->file_path, file_path);
+
 error:
 
 	nxs_chat_srv_c_tlgrm_file_free(&file);
@@ -193,9 +249,9 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_attachments_send_photo(nxs_chat_srv_u_tl
 
 	nxs_chat_srv_c_tlgrm_message_init(&tlgrm_message);
 
-	for(i = 0; i < nxs_array_count(&u_ctx->uploaded_files); i++) {
+	for(i = 0; i < nxs_array_count(&u_ctx->uploads); i++) {
 
-		u = nxs_array_get(&u_ctx->uploaded_files, i);
+		u = nxs_array_get(&u_ctx->uploads, i);
 
 		if(nxs_string_cmp(&u->file_path, 0, file_path, 0) == NXS_YES) {
 
@@ -246,7 +302,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_attachments_send_photo(nxs_chat_srv_u_tl
 
 		if((p = nxs_array_get(&tlgrm_message.photo, nxs_array_count(&tlgrm_message.photo) - 1)) != NULL) {
 
-			u = nxs_array_add(&u_ctx->uploaded_files);
+			u = nxs_array_add(&u_ctx->uploads);
 
 			nxs_string_init3(&u->file_path, file_path);
 			nxs_string_init3(&u->file_id, &p->file_id);

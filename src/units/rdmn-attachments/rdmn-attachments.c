@@ -36,24 +36,32 @@ typedef struct
 	nxs_string_t		file_name;
 	nxs_string_t		file_path;
 	nxs_string_t		description;
-} nxs_chat_srv_u_rdmn_attachments_downloads_t;
+} nxs_chat_srv_u_rdmn_attachments_download_t;
 
 struct nxs_chat_srv_u_rdmn_attachments_s
 {
 	nxs_buf_t		response_buf;
-	nxs_array_t		downloads;		/* type: nxs_chat_srv_u_rdmn_attachments_downloads_t */
+	nxs_array_t		downloads;		/* type: nxs_chat_srv_u_rdmn_attachments_download_t */
+	nxs_array_t		uploads;		/* type: nxs_chat_srv_d_rdmn_issues_upload_t (defined in dal 'rdmn-issues' ) */
 };
 
 /* Module internal (static) functions prototypes */
 
 // clang-format on
 
+static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_upload_extract(nxs_string_t *upload_token, nxs_buf_t *json_buf);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_u_rdmn_attachments_upload_token_extract(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+
 // clang-format off
 
 /* Module initializations */
 
-static nxs_string_t _s_proto_http = nxs_string("http://");
-static nxs_string_t _s_proto_https = nxs_string("https://");
+static nxs_string_t _s_par_upload	= nxs_string("upload");
+static nxs_string_t _s_par_token	= nxs_string("token");
+
+static nxs_string_t _s_proto_http	= nxs_string("http://");
+static nxs_string_t _s_proto_https	= nxs_string("https://");
 
 /* Module global functions */
 
@@ -67,16 +75,18 @@ nxs_chat_srv_u_rdmn_attachments_t *nxs_chat_srv_u_rdmn_attachments_init(void)
 
 	nxs_buf_init2(&u_ctx->response_buf);
 
-	nxs_array_init2(&u_ctx->downloads, nxs_chat_srv_u_rdmn_attachments_downloads_t);
+	nxs_array_init2(&u_ctx->downloads, nxs_chat_srv_u_rdmn_attachments_download_t);
+
+	nxs_chat_srv_d_rdmn_issues_uploads_init(&u_ctx->uploads);
 
 	return u_ctx;
 }
 
 nxs_chat_srv_u_rdmn_attachments_t *nxs_chat_srv_u_rdmn_attachments_free(nxs_chat_srv_u_rdmn_attachments_t *u_ctx)
 {
-	nxs_chat_srv_u_rdmn_attachments_downloads_t *d;
-	nxs_string_t                                 tmp_dir;
-	size_t                                       i;
+	nxs_chat_srv_u_rdmn_attachments_download_t *d;
+	nxs_string_t                                tmp_dir;
+	size_t                                      i;
 
 	if(u_ctx == NULL) {
 
@@ -103,6 +113,8 @@ nxs_chat_srv_u_rdmn_attachments_t *nxs_chat_srv_u_rdmn_attachments_free(nxs_chat
 
 	nxs_array_free(&u_ctx->downloads);
 
+	nxs_chat_srv_d_rdmn_issues_uploads_free(&u_ctx->uploads);
+
 	nxs_buf_free(&u_ctx->response_buf);
 
 	nxs_string_free(&tmp_dir);
@@ -116,12 +128,12 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_
                                                             nxs_string_t *                     file_path,
                                                             nxs_string_t *                     description)
 {
-	nxs_chat_srv_m_rdmn_attachment_t             attachment;
-	nxs_chat_srv_u_rdmn_attachments_downloads_t *d;
-	nxs_string_t                                 content_url;
-	nxs_chat_srv_err_t                           rc;
-	size_t                                       i;
-	u_char *                                     c;
+	nxs_chat_srv_m_rdmn_attachment_t            attachment;
+	nxs_chat_srv_u_rdmn_attachments_download_t *d;
+	nxs_string_t                                content_url;
+	nxs_chat_srv_err_t                          rc;
+	size_t                                      i;
+	u_char *                                    c;
 
 	if(u_ctx == NULL || file_path == NULL) {
 
@@ -221,4 +233,137 @@ error:
 	return rc;
 }
 
+nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_upload(nxs_chat_srv_u_rdmn_attachments_t *u_ctx,
+                                                          nxs_string_t *                     api_key,
+                                                          nxs_string_t *                     file_name,
+                                                          nxs_string_t *                     file_path)
+{
+	nxs_buf_t          out_buf;
+	nxs_string_t       upload_token;
+	nxs_chat_srv_err_t rc;
+
+	if(u_ctx == NULL || api_key == NULL || file_name == NULL || file_path == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_buf_init2(&out_buf);
+
+	nxs_string_init(&upload_token);
+
+	switch(nxs_chat_srv_d_rdmn_issues_uploads_push(api_key, file_path, NULL, &out_buf)) {
+
+		case NXS_CHAT_SRV_E_OK:
+
+			if(nxs_chat_srv_u_rdmn_attachments_upload_extract(&upload_token, &out_buf) != NXS_CHAT_SRV_E_OK) {
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+
+			nxs_chat_srv_d_rdmn_issues_uploads_add(
+			        &u_ctx->uploads, &upload_token, file_name, file_path, nxs_chat_srv_c_mime_get(file_path));
+
+			break;
+
+		case NXS_CHAT_SRV_E_ATTR:
+
+			break;
+
+		default:
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+error:
+
+	nxs_buf_free(&out_buf);
+
+	nxs_string_free(&upload_token);
+
+	return rc;
+}
+
+nxs_array_t *nxs_chat_srv_u_rdmn_attachments_uploads_get(nxs_chat_srv_u_rdmn_attachments_t *u_ctx)
+{
+
+	if(u_ctx == NULL) {
+
+		return NULL;
+	}
+
+	return &u_ctx->uploads;
+}
+
 /* Module internal (static) functions */
+
+static nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_upload_extract(nxs_string_t *upload_token, nxs_buf_t *json_buf)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_cfg_json_t     cfg_json;
+	nxs_array_t        cfg_arr;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_upload,		upload_token,	&nxs_chat_srv_u_rdmn_attachments_upload_token_extract,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_buf(&process, cfg_json, json_buf) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_error(
+		        &process, "[%s]: rdmn upload response extract error: parse rdmn upload response", nxs_proc_get_name(&process));
+
+		rc = NXS_CHAT_SRV_E_ERR;
+	}
+
+	nxs_cfg_json_free(&cfg_json);
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_u_rdmn_attachments_upload_token_extract(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_string_t *       var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t       cfg_json;
+	nxs_array_t          cfg_arr;
+	nxs_cfg_json_state_t rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_token,	var,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "[%s]: rdmn upload response extract error: 'upload' block", nxs_proc_get_name(&process));
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
