@@ -55,7 +55,6 @@ typedef struct
 	nxs_string_t					project_name_regex;	/* regex to filter redmine projects name */
 	nxs_list_t					available_projects;	/* type: nxs_chat_srv_u_db_sess_project_t. All available active projects for user */
 	nxs_array_t					selected_projects;	/* type: nxs_chat_srv_u_db_sess_project_t. Selected projects (by specified regex) for user */
-	nxs_array_t					file_ids;		/* type: nxs_string_t. Telegram 'file_id' array */
 } nxs_chat_srv_u_db_sess_t_new_issue_t;
 
 /*
@@ -66,7 +65,6 @@ typedef struct
 	nxs_string_t					message;		/* message to append into redmine issue */
 	nxs_bool_t					is_private;		/* if message is private */
 	nxs_bool_t					is_ext;			/* if message need extended actions */
-	nxs_array_t					file_ids;		/* type: nxs_string_t. Telegram 'file_id' array */
 } nxs_chat_srv_u_db_sess_t_message_t;
 
 typedef struct
@@ -78,6 +76,7 @@ typedef struct
 	time_t						updated_at;		/* session last update */
 	nxs_chat_srv_m_db_sess_type_t			type;			/* type of data stored in `data` field */
 	nxs_chat_srv_m_db_sess_wait_for_type_t		wait_for;		/* used to help bot to determine type of expected data received from user (e.g. expected reply from user with new issue subject) */
+	nxs_array_t					files;			/* type: nxs_chat_srv_m_db_sess_file_t */
 
 	nxs_chat_srv_u_db_sess_t_message_t		message;
 	nxs_chat_srv_u_db_sess_t_new_issue_t		new_issue;
@@ -115,6 +114,10 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_get(nxs_chat_srv_u_db_s
 static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_put(nxs_chat_srv_u_db_sess_t *u_ctx);
 static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_serialize(nxs_string_t *value_str, nxs_chat_srv_u_db_sess_t_value_t *value);
 static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_deserialize(nxs_string_t *value_str, nxs_chat_srv_u_db_sess_t_value_t *value);
+static nxs_cfg_json_state_t nxs_chat_srv_u_db_sess_s_value_deserialize_files(nxs_process_t *     proc,
+                                                                             nxs_json_t *        json,
+                                                                             nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                             nxs_array_t *       cfg_arr);
 
 static void nxs_chat_srv_u_db_sess_s_message_init(nxs_chat_srv_u_db_sess_t_message_t *message);
 static void nxs_chat_srv_u_db_sess_s_message_free(nxs_chat_srv_u_db_sess_t_message_t *message);
@@ -141,9 +144,8 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize_proje
                                                                                              nxs_json_t *        json,
                                                                                              nxs_cfg_json_par_t *cfg_json_par_el,
                                                                                              nxs_array_t *       cfg_arr);
-static nxs_cfg_json_state_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_name(nxs_process_t *     proc,
-                                                                                         nxs_json_t *        json,
-                                                                                         nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_u_db_sess_s_deserialize_base64(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 
 // clang-format off
 
@@ -174,7 +176,10 @@ static nxs_string_t _s_par_memberships		= nxs_string("memberships");
 static nxs_string_t _s_par_project		= nxs_string("project");
 static nxs_string_t _s_par_is_private		= nxs_string("is_private");
 static nxs_string_t _s_par_is_ext		= nxs_string("is_ext");
-static nxs_string_t _s_par_file_ids		= nxs_string("file_ids");
+static nxs_string_t _s_par_files		= nxs_string("files");
+static nxs_string_t _s_par_file_id		= nxs_string("file_id");
+static nxs_string_t _s_par_file_name		= nxs_string("file_name");
+static nxs_string_t _s_par_mime_type		= nxs_string("mime_type");
 
 /* Module global functions */
 
@@ -401,6 +406,9 @@ nxs_chat_srv_m_db_sess_wait_for_type_t nxs_chat_srv_u_db_sess_get_wait_for(nxs_c
 	return u_ctx->value.wait_for;
 }
 
+/*
+ * Return array type: nxs_chat_srv_m_db_sess_file_t
+ */
 nxs_array_t *nxs_chat_srv_u_db_sess_get_files(nxs_chat_srv_u_db_sess_t *u_ctx)
 {
 
@@ -417,12 +425,9 @@ nxs_array_t *nxs_chat_srv_u_db_sess_get_files(nxs_chat_srv_u_db_sess_t *u_ctx)
 	switch(u_ctx->value.type) {
 
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE:
-
-			return &u_ctx->value.message.file_ids;
-
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE:
 
-			return &u_ctx->value.new_issue.file_ids;
+			return &u_ctx->value.files;
 
 		default:
 
@@ -454,12 +459,9 @@ size_t nxs_chat_srv_u_db_sess_get_files_count(nxs_chat_srv_u_db_sess_t *u_ctx)
 	switch(u_ctx->value.type) {
 
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE:
-
-			return nxs_array_count(&u_ctx->value.message.file_ids);
-
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE:
 
-			return nxs_array_count(&u_ctx->value.new_issue.file_ids);
+			return nxs_array_count(&u_ctx->value.files);
 
 		default:
 
@@ -556,9 +558,12 @@ nxs_chat_srv_err_t
 	return nxs_chat_srv_u_db_sess_s_value_put(u_ctx);
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_add_file(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_string_t *file_id)
+nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_add_file(nxs_chat_srv_u_db_sess_t *u_ctx,
+                                                   nxs_string_t *            file_id,
+                                                   nxs_string_t *            file_name,
+                                                   nxs_string_t *            mime_type)
 {
-	nxs_string_t *s;
+	nxs_chat_srv_m_db_sess_file_t *f;
 
 	if(u_ctx == NULL || file_id == NULL) {
 
@@ -573,18 +578,29 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_add_file(nxs_chat_srv_u_db_sess_t *u_c
 	switch(u_ctx->value.type) {
 
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE:
-
-			s = nxs_array_add(&u_ctx->value.message.file_ids);
-
-			nxs_string_init3(s, file_id);
-
-			return nxs_chat_srv_u_db_sess_s_value_put(u_ctx);
-
 		case NXS_CHAT_SRV_M_DB_SESS_TYPE_NEW_ISSUE:
 
-			s = nxs_array_add(&u_ctx->value.new_issue.file_ids);
+			f = nxs_array_add(&u_ctx->value.files);
 
-			nxs_string_init3(s, file_id);
+			nxs_string_init3(&f->file_id, file_id);
+
+			if(file_name != NULL) {
+
+				nxs_string_init3(&f->file_name, file_name);
+			}
+			else {
+
+				nxs_string_init_empty(&f->file_name);
+			}
+
+			if(mime_type != NULL) {
+
+				nxs_string_init3(&f->mime_type, mime_type);
+			}
+			else {
+
+				nxs_string_init_empty(&f->mime_type);
+			}
 
 			return nxs_chat_srv_u_db_sess_s_value_put(u_ctx);
 
@@ -998,8 +1014,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_new_issue(nxs_chat_srv_u_db_
                                                               nxs_string_t *            project_name_regex)
 {
 	nxs_chat_srv_err_t rc;
-	nxs_string_t *     s_f, *s_t;
-	size_t             i;
 
 	if(u_ctx == NULL || cache_projects == NULL) {
 
@@ -1040,15 +1054,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_new_issue(nxs_chat_srv_u_db_
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			for(i = 0; i < nxs_array_count(&u_ctx->value.message.file_ids); i++) {
-
-				s_f = nxs_array_get(&u_ctx->value.message.file_ids, i);
-
-				s_t = nxs_array_add(&u_ctx->value.new_issue.file_ids);
-
-				nxs_string_init3(s_t, s_f);
-			}
-
 			nxs_chat_srv_u_db_sess_s_new_issue_set_selected_project_first(&u_ctx->value.new_issue);
 
 			nxs_chat_srv_u_db_sess_s_message_clear(&u_ctx->value.message);
@@ -1073,8 +1078,6 @@ error:
 nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_message(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_string_t *message)
 {
 	nxs_chat_srv_err_t rc;
-	nxs_string_t *     s_f, *s_t;
-	size_t             i;
 
 	if(u_ctx == NULL) {
 
@@ -1100,15 +1103,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_t_conv_to_message(nxs_chat_srv_u_db_se
 			u_ctx->value.message.is_ext     = u_ctx->value.new_issue.is_ext;
 
 			nxs_string_clone(&u_ctx->value.message.message, &u_ctx->value.new_issue.description);
-
-			for(i = 0; i < nxs_array_count(&u_ctx->value.new_issue.file_ids); i++) {
-
-				s_f = nxs_array_get(&u_ctx->value.new_issue.file_ids, i);
-
-				s_t = nxs_array_add(&u_ctx->value.message.file_ids);
-
-				nxs_string_init3(s_t, s_f);
-			}
 
 			nxs_chat_srv_u_db_sess_s_new_issue_clear(&u_ctx->value.new_issue);
 
@@ -1349,10 +1343,14 @@ static void nxs_chat_srv_u_db_sess_s_value_init(nxs_chat_srv_u_db_sess_t_value_t
 
 	nxs_chat_srv_u_db_sess_s_message_init(&value->message);
 	nxs_chat_srv_u_db_sess_s_new_issue_init(&value->new_issue);
+
+	nxs_array_init2(&value->files, nxs_chat_srv_m_db_sess_file_t);
 }
 
 static void nxs_chat_srv_u_db_sess_s_value_free(nxs_chat_srv_u_db_sess_t_value_t *value)
 {
+	nxs_chat_srv_m_db_sess_file_t *f;
+	size_t                         i;
 
 	if(value == NULL) {
 
@@ -1370,10 +1368,23 @@ static void nxs_chat_srv_u_db_sess_s_value_free(nxs_chat_srv_u_db_sess_t_value_t
 
 	nxs_chat_srv_u_db_sess_s_message_free(&value->message);
 	nxs_chat_srv_u_db_sess_s_new_issue_free(&value->new_issue);
+
+	for(i = 0; i < nxs_array_count(&value->files); i++) {
+
+		f = nxs_array_get(&value->files, i);
+
+		nxs_string_free(&f->file_id);
+		nxs_string_free(&f->file_name);
+		nxs_string_free(&f->mime_type);
+	}
+
+	nxs_array_free(&value->files);
 }
 
 static void nxs_chat_srv_u_db_sess_s_value_clear(nxs_chat_srv_u_db_sess_t_value_t *value)
 {
+	nxs_chat_srv_m_db_sess_file_t *f;
+	size_t                         i;
 
 	if(value == NULL) {
 
@@ -1391,6 +1402,17 @@ static void nxs_chat_srv_u_db_sess_s_value_clear(nxs_chat_srv_u_db_sess_t_value_
 
 	nxs_chat_srv_u_db_sess_s_message_clear(&value->message);
 	nxs_chat_srv_u_db_sess_s_new_issue_clear(&value->new_issue);
+
+	for(i = 0; i < nxs_array_count(&value->files); i++) {
+
+		f = nxs_array_get(&value->files, i);
+
+		nxs_string_free(&f->file_id);
+		nxs_string_free(&f->file_name);
+		nxs_string_free(&f->mime_type);
+	}
+
+	nxs_array_clear(&value->files);
 }
 
 static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_get(nxs_chat_srv_u_db_sess_t *u_ctx)
@@ -1471,15 +1493,20 @@ error:
 
 static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_serialize(nxs_string_t *value_str, nxs_chat_srv_u_db_sess_t_value_t *value)
 {
-	nxs_string_t       data_str;
-	nxs_chat_srv_err_t rc;
+	nxs_string_t                   data_str, files, file_name_encoding, mime_type_encoding;
+	nxs_chat_srv_m_db_sess_file_t *f;
+	nxs_chat_srv_err_t             rc;
+	size_t                         i;
 
 	if(value_str == NULL || value == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	nxs_string_init(&data_str);
+	nxs_string_init_empty(&data_str);
+	nxs_string_init_empty(&files);
+	nxs_string_init_empty(&file_name_encoding);
+	nxs_string_init_empty(&mime_type_encoding);
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -1509,6 +1536,25 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_serialize(nxs_string_t 
 			nxs_error(rc, NXS_CHAT_SRV_E_TYPE, error);
 	}
 
+	for(i = 0; i < nxs_array_count(&value->files); i++) {
+
+		f = nxs_array_get(&value->files, i);
+
+		if(i > 0) {
+
+			nxs_string_char_add_char(&files, (u_char)',');
+		}
+
+		nxs_base64_encode_string(&file_name_encoding, &f->file_name);
+		nxs_base64_encode_string(&mime_type_encoding, &f->mime_type);
+
+		nxs_string_printf2_cat(&files,
+		                       "{\"file_id\":\"%r\",\"file_name\":\"%r\",\"mime_type\":\"%r\"}",
+		                       &f->file_id,
+		                       &file_name_encoding,
+		                       &mime_type_encoding);
+	}
+
 	nxs_string_printf(value_str,
 	                  "{"
 	                  "\"rdmn_api_key\":\"%r\","
@@ -1518,6 +1564,7 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_serialize(nxs_string_t 
 	                  "\"updated_at\":%zu,"
 	                  "\"type\":%d,"
 	                  "\"wait_for\":%d,"
+	                  "\"files\":[%r],"
 	                  "\"data\":%r"
 	                  "}",
 	                  &value->rdmn_api_key,
@@ -1527,11 +1574,15 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_serialize(nxs_string_t 
 	                  value->updated_at,
 	                  value->type,
 	                  value->wait_for,
+	                  &files,
 	                  &data_str);
 
 error:
 
 	nxs_string_free(&data_str);
+	nxs_string_free(&files);
+	nxs_string_free(&file_name_encoding);
+	nxs_string_free(&mime_type_encoding);
 
 	return rc;
 }
@@ -1565,13 +1616,14 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_value_deserialize(nxs_string_
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_rdmn_api_key,	&value->rdmn_api_key,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_chat_id,	&value->chat_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_usr_message_id,	&value->usr_message_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bot_message_id,	&value->bot_message_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_updated_at,	&value->updated_at,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_type,		&value->type,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT_32,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_wait_for,	&value->wait_for,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT_32,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_rdmn_api_key,	&value->rdmn_api_key,	NULL,	NULL,							NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_chat_id,	&value->chat_id,	NULL,	NULL,							NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_usr_message_id,	&value->usr_message_id,	NULL,	NULL,							NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bot_message_id,	&value->bot_message_id,	NULL,	NULL,							NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_updated_at,	&value->updated_at,	NULL,	NULL,							NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_type,		&value->type,		NULL,	NULL,							NXS_CFG_JSON_TYPE_INT_32,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_wait_for,	&value->wait_for,	NULL,	NULL,							NXS_CFG_JSON_TYPE_INT_32,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_files,		&value->files,		NULL,	&nxs_chat_srv_u_db_sess_s_value_deserialize_files,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -1637,6 +1689,31 @@ error:
 	return rc;
 }
 
+static nxs_cfg_json_state_t nxs_chat_srv_u_db_sess_s_value_deserialize_files(nxs_process_t *     proc,
+                                                                             nxs_json_t *        json,
+                                                                             nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                             nxs_array_t *       cfg_arr)
+{
+	nxs_array_t *                  files = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_chat_srv_m_db_sess_file_t *f;
+
+	f = nxs_array_add(files);
+
+	nxs_string_init_empty(&f->file_id);
+	nxs_string_init_empty(&f->file_name);
+	nxs_string_init_empty(&f->mime_type);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_file_id,	&f->file_id,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_file_name,	&f->file_name,		&nxs_chat_srv_u_db_sess_s_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_mime_type,	&f->mime_type,		&nxs_chat_srv_u_db_sess_s_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	return NXS_CFG_JSON_CONF_OK;
+}
+
 static void nxs_chat_srv_u_db_sess_s_message_init(nxs_chat_srv_u_db_sess_t_message_t *message)
 {
 
@@ -1649,14 +1726,10 @@ static void nxs_chat_srv_u_db_sess_s_message_init(nxs_chat_srv_u_db_sess_t_messa
 	message->is_ext     = NXS_NO;
 
 	nxs_string_init_empty(&message->message);
-
-	nxs_array_init2(&message->file_ids, nxs_string_t);
 }
 
 static void nxs_chat_srv_u_db_sess_s_message_free(nxs_chat_srv_u_db_sess_t_message_t *message)
 {
-	nxs_string_t *s;
-	size_t        i;
 
 	if(message == NULL) {
 
@@ -1667,21 +1740,10 @@ static void nxs_chat_srv_u_db_sess_s_message_free(nxs_chat_srv_u_db_sess_t_messa
 	message->is_ext     = NXS_NO;
 
 	nxs_string_free(&message->message);
-
-	for(i = 0; i < nxs_array_count(&message->file_ids); i++) {
-
-		s = nxs_array_get(&message->file_ids, i);
-
-		nxs_string_free(s);
-	}
-
-	nxs_array_free(&message->file_ids);
 }
 
 static void nxs_chat_srv_u_db_sess_s_message_clear(nxs_chat_srv_u_db_sess_t_message_t *message)
 {
-	nxs_string_t *s;
-	size_t        i;
 
 	if(message == NULL) {
 
@@ -1692,21 +1754,11 @@ static void nxs_chat_srv_u_db_sess_s_message_clear(nxs_chat_srv_u_db_sess_t_mess
 	message->is_ext     = NXS_NO;
 
 	nxs_string_clear(&message->message);
-
-	for(i = 0; i < nxs_array_count(&message->file_ids); i++) {
-
-		s = nxs_array_get(&message->file_ids, i);
-
-		nxs_string_free(s);
-	}
-
-	nxs_array_clear(&message->file_ids);
 }
 
 static void nxs_chat_srv_u_db_sess_s_message_serialize(nxs_chat_srv_u_db_sess_t_message_t *message, nxs_string_t *out_str)
 {
-	nxs_string_t message_encoded, files, *s;
-	size_t       i;
+	nxs_string_t message_encoded;
 
 	if(message == NULL || out_str == NULL) {
 
@@ -1714,31 +1766,16 @@ static void nxs_chat_srv_u_db_sess_s_message_serialize(nxs_chat_srv_u_db_sess_t_
 	}
 
 	nxs_string_init(&message_encoded);
-	nxs_string_init(&files);
-
-	for(i = 0; i < nxs_array_count(&message->file_ids); i++) {
-
-		s = nxs_array_get(&message->file_ids, i);
-
-		if(i > 0) {
-
-			nxs_string_char_add_char(&files, (u_char)',');
-		}
-
-		nxs_string_printf2_cat(&files, "\"%r\"", s);
-	}
 
 	nxs_base64_encode_string(&message_encoded, &message->message);
 
 	nxs_string_printf(out_str,
-	                  "{\"message\":\"%r\",\"is_private\":%s,\"is_ext\":%s,\"file_ids\":[%r]}",
+	                  "{\"message\":\"%r\",\"is_private\":%s,\"is_ext\":%s}",
 	                  &message_encoded,
 	                  message->is_private == NXS_YES ? "true" : "false",
-	                  message->is_ext == NXS_YES ? "true" : "false",
-	                  &files);
+	                  message->is_ext == NXS_YES ? "true" : "false");
 
 	nxs_string_free(&message_encoded);
-	nxs_string_free(&files);
 }
 
 static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_message_deserialize(nxs_chat_srv_u_db_sess_t_message_t *message, nxs_json_t *json_data)
@@ -1746,7 +1783,6 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_message_deserialize(nxs_chat_
 	nxs_chat_srv_err_t rc;
 	nxs_cfg_json_t     cfg_json;
 	nxs_array_t        cfg_arr;
-	nxs_string_t       message_encoded;
 
 	if(message == NULL || json_data == NULL) {
 
@@ -1757,14 +1793,11 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_message_deserialize(nxs_chat_
 
 	nxs_cfg_json_conf_array_init(&cfg_arr);
 
-	nxs_string_init(&message_encoded);
-
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_message,	&message_encoded,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,	&message->is_private,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_ext,		&message->is_ext,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_ids,	&message->file_ids,	NULL,	NULL,	NXS_CFG_JSON_TYPE_ARRAY_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_message,	&message->message,	&nxs_chat_srv_u_db_sess_s_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,	&message->is_private,	NULL,						NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_ext,		&message->is_ext,	NULL,						NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -1776,12 +1809,6 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_message_deserialize(nxs_chat_
 
 		rc = NXS_CHAT_SRV_E_ERR;
 	}
-	else {
-
-		nxs_base64_decode_string(&message->message, &message_encoded);
-	}
-
-	nxs_string_free(&message_encoded);
 
 	nxs_cfg_json_free(&cfg_json);
 	nxs_cfg_json_conf_array_free(&cfg_arr);
@@ -1810,13 +1837,11 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_init(nxs_chat_srv_u_db_sess_t_new
 
 	nxs_list_init2(&new_issue->available_projects, nxs_chat_srv_u_db_sess_project_t);
 	nxs_array_init2(&new_issue->selected_projects, nxs_chat_srv_u_db_sess_project_t);
-	nxs_array_init2(&new_issue->file_ids, nxs_string_t);
 }
 
 static void nxs_chat_srv_u_db_sess_s_new_issue_free(nxs_chat_srv_u_db_sess_t_new_issue_t *new_issue)
 {
 	nxs_chat_srv_u_db_sess_project_t *p;
-	nxs_string_t *                    s;
 	size_t                            i;
 
 	if(new_issue == NULL) {
@@ -1852,22 +1877,13 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_free(nxs_chat_srv_u_db_sess_t_new
 		nxs_string_free(&p->name);
 	}
 
-	for(i = 0; i < nxs_array_count(&new_issue->file_ids); i++) {
-
-		s = nxs_array_get(&new_issue->file_ids, i);
-
-		nxs_string_free(s);
-	}
-
 	nxs_list_free(&new_issue->available_projects);
 	nxs_array_free(&new_issue->selected_projects);
-	nxs_array_free(&new_issue->file_ids);
 }
 
 static void nxs_chat_srv_u_db_sess_s_new_issue_clear(nxs_chat_srv_u_db_sess_t_new_issue_t *new_issue)
 {
 	nxs_chat_srv_u_db_sess_project_t *p;
-	nxs_string_t *                    s;
 	size_t                            i;
 
 	if(new_issue == NULL) {
@@ -1903,15 +1919,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_clear(nxs_chat_srv_u_db_sess_t_ne
 		nxs_string_free(&p->name);
 	}
 
-	for(i = 0; i < nxs_array_count(&new_issue->file_ids); i++) {
-
-		s = nxs_array_get(&new_issue->file_ids, i);
-
-		nxs_string_free(s);
-	}
-
 	nxs_array_clear(&new_issue->selected_projects);
-	nxs_array_clear(&new_issue->file_ids);
 }
 
 static void nxs_chat_srv_u_db_sess_s_new_issue_set_selected_project_first(nxs_chat_srv_u_db_sess_t_new_issue_t *new_issue)
@@ -2065,7 +2073,7 @@ error:
 static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_t_new_issue_t *new_issue, nxs_string_t *out_str)
 {
 	nxs_string_t description_encoded, priority_name_encoded, project_name_encoded, subject_encoded, project_name_regex_encoded,
-	        available_projects, selected_projects, files, *s;
+	        available_projects, selected_projects;
 	nxs_chat_srv_u_db_sess_project_t *p;
 	size_t                            i;
 	nxs_bool_t                        f;
@@ -2114,20 +2122,6 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_
 		nxs_string_printf2_cat(&selected_projects, "{\"id\":%zu,\"name\":\"%r\"}", p->id, &project_name_encoded);
 	}
 
-	nxs_string_init(&files);
-
-	for(i = 0; i < nxs_array_count(&new_issue->file_ids); i++) {
-
-		s = nxs_array_get(&new_issue->file_ids, i);
-
-		if(i > 0) {
-
-			nxs_string_char_add_char(&files, (u_char)',');
-		}
-
-		nxs_string_printf2_cat(&files, "\"%r\"", s);
-	}
-
 	nxs_base64_encode_string(&description_encoded, &new_issue->description);
 	nxs_base64_encode_string(&priority_name_encoded, &new_issue->priority_name);
 	nxs_base64_encode_string(&project_name_encoded, &new_issue->project_name);
@@ -2145,8 +2139,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_
 	                  "\"is_ext\":%s,"
 	                  "\"project_name_regex\":\"%r\","
 	                  "\"available_projects\":[%r],"
-	                  "\"selected_projects\":[%r],"
-	                  "\"file_ids\":[%r]}",
+	                  "\"selected_projects\":[%r]}",
 	                  new_issue->project_id,
 	                  &project_name_encoded,
 	                  new_issue->priority_id,
@@ -2157,8 +2150,7 @@ static void nxs_chat_srv_u_db_sess_s_new_issue_serialize(nxs_chat_srv_u_db_sess_
 	                  new_issue->is_ext == NXS_YES ? "true" : "false",
 	                  &project_name_regex_encoded,
 	                  &available_projects,
-	                  &selected_projects,
-	                  &files);
+	                  &selected_projects);
 
 	nxs_string_free(&available_projects);
 	nxs_string_free(&selected_projects);
@@ -2175,7 +2167,6 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize(nxs_cha
 	nxs_chat_srv_err_t rc;
 	nxs_cfg_json_t     cfg_json;
 	nxs_array_t        cfg_arr;
-	nxs_string_t       project_name, priority_name, subject, description, project_name_regex;
 
 	if(new_issue == NULL || json_data == NULL) {
 
@@ -2186,26 +2177,19 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize(nxs_cha
 
 	nxs_cfg_json_conf_array_init(&cfg_arr);
 
-	nxs_string_init(&project_name);
-	nxs_string_init(&priority_name);
-	nxs_string_init(&subject);
-	nxs_string_init(&description);
-	nxs_string_init(&project_name_regex);
-
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_id,		&new_issue->project_id,		NULL,	NULL,									NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_name,		&project_name,			NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority_id,		&new_issue->priority_id,	NULL,	NULL,									NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority_name,		&priority_name,			NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,		&subject,			NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,		&description,			NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,		&new_issue->is_private,		NULL,	NULL,									NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_ext,			&new_issue->is_ext,		NULL,	NULL,									NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_name_regex,	&project_name_regex,		NULL,	NULL,									NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_available_projects,	&new_issue->available_projects,	NULL,	&nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_available,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_selected_projects,	&new_issue->selected_projects,	NULL,	&nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_selected,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_ids,		&new_issue->file_ids,		NULL,	NULL,									NXS_CFG_JSON_TYPE_ARRAY_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_id,		&new_issue->project_id,		NULL,						NULL,									NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_name,		&new_issue->project_name,	&nxs_chat_srv_u_db_sess_s_deserialize_base64,	NULL,									NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority_id,		&new_issue->priority_id,	NULL,						NULL,									NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_priority_name,		&new_issue->priority_name,	&nxs_chat_srv_u_db_sess_s_deserialize_base64,	NULL,									NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,		&new_issue->subject,		&nxs_chat_srv_u_db_sess_s_deserialize_base64,	NULL,									NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,		&new_issue->description,	&nxs_chat_srv_u_db_sess_s_deserialize_base64,	NULL,									NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,		&new_issue->is_private,		NULL,						NULL,									NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_ext,			&new_issue->is_ext,		NULL,						NULL,									NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project_name_regex,	&new_issue->project_name_regex,	&nxs_chat_srv_u_db_sess_s_deserialize_base64,	NULL,									NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_available_projects,	&new_issue->available_projects,	NULL,						&nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_available,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_selected_projects,	&new_issue->selected_projects,	NULL,						&nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_selected,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -2217,20 +2201,6 @@ static nxs_chat_srv_err_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize(nxs_cha
 
 		rc = NXS_CHAT_SRV_E_ERR;
 	}
-	else {
-
-		nxs_base64_decode_string(&new_issue->project_name, &project_name);
-		nxs_base64_decode_string(&new_issue->priority_name, &priority_name);
-		nxs_base64_decode_string(&new_issue->subject, &subject);
-		nxs_base64_decode_string(&new_issue->description, &description);
-		nxs_base64_decode_string(&new_issue->project_name_regex, &project_name_regex);
-	}
-
-	nxs_string_free(&project_name);
-	nxs_string_free(&priority_name);
-	nxs_string_free(&subject);
-	nxs_string_free(&description);
-	nxs_string_free(&project_name_regex);
 
 	nxs_cfg_json_free(&cfg_json);
 	nxs_cfg_json_conf_array_free(&cfg_arr);
@@ -2254,8 +2224,8 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize_proje
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,	&p->id,		NULL,								NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,	&p->name,	&nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_name,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,	&p->id,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,	&p->name,	&nxs_chat_srv_u_db_sess_s_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -2278,26 +2248,23 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize_proje
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,	&p->id,		NULL,								NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,	&p->name,	&nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_name,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,	&p->id,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,	&p->name,	&nxs_chat_srv_u_db_sess_s_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
 	return NXS_CFG_JSON_CONF_OK;
 }
 
-static nxs_cfg_json_state_t nxs_chat_srv_u_db_sess_s_new_issue_deserialize_projects_name(nxs_process_t *     proc,
-                                                                                         nxs_json_t *        json,
-                                                                                         nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t
+        nxs_chat_srv_u_db_sess_s_deserialize_base64(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_string_t *name = nxs_cfg_json_get_val(cfg_json_par_el);
 
 	if(nxs_json_type_get(json) != NXS_JSON_TYPE_STRING) {
 
 		nxs_log_write_error(
-		        &process,
-		        "[%s]: tlgrm db-sess unit error: wrong type for available or selected projects name in new issue deserialize",
-		        nxs_proc_get_name(&process));
+		        &process, "[%s]: tlgrm db-sess unit error: expected type string for base64 decoding", nxs_proc_get_name(&process));
 
 		return NXS_CFG_JSON_CONF_ERROR;
 	}

@@ -31,7 +31,7 @@ size_t						nxs_chat_srv_u_db_sess_get_files_count			(nxs_chat_srv_u_db_sess_t *
 
 nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_set_wait_for			(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_chat_srv_m_db_sess_wait_for_type_t wait_for);
 nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_set_ids				(nxs_chat_srv_u_db_sess_t *u_ctx, size_t chat_id, size_t usr_message_id, size_t bot_message_id);
-nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_add_file				(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_string_t *file_id);
+nxs_chat_srv_err_t				nxs_chat_srv_u_db_sess_add_file				(nxs_chat_srv_u_db_sess_t *u_ctx, nxs_string_t *file_id, nxs_string_t *file_name, nxs_string_t *mime_type);
 
 nxs_string_t 					*nxs_chat_srv_u_db_sess_t_get_message			(nxs_chat_srv_u_db_sess_t *u_ctx);
 nxs_bool_t					nxs_chat_srv_u_db_sess_t_get_message_is_private		(nxs_chat_srv_u_db_sess_t *u_ctx);

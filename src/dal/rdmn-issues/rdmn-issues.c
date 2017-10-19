@@ -266,10 +266,10 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_create(size_t           project_id
                                                      nxs_http_code_t *http_code,
                                                      nxs_buf_t *      out_buf)
 {
-	nxs_chat_srv_err_t                   rc;
-	nxs_curl_t                           curl;
-	nxs_string_t                         data, api_key, subject_escaped, description_escaped, uploads_str, uploads_str_els;
-	nxs_http_code_t                      ret_code;
+	nxs_chat_srv_err_t rc;
+	nxs_curl_t         curl;
+	nxs_string_t       data, api_key, subject_escaped, description_escaped, uploads_str, uploads_str_els, file_name_escaped;
+	nxs_http_code_t    ret_code;
 	nxs_chat_srv_d_rdmn_issues_upload_t *u;
 	nxs_buf_t *                          b;
 	size_t                               i;
@@ -286,6 +286,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_create(size_t           project_id
 	nxs_string_init(&api_key);
 	nxs_string_init(&subject_escaped);
 	nxs_string_init(&description_escaped);
+	nxs_string_init(&file_name_escaped);
 	nxs_string_init_empty(&uploads_str);
 	nxs_string_init_empty(&uploads_str_els);
 
@@ -310,10 +311,12 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_create(size_t           project_id
 			nxs_string_char_add_char(&uploads_str_els, (u_char)',');
 		}
 
+		nxs_string_escape(&file_name_escaped, &u->file_name, NXS_STRING_ESCAPE_TYPE_JSON);
+
 		nxs_string_printf2_cat(&uploads_str_els,
 		                       "{\"token\":\"%r\",\"filename\":\"%r\",\"content_type\":\"%r\"}",
 		                       &u->token,
-		                       &u->file_name,
+		                       &file_name_escaped,
 		                       &u->content_type);
 	}
 
@@ -412,6 +415,7 @@ error:
 	nxs_string_free(&api_key);
 	nxs_string_free(&subject_escaped);
 	nxs_string_free(&description_escaped);
+	nxs_string_free(&file_name_escaped);
 	nxs_string_free(&uploads_str);
 	nxs_string_free(&uploads_str_els);
 

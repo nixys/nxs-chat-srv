@@ -113,6 +113,7 @@ static nxs_chat_srv_err_t handler_command_dummy(nxs_chat_srv_m_tlgrm_update_t *u
 static void messages_queue_clean_text_messages(nxs_chat_srv_u_db_queue_t *queue_ctx);
 static void messages_queue_clean_reply(nxs_chat_srv_u_db_queue_t *queue_ctx);
 static nxs_chat_srv_err_t messages_queue_elt_parse(nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_m_tlgrm_update_t *update);
+static nxs_chat_srv_err_t messages_queue_extract_files(nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_m_tlgrm_update_t *update);
 
 // clang-format off
 
@@ -145,6 +146,7 @@ static handlers_commands_t handlers_command[] =
 };
 
 static nxs_string_t _s_cf_ignore_value	= nxs_string("1");
+static nxs_string_t _s_stickers_mime	= nxs_string("image/webp");
 
 /* Module global functions */
 
@@ -640,8 +642,9 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 {
 	nxs_chat_srv_err_t                       rc;
 	nxs_chat_srv_m_db_cache_issue_priority_t issue_priority;
-	nxs_array_t                              cache_projects, *file_ids, *rdmn_uploads;
-	nxs_string_t *                           api_key, *message, *s, file_name, file_path;
+	nxs_chat_srv_m_db_sess_file_t *          file;
+	nxs_array_t                              cache_projects, *files, *rdmn_uploads;
+	nxs_string_t *                           api_key, *message, file_name, file_path;
 	nxs_chat_srv_u_db_issues_t *             db_issue_ctx;
 	nxs_chat_srv_u_last_issues_t *           last_issue_ctx;
 	nxs_chat_srv_u_tlgrm_attachments_t *     tlgrm_attachments_ctx;
@@ -668,7 +671,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 	chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
 	bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
 	usr_message_id = nxs_chat_srv_u_db_sess_get_usr_message_id(sess_ctx);
-	file_ids       = nxs_chat_srv_u_db_sess_get_files(sess_ctx);
+	files          = nxs_chat_srv_u_db_sess_get_files(sess_ctx);
 	files_count    = nxs_chat_srv_u_db_sess_get_files_count(sess_ctx);
 	message        = nxs_chat_srv_u_db_sess_t_get_message(sess_ctx);
 	private_notes  = nxs_chat_srv_u_db_sess_t_get_message_is_private(sess_ctx);
@@ -771,18 +774,18 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 					break;
 			}
 
-			for(i = 0; i < nxs_array_count(file_ids); i++) {
+			for(i = 0; i < nxs_array_count(files); i++) {
 
-				s = nxs_array_get(file_ids, i);
+				file = nxs_array_get(files, i);
 
-				if(nxs_chat_srv_u_tlgrm_attachments_download(tlgrm_attachments_ctx, chat_id, s, &file_name, &file_path) !=
-				   NXS_CHAT_SRV_E_OK) {
+				if(nxs_chat_srv_u_tlgrm_attachments_download(
+				           tlgrm_attachments_ctx, chat_id, file, &file_name, &file_path) != NXS_CHAT_SRV_E_OK) {
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
 
-				if(nxs_chat_srv_u_rdmn_attachments_upload(rdmn_attachments_ctx, api_key, &file_name, &file_path) !=
-				   NXS_CHAT_SRV_E_OK) {
+				if(nxs_chat_srv_u_rdmn_attachments_upload(
+				           rdmn_attachments_ctx, api_key, &file_name, &file_path, &file->mime_type) != NXS_CHAT_SRV_E_OK) {
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
@@ -1283,13 +1286,11 @@ static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_u_db_qu
                                                             nxs_chat_srv_u_db_cache_t *cache_ctx,
                                                             nxs_chat_srv_m_user_ctx_t *user_ctx)
 {
-	nxs_chat_srv_m_tlgrm_update_t *    update;
-	nxs_chat_srv_m_tlgrm_photo_size_t *p;
-
-	nxs_chat_srv_err_t rc;
-	nxs_string_t *     api_key;
-	size_t             tlgrm_userid, bot_message_id, files_count;
-	nxs_bool_t         f, private_notes;
+	nxs_chat_srv_m_tlgrm_update_t *update;
+	nxs_chat_srv_err_t             rc;
+	nxs_string_t *                 api_key;
+	size_t                         tlgrm_userid, bot_message_id, files_count;
+	nxs_bool_t                     f, private_notes;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -1306,28 +1307,22 @@ static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_u_db_qu
 	for(f = NXS_NO, update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx); update != NULL;
 	    update = nxs_chat_srv_u_db_queue_list_del_head(queue_ctx)) {
 
-		if(nxs_chat_srv_c_tlgrm_update_get_type(update) == NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE) {
+		if((rc = messages_queue_extract_files(sess_ctx, update)) == NXS_CHAT_SRV_E_ERR) {
 
-			if(nxs_array_count(&update->message.photo) > 0) {
-
-				f = NXS_YES;
-
-				p = nxs_array_get(&update->message.photo, nxs_array_count(&update->message.photo) - 1);
-
-				if(nxs_chat_srv_u_db_sess_add_file(sess_ctx, &p->file_id) != NXS_CHAT_SRV_E_OK) {
-
-					return NXS_CHAT_SRV_E_ERR;
-				}
-			}
-			else {
-
-				continue;
-			}
+			return NXS_CHAT_SRV_E_ERR;
 		}
-		else {
+
+		if(rc == NXS_CHAT_SRV_E_TYPE) {
 
 			break;
 		}
+
+		if(rc == NXS_CHAT_SRV_E_OK) {
+
+			f = NXS_YES;
+		}
+
+		/* if rc == NXS_CHAT_SRV_E_EXIST: continue */
 	}
 
 	if(f == NXS_YES) {
@@ -1365,7 +1360,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
                                                               nxs_chat_srv_u_db_cache_t *cache_ctx,
                                                               nxs_chat_srv_m_user_ctx_t *user_ctx)
 {
-	nxs_string_t                  description, subject, project_name_regex, *api_key, *s, file_name, file_path;
+	nxs_string_t                  description, subject, project_name_regex, *api_key, file_name, file_path;
 	size_t                        chat_id, bot_message_id, usr_message_id, projects_count, project_id, priority_id, new_issue_id, i;
 	nxs_chat_srv_u_db_issues_t *  db_issue_ctx;
 	nxs_chat_srv_u_last_issues_t *last_issue_ctx;
@@ -1374,9 +1369,9 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	nxs_chat_srv_u_rdmn_issues_t *      rdmn_issues_ctx;
 	nxs_chat_srv_m_tlgrm_message_t      response_message;
 	nxs_chat_srv_m_tlgrm_update_t *     update;
-	nxs_chat_srv_m_tlgrm_photo_size_t * p;
+	nxs_chat_srv_m_db_sess_file_t *     file;
 	nxs_bool_t                          response_status, is_private, f;
-	nxs_array_t                         projects, *file_ids, *rdmn_uploads;
+	nxs_array_t                         projects, *files, *rdmn_uploads;
 	nxs_buf_t                           response_buf;
 	nxs_chat_srv_err_t                  rc;
 
@@ -1386,17 +1381,14 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	for(f = NXS_NO, update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx); update != NULL;
 	    update = nxs_chat_srv_u_db_queue_list_del_head(queue_ctx)) {
 
-		if(nxs_chat_srv_c_tlgrm_update_get_type(update) == NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE &&
-		   nxs_array_count(&update->message.photo) > 0) {
+		if((rc = messages_queue_extract_files(sess_ctx, update)) == NXS_CHAT_SRV_E_ERR) {
+
+			return NXS_CHAT_SRV_E_ERR;
+		}
+
+		if(rc == NXS_CHAT_SRV_E_OK) {
 
 			f = NXS_YES;
-
-			p = nxs_array_get(&update->message.photo, nxs_array_count(&update->message.photo) - 1);
-
-			if(nxs_chat_srv_u_db_sess_add_file(sess_ctx, &p->file_id) != NXS_CHAT_SRV_E_OK) {
-
-				return NXS_CHAT_SRV_E_ERR;
-			}
 		}
 		else {
 
@@ -1441,7 +1433,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
 	bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
 	usr_message_id = nxs_chat_srv_u_db_sess_get_usr_message_id(sess_ctx);
-	file_ids       = nxs_chat_srv_u_db_sess_get_files(sess_ctx);
+	files          = nxs_chat_srv_u_db_sess_get_files(sess_ctx);
 
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_init();
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_init();
@@ -1488,18 +1480,18 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 				}
 			}
 
-			for(i = 0; i < nxs_array_count(file_ids); i++) {
+			for(i = 0; i < nxs_array_count(files); i++) {
 
-				s = nxs_array_get(file_ids, i);
+				file = nxs_array_get(files, i);
 
-				if(nxs_chat_srv_u_tlgrm_attachments_download(tlgrm_attachments_ctx, chat_id, s, &file_name, &file_path) !=
-				   NXS_CHAT_SRV_E_OK) {
+				if(nxs_chat_srv_u_tlgrm_attachments_download(
+				           tlgrm_attachments_ctx, chat_id, file, &file_name, &file_path) != NXS_CHAT_SRV_E_OK) {
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
 
-				if(nxs_chat_srv_u_rdmn_attachments_upload(rdmn_attachments_ctx, api_key, &file_name, &file_path) !=
-				   NXS_CHAT_SRV_E_OK) {
+				if(nxs_chat_srv_u_rdmn_attachments_upload(
+				           rdmn_attachments_ctx, api_key, &file_name, &file_path, &file->mime_type) != NXS_CHAT_SRV_E_OK) {
 
 					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 				}
@@ -1696,9 +1688,10 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 	nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx;
 	nxs_chat_srv_u_rdmn_issues_t *      rdmn_issues_ctx;
 	nxs_chat_srv_m_tlgrm_update_t *     update;
-	nxs_string_t *                      rdmn_api_key, *message, *s, file_name, file_path;
+	nxs_chat_srv_m_db_sess_file_t *     file;
+	nxs_string_t *                      rdmn_api_key, *message, file_name, file_path;
 	nxs_chat_srv_err_t                  rc;
-	nxs_array_t *                       file_ids, *rdmn_uploads;
+	nxs_array_t *                       files, *rdmn_uploads;
 	nxs_bool_t                          private_notes;
 	size_t                              issue_id, reply_to_message, message_id, i;
 
@@ -1817,20 +1810,20 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 	}
 	else {
 
-		file_ids = nxs_chat_srv_u_db_sess_get_files(sess_ctx);
+		files = nxs_chat_srv_u_db_sess_get_files(sess_ctx);
 
-		for(i = 0; i < nxs_array_count(file_ids); i++) {
+		for(i = 0; i < nxs_array_count(files); i++) {
 
-			s = nxs_array_get(file_ids, i);
+			file = nxs_array_get(files, i);
 
-			if(nxs_chat_srv_u_tlgrm_attachments_download(tlgrm_attachments_ctx, tlgrm_userid, s, &file_name, &file_path) !=
+			if(nxs_chat_srv_u_tlgrm_attachments_download(tlgrm_attachments_ctx, tlgrm_userid, file, &file_name, &file_path) !=
 			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(nxs_chat_srv_u_rdmn_attachments_upload(rdmn_attachments_ctx, rdmn_api_key, &file_name, &file_path) !=
-			   NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_rdmn_attachments_upload(
+			           rdmn_attachments_ctx, rdmn_api_key, &file_name, &file_path, &file->mime_type) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -2096,8 +2089,7 @@ static void messages_queue_clean_reply(nxs_chat_srv_u_db_queue_t *queue_ctx)
 
 static nxs_chat_srv_err_t messages_queue_elt_parse(nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_m_tlgrm_update_t *update)
 {
-	nxs_chat_srv_m_tlgrm_photo_size_t *p;
-	nxs_string_t *                     s;
+	nxs_string_t *s;
 
 	if(nxs_string_len(&update->message.text) > 0) {
 
@@ -2115,14 +2107,9 @@ static nxs_chat_srv_err_t messages_queue_elt_parse(nxs_chat_srv_u_db_sess_t *ses
 		}
 	}
 
-	if(nxs_array_count(&update->message.photo) > 0) {
+	if(messages_queue_extract_files(sess_ctx, update) == NXS_CHAT_SRV_E_ERR) {
 
-		p = nxs_array_get(&update->message.photo, nxs_array_count(&update->message.photo) - 1);
-
-		if(nxs_chat_srv_u_db_sess_add_file(sess_ctx, &p->file_id) != NXS_CHAT_SRV_E_OK) {
-
-			return NXS_CHAT_SRV_E_ERR;
-		}
+		return NXS_CHAT_SRV_E_ERR;
 	}
 
 	if(nxs_chat_srv_u_db_sess_t_cat_message(sess_ctx, s) != NXS_CHAT_SRV_E_OK) {
@@ -2131,4 +2118,64 @@ static nxs_chat_srv_err_t messages_queue_elt_parse(nxs_chat_srv_u_db_sess_t *ses
 	}
 
 	return NXS_CHAT_SRV_E_OK;
+}
+
+/*
+ * Returns:
+ * * NXS_CHAT_SRV_E_TYPE	- if update type is not NXS_CHAT_SRV_E_TYPE
+ * * NXS_CHAT_SRV_E_EXIST	- if no files exists in update
+ * * NXS_CHAT_SRV_E_OK		- if one or more files exists in update
+ * * NXS_CHAT_SRV_E_ERR		- on error
+ */
+static nxs_chat_srv_err_t messages_queue_extract_files(nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_m_tlgrm_update_t *update)
+{
+	nxs_chat_srv_m_tlgrm_photo_size_t *p;
+	nxs_chat_srv_err_t                 rc;
+
+	if(nxs_chat_srv_c_tlgrm_update_get_type(update) != NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE) {
+
+		return NXS_CHAT_SRV_E_TYPE;
+	}
+
+	rc = NXS_CHAT_SRV_E_EXIST;
+
+	if(nxs_array_count(&update->message.photo) > 0) {
+
+		if((p = nxs_array_get(&update->message.photo, nxs_array_count(&update->message.photo) - 1)) != NULL) {
+
+			rc = NXS_CHAT_SRV_E_OK;
+
+			if(nxs_chat_srv_u_db_sess_add_file(sess_ctx, &p->file_id, NULL, NULL) != NXS_CHAT_SRV_E_OK) {
+
+				return NXS_CHAT_SRV_E_ERR;
+			}
+		}
+	}
+
+	if(update->message.document._is_used == NXS_YES) {
+
+		rc = NXS_CHAT_SRV_E_OK;
+
+		if(nxs_chat_srv_u_db_sess_add_file(sess_ctx,
+		                                   &update->message.document.file_id,
+		                                   &update->message.document.file_name,
+		                                   &update->message.document.mime_type) != NXS_CHAT_SRV_E_OK) {
+
+			return NXS_CHAT_SRV_E_ERR;
+		}
+	}
+
+	/* TODO: Not fully support. Telegram send sticker file in webp format and without file extension. */
+	if(update->message.sticker._is_used == NXS_YES) {
+
+		rc = NXS_CHAT_SRV_E_OK;
+
+		if(nxs_chat_srv_u_db_sess_add_file(sess_ctx, &update->message.sticker.file_id, NULL, &_s_stickers_mime) !=
+		   NXS_CHAT_SRV_E_OK) {
+
+			return NXS_CHAT_SRV_E_ERR;
+		}
+	}
+
+	return rc;
 }

@@ -47,6 +47,7 @@ nxs_chat_srv_c_mime_types_t mimes[] =
 	{nxs_string("jpeg"),			nxs_string("image/jpeg")},
 	{nxs_string("jpg"),			nxs_string("image/jpeg")},
 	{nxs_string("png"),			nxs_string("image/png")},
+	{nxs_string("pdf"),			nxs_string("application/pdf")},
 
 	{NXS_STRING_NULL_STR,			NXS_STRING_NULL_STR},
 };

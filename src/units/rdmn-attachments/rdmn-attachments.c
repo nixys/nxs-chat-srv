@@ -236,10 +236,11 @@ error:
 nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_upload(nxs_chat_srv_u_rdmn_attachments_t *u_ctx,
                                                           nxs_string_t *                     api_key,
                                                           nxs_string_t *                     file_name,
-                                                          nxs_string_t *                     file_path)
+                                                          nxs_string_t *                     file_path,
+                                                          nxs_string_t *                     mime_type)
 {
 	nxs_buf_t          out_buf;
-	nxs_string_t       upload_token;
+	nxs_string_t       upload_token, *m;
 	nxs_chat_srv_err_t rc;
 
 	if(u_ctx == NULL || api_key == NULL || file_name == NULL || file_path == NULL) {
@@ -262,8 +263,16 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_upload(nxs_chat_srv_u_rdmn_at
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			nxs_chat_srv_d_rdmn_issues_uploads_add(
-			        &u_ctx->uploads, &upload_token, file_name, file_path, nxs_chat_srv_c_mime_get(file_path));
+			if(nxs_string_len(mime_type) == 0) {
+
+				m = nxs_chat_srv_c_mime_get(file_path);
+			}
+			else {
+
+				m = mime_type;
+			}
+
+			nxs_chat_srv_d_rdmn_issues_uploads_add(&u_ctx->uploads, &upload_token, file_name, file_path, m);
 
 			break;
 

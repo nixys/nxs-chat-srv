@@ -24,4 +24,11 @@ typedef struct
 	nxs_string_t		*name;
 } nxs_chat_srv_m_db_sess_project_t;
 
+typedef struct
+{
+	nxs_string_t		file_id;
+	nxs_string_t		file_name;
+	nxs_string_t		mime_type;
+} nxs_chat_srv_m_db_sess_file_t;
+
 #endif /* _INCLUDE_NXS_CHAT_SRV_M_DB_SESS_H */
