@@ -51,6 +51,7 @@ static size_t nxs_chat_srv_d_tlgrm_upload_get_data(void *buffer, size_t size, si
 static nxs_string_t		_s_content_type_json		= nxs_string("Content-Type: application/json");
 
 static char			_s_form_photo[]			= "photo";
+static char			_s_form_document[]		= "document";
 static char			_s_form_chat_id[]		= "chat_id";
 static char			_s_form_caption[]		= "caption";
 
@@ -61,6 +62,7 @@ nxs_chat_srv_d_tlgrm_method_t tlgrm_methods[] =
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_ANSWER_CALLBACK_QUERY,		nxs_string("answerCallbackQuery")},
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_FILE,			nxs_string("getFile")},
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO,			nxs_string("sendPhoto")},
+	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT,			nxs_string("sendDocument")},
 
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_NONE, {NULL, 0, 0}}
 };
@@ -292,7 +294,33 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_upload(nxs_chat_srv_tlgrm_request_type_t
 	             (char *)nxs_string_str(caption),
 	             CURLFORM_END);
 
-	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, _s_form_photo, CURLFORM_FILE, (char *)nxs_string_str(file_path), CURLFORM_END);
+	switch(type) {
+
+		case NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO:
+
+			curl_formadd(&formpost,
+			             &lastptr,
+			             CURLFORM_COPYNAME,
+			             _s_form_photo,
+			             CURLFORM_FILE,
+			             (char *)nxs_string_str(file_path),
+			             CURLFORM_END);
+
+			break;
+
+		case NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT:
+		default:
+
+			curl_formadd(&formpost,
+			             &lastptr,
+			             CURLFORM_COPYNAME,
+			             _s_form_document,
+			             CURLFORM_FILE,
+			             (char *)nxs_string_str(file_path),
+			             CURLFORM_END);
+
+			break;
+	}
 
 	nxs_string_printf(&tmp_str, "%r/bot%r/%r", &nxs_chat_srv_cfg.tlgrm.bot_api_addr, &nxs_chat_srv_cfg.tlgrm.bot_api_key, method);
 

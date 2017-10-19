@@ -36,6 +36,7 @@ typedef struct
 	nxs_string_t		file_name;
 	nxs_string_t		file_path;
 	nxs_string_t		description;
+	nxs_string_t		content_type;
 } nxs_chat_srv_u_rdmn_attachments_download_t;
 
 struct nxs_chat_srv_u_rdmn_attachments_s
@@ -109,6 +110,7 @@ nxs_chat_srv_u_rdmn_attachments_t *nxs_chat_srv_u_rdmn_attachments_free(nxs_chat
 		nxs_string_free(&d->file_name);
 		nxs_string_free(&d->file_path);
 		nxs_string_free(&d->description);
+		nxs_string_free(&d->content_type);
 	}
 
 	nxs_array_free(&u_ctx->downloads);
@@ -126,7 +128,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_
                                                             size_t                             attachment_id,
                                                             nxs_string_t *                     file_name,
                                                             nxs_string_t *                     file_path,
-                                                            nxs_string_t *                     description)
+                                                            nxs_string_t *                     description,
+                                                            nxs_string_t *                     content_type)
 {
 	nxs_chat_srv_m_rdmn_attachment_t            attachment;
 	nxs_chat_srv_u_rdmn_attachments_download_t *d;
@@ -151,6 +154,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_
 			nxs_string_clone(file_name, &d->file_name);
 			nxs_string_clone(file_path, &d->file_path);
 			nxs_string_clone(description, &d->description);
+			nxs_string_clone(content_type, &d->content_type);
 
 			return NXS_CHAT_SRV_E_OK;
 		}
@@ -181,6 +185,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_
 
 	nxs_string_clone(file_name, &attachment.filename);
 	nxs_string_clone(description, &attachment.description);
+	nxs_string_clone(content_type, &attachment.content_type);
 
 	if((c = nxs_string_find_substr_first(&attachment.content_url, 0, nxs_string_str(&_s_proto_http), nxs_string_len(&_s_proto_http))) ==
 	   NULL) {
@@ -223,6 +228,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_
 	nxs_string_init3(&d->file_name, file_name);
 	nxs_string_init3(&d->file_path, file_path);
 	nxs_string_init3(&d->description, description);
+	nxs_string_init3(&d->content_type, content_type);
 
 error:
 

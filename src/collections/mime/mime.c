@@ -17,7 +17,7 @@
 
 
 /* Project globals */
-extern		nxs_process_t				process;
+extern		nxs_process_t			process;
 extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module typedefs */
@@ -47,7 +47,6 @@ nxs_chat_srv_c_mime_types_t mimes[] =
 	{nxs_string("jpeg"),			nxs_string("image/jpeg")},
 	{nxs_string("jpg"),			nxs_string("image/jpeg")},
 	{nxs_string("png"),			nxs_string("image/png")},
-	{nxs_string("pdf"),			nxs_string("application/pdf")},
 
 	{NXS_STRING_NULL_STR,			NXS_STRING_NULL_STR},
 };
@@ -61,19 +60,7 @@ nxs_string_t *nxs_chat_srv_c_mime_get(nxs_string_t *file_name)
 	size_t  i;
 	u_char *c;
 
-	if(file_name == NULL || nxs_string_len(file_name) == 0) {
-
-		return &_s_mime_default;
-	}
-
-	if((c = nxs_string_find_char_last(file_name, 0, (u_char)'.')) == NULL) {
-
-		return &_s_mime_default;
-	}
-
-	c++;
-
-	if((size_t)(c - nxs_string_str(file_name)) >= nxs_string_len(file_name)) {
+	if((c = nxs_chat_srv_c_mime_get_file_extension(file_name)) == NULL) {
 
 		return &_s_mime_default;
 	}
@@ -87,6 +74,30 @@ nxs_string_t *nxs_chat_srv_c_mime_get(nxs_string_t *file_name)
 	}
 
 	return &_s_mime_default;
+}
+
+u_char *nxs_chat_srv_c_mime_get_file_extension(nxs_string_t *file_name)
+{
+	u_char *c;
+
+	if(file_name == NULL || nxs_string_len(file_name) == 0) {
+
+		return NULL;
+	}
+
+	if((c = nxs_string_find_char_last(file_name, 0, (u_char)'.')) == NULL) {
+
+		return NULL;
+	}
+
+	c++;
+
+	if((size_t)(c - nxs_string_str(file_name)) >= nxs_string_len(file_name)) {
+
+		return NULL;
+	}
+
+	return c;
 }
 
 /* Module internal (static) functions */

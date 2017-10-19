@@ -26,15 +26,43 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module declarations */
 
+typedef struct
+{
+	nxs_string_t				file_extension;
+	nxs_chat_srv_tlgrm_request_type_t	send_method;
+} extension_send_method_t;
 
+typedef struct
+{
+	nxs_string_t				content_type;
+	nxs_chat_srv_tlgrm_request_type_t	send_method;
+} mime_send_method_t;
 
 /* Module internal (static) functions prototypes */
 
 // clang-format on
 
+static nxs_chat_srv_tlgrm_request_type_t tlgrm_send_method_get(nxs_string_t *file_name, nxs_string_t *content_type);
+
 // clang-format off
 
 /* Module initializations */
+
+static extension_send_method_t extension_send_method[] =
+{
+	{nxs_string("jpg"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
+	{nxs_string("jpeg"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
+	{nxs_string("png"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
+
+	{NXS_STRING_NULL_STR,			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT}
+};
+
+static mime_send_method_t mime_send_method[] =
+{
+	{nxs_string("image/webp"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
+
+	{NXS_STRING_NULL_STR,			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT}
+};
 
 static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
 
@@ -50,7 +78,7 @@ nxs_chat_srv_err_t
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
 	nxs_string_t *s, message, private_issue, description_fmt, project_fmt, subject_fmt, author_fmt, status_fmt, priority_fmt,
-	        assigned_to_fmt, file_name, file_path, description;
+	        assigned_to_fmt, file_name, file_path, description, content_type;
 	nxs_buf_t *                       out_buf;
 	nxs_array_t                       d_chunks;
 	nxs_bool_t                        response_status;
@@ -75,6 +103,7 @@ nxs_chat_srv_err_t
 	nxs_string_init_empty(&file_name);
 	nxs_string_init_empty(&file_path);
 	nxs_string_init_empty(&description);
+	nxs_string_init_empty(&content_type);
 
 	nxs_array_init2(&d_chunks, nxs_string_t);
 
@@ -140,12 +169,33 @@ nxs_chat_srv_err_t
 		rdmn_attachment = nxs_array_get(&update->data.issue.attachments, i);
 
 		if(nxs_chat_srv_u_rdmn_attachments_download(
-		           rdmn_attachments_ctx, rdmn_attachment->id, &file_name, &file_path, &description) == NXS_CHAT_SRV_E_OK) {
+		           rdmn_attachments_ctx, rdmn_attachment->id, &file_name, &file_path, &description, &content_type) ==
+		   NXS_CHAT_SRV_E_OK) {
 
-			if(nxs_chat_srv_u_tlgrm_attachments_send_photo(
-			           tlgrm_attachments_ctx, tlgrm_userid, &file_path, &description, &message_id) == NXS_CHAT_SRV_E_OK) {
+			switch(tlgrm_send_method_get(&file_name, &content_type)) {
 
-				nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, message_id, update->data.issue.id);
+				case NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO:
+
+					if(nxs_chat_srv_u_tlgrm_attachments_send_photo(
+					           tlgrm_attachments_ctx, tlgrm_userid, &file_path, &description, &message_id) ==
+					   NXS_CHAT_SRV_E_OK) {
+
+						nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, message_id, update->data.issue.id);
+					}
+
+					break;
+
+				case NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT:
+				default:
+
+					if(nxs_chat_srv_u_tlgrm_attachments_send_document(
+					           tlgrm_attachments_ctx, tlgrm_userid, &file_path, &description, &message_id) ==
+					   NXS_CHAT_SRV_E_OK) {
+
+						nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, message_id, update->data.issue.id);
+					}
+
+					break;
 			}
 		}
 	}
@@ -178,8 +228,50 @@ error:
 	nxs_string_free(&file_name);
 	nxs_string_free(&file_path);
 	nxs_string_free(&description);
+	nxs_string_free(&content_type);
 
 	return rc;
 }
 
 /* Module internal (static) functions */
+
+/*
+ * If content_type is set (len > 0) and found in mime_send_method[] - mime_send_method.send_method will be returned
+ * else extension_send_method.send_method will be returned
+ */
+static nxs_chat_srv_tlgrm_request_type_t tlgrm_send_method_get(nxs_string_t *file_name, nxs_string_t *content_type)
+{
+	u_char *ext;
+	size_t  i;
+
+	if(file_name == NULL) {
+
+		return NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT;
+	}
+
+	if(nxs_string_len(content_type) > 0) {
+
+		for(i = 0; nxs_string_len(&mime_send_method[i].content_type) > 0; i++) {
+
+			if(nxs_string_cmp(&mime_send_method[i].content_type, 0, content_type, 0) == NXS_YES) {
+
+				return mime_send_method[i].send_method;
+			}
+		}
+	}
+
+	if((ext = nxs_chat_srv_c_mime_get_file_extension(file_name)) == NULL) {
+
+		return NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT;
+	}
+
+	for(i = 0; nxs_string_len(&extension_send_method[i].file_extension) > 0; i++) {
+
+		if(nxs_string_char_cmp(&extension_send_method[i].file_extension, 0, ext) == NXS_YES) {
+
+			return extension_send_method[i].send_method;
+		}
+	}
+
+	return NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT;
+}
