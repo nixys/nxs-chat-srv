@@ -123,7 +123,6 @@ static nxs_string_t	_s_par_duration		= nxs_string("duration");
 static nxs_string_t	_s_par_voice		= nxs_string("voice");
 static nxs_string_t	_s_par_video		= nxs_string("video");
 
-
 static nxs_chat_srv_c_tlgrm_types_t chat_types[] =
 {
 	{NXS_CHAT_SRV_M_TLGRM_CHAT_TYPE_PRIVATE,		nxs_string("private")},
@@ -350,6 +349,53 @@ nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_make_message_chunks(nxs_string_t *messag
 		nxs_string_init(s);
 
 		nxs_string_ncpy(s, 0, message_src, o, nxs_string_len(message_src) - o);
+	}
+
+	return NXS_CHAT_SRV_E_OK;
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_make_message_preview(nxs_string_t *message_dst, nxs_string_t *message_src)
+{
+	nxs_bool_t f;
+	size_t     i;
+	u_char     c;
+
+	if(message_dst == NULL || message_src == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if(nxs_string_len(message_src) <= NXS_CHAT_SRV_TLGRM_MAX_MESSAGE_PREVIEW) {
+
+		nxs_string_cpy(message_dst, 0, message_src, 0);
+
+		return NXS_CHAT_SRV_E_OK;
+	}
+
+	for(f = NXS_NO, i = NXS_CHAT_SRV_TLGRM_MAX_MESSAGE_PREVIEW; i > 0; i--) {
+
+		c = nxs_string_get_char(message_src, i);
+
+		if(c == (u_char)' ' || c == (u_char)'\t' || c == (u_char)'\n') {
+
+			f = NXS_YES;
+
+			break;
+		}
+	}
+
+	if(f == NXS_NO) {
+
+		/* message too big */
+
+		nxs_string_char_cpy(message_dst, 0, (u_char *)NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_TOO_BIG_PREVIEW);
+
+		return NXS_CHAT_SRV_E_WARN;
+	}
+	else {
+
+		nxs_string_ncpy(message_dst, 0, message_src, 0, i);
+		nxs_string_char_cat(message_dst, (u_char *)" ...");
 	}
 
 	return NXS_CHAT_SRV_E_OK;

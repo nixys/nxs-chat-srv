@@ -53,8 +53,9 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(n
                                                                                nxs_buf_t *               response_buf)
 {
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
-	nxs_string_t callback_str, description, subject, project_name, priority_name, project_name_regex, message, private_msg;
-	nxs_buf_t *  b;
+	nxs_string_t callback_str, description, description_preview, subject, project_name, priority_name, project_name_regex, message,
+	        private_msg;
+	nxs_buf_t *                       b;
 	nxs_chat_srv_m_db_sess_project_t *p;
 	size_t                            i, files_count;
 	nxs_chat_srv_err_t                rc;
@@ -64,6 +65,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(n
 
 	nxs_string_init(&callback_str);
 	nxs_string_init(&description);
+	nxs_string_init(&description_preview);
 	nxs_string_init(&subject);
 	nxs_string_init(&project_name);
 	nxs_string_init(&priority_name);
@@ -94,7 +96,11 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(n
 		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &project_name);
 		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &priority_name);
 		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &subject);
-		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &description);
+
+		if(nxs_chat_srv_c_tlgrm_make_message_preview(&description_preview, &description) == NXS_CHAT_SRV_E_OK) {
+
+			nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &description_preview);
+		}
 
 		nxs_string_printf(&message,
 		                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_FULL,
@@ -102,7 +108,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_project(n
 		                  &priority_name,
 		                  nxs_string_len(&subject) > 0 ? &subject : &_s_msg_empty_subject,
 		                  &private_msg,
-		                  &description,
+		                  &description_preview,
 		                  files_count);
 
 		tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
@@ -162,6 +168,7 @@ error:
 
 	nxs_string_free(&callback_str);
 	nxs_string_free(&description);
+	nxs_string_free(&description_preview);
 	nxs_string_free(&subject);
 	nxs_string_free(&project_name);
 	nxs_string_free(&priority_name);
