@@ -27,6 +27,15 @@ void					nxs_chat_srv_c_tlgrm_photo_size_free		(nxs_chat_srv_m_tlgrm_photo_size_
 void					nxs_chat_srv_c_tlgrm_document_init		(nxs_chat_srv_m_tlgrm_document_t *document);
 void					nxs_chat_srv_c_tlgrm_document_free		(nxs_chat_srv_m_tlgrm_document_t *document);
 
+void					nxs_chat_srv_c_tlgrm_sticker_init		(nxs_chat_srv_m_tlgrm_sticker_t *sticker);
+void					nxs_chat_srv_c_tlgrm_sticker_free		(nxs_chat_srv_m_tlgrm_sticker_t *sticker);
+
+void					nxs_chat_srv_c_tlgrm_voice_init			(nxs_chat_srv_m_tlgrm_voice_t *voice);
+void					nxs_chat_srv_c_tlgrm_voice_free			(nxs_chat_srv_m_tlgrm_voice_t *voice);
+
+void					nxs_chat_srv_c_tlgrm_video_init			(nxs_chat_srv_m_tlgrm_video_t *video);
+void					nxs_chat_srv_c_tlgrm_video_free			(nxs_chat_srv_m_tlgrm_video_t *video);
+
 void					nxs_chat_srv_c_tlgrm_message_init		(nxs_chat_srv_m_tlgrm_message_t *message);
 void					nxs_chat_srv_c_tlgrm_message_free		(nxs_chat_srv_m_tlgrm_message_t *message);
 nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_message_result_pull_json	(nxs_chat_srv_m_tlgrm_message_t *message, nxs_bool_t *status, nxs_buf_t *json_buf);

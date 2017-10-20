@@ -246,7 +246,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_upload(nxs_chat_srv_u_rdmn_at
                                                           nxs_string_t *                     mime_type)
 {
 	nxs_buf_t          out_buf;
-	nxs_string_t       upload_token, *m;
+	nxs_string_t       upload_token, *m, file_name_mime;
 	nxs_chat_srv_err_t rc;
 
 	if(u_ctx == NULL || api_key == NULL || file_name == NULL || file_path == NULL) {
@@ -259,6 +259,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_upload(nxs_chat_srv_u_rdmn_at
 	nxs_buf_init2(&out_buf);
 
 	nxs_string_init(&upload_token);
+	nxs_string_init(&file_name_mime);
 
 	switch(nxs_chat_srv_d_rdmn_issues_uploads_push(api_key, file_path, NULL, &out_buf)) {
 
@@ -278,7 +279,9 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_upload(nxs_chat_srv_u_rdmn_at
 				m = mime_type;
 			}
 
-			nxs_chat_srv_d_rdmn_issues_uploads_add(&u_ctx->uploads, &upload_token, file_name, file_path, m);
+			nxs_chat_srv_c_mime_add_file_extension(&file_name_mime, file_name, m);
+
+			nxs_chat_srv_d_rdmn_issues_uploads_add(&u_ctx->uploads, &upload_token, &file_name_mime, file_path, m);
 
 			break;
 
@@ -296,6 +299,7 @@ error:
 	nxs_buf_free(&out_buf);
 
 	nxs_string_free(&upload_token);
+	nxs_string_free(&file_name_mime);
 
 	return rc;
 }

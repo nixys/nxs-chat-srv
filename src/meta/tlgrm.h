@@ -18,6 +18,8 @@ typedef struct			nxs_chat_srv_m_tlgrm_message_entity_s		nxs_chat_srv_m_tlgrm_mes
 typedef struct			nxs_chat_srv_m_tlgrm_photo_size_s		nxs_chat_srv_m_tlgrm_photo_size_t;
 typedef struct			nxs_chat_srv_m_tlgrm_document_s			nxs_chat_srv_m_tlgrm_document_t;
 typedef struct			nxs_chat_srv_m_tlgrm_sticker_s			nxs_chat_srv_m_tlgrm_sticker_t;
+typedef struct			nxs_chat_srv_m_tlgrm_voice_s			nxs_chat_srv_m_tlgrm_voice_t;
+typedef struct			nxs_chat_srv_m_tlgrm_video_s			nxs_chat_srv_m_tlgrm_video_t;
 typedef struct			nxs_chat_srv_m_tlgrm_message_s			nxs_chat_srv_m_tlgrm_message_t;
 typedef struct			nxs_chat_srv_m_tlgrm_chat_s			nxs_chat_srv_m_tlgrm_chat_t;
 typedef struct			nxs_chat_srv_m_tlgrm_user_s			nxs_chat_srv_m_tlgrm_user_t;
@@ -177,6 +179,30 @@ struct nxs_chat_srv_m_tlgrm_sticker_s
 	size_t					file_size;		/* Optional */
 };
 
+struct nxs_chat_srv_m_tlgrm_voice_s
+{
+	nxs_bool_t				_is_used;
+
+	nxs_string_t				file_id;
+	size_t					duration;
+	nxs_string_t				mime_type;		/* Optional */
+	size_t					file_size;		/* Optional */
+};
+
+struct nxs_chat_srv_m_tlgrm_video_s
+{
+	nxs_bool_t				_is_used;
+
+	nxs_string_t				file_id;
+	size_t					width;
+	size_t					height;
+	size_t					duration;
+	nxs_chat_srv_m_tlgrm_photo_size_t	thumb;			/* Optional */
+	nxs_string_t				mime_type;		/* Optional */
+	size_t					file_size;		/* Optional */
+};
+
+
 struct nxs_chat_srv_m_tlgrm_message_s
 {
 	nxs_bool_t				_is_used;
@@ -191,6 +217,8 @@ struct nxs_chat_srv_m_tlgrm_message_s
 	nxs_array_t				photo;			/* type: nxs_chat_srv_m_tlgrm_photo_size_t. Optional */
 	nxs_chat_srv_m_tlgrm_document_t		document;		/* Optional */
 	nxs_chat_srv_m_tlgrm_sticker_t		sticker;		/* Optional */
+	nxs_chat_srv_m_tlgrm_voice_t		voice;			/* Optional */
+	nxs_chat_srv_m_tlgrm_video_t		video;			/* Optional */
 
 	nxs_array_t				entities;		/* type: nxs_chat_srv_m_tlgrm_message_entity_t. Optional */
 };

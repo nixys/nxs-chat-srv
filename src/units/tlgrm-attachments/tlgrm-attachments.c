@@ -339,6 +339,96 @@ error:
 	return rc;
 }
 
+nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_attachments_send_sticker(nxs_chat_srv_u_tlgrm_attachments_t *u_ctx,
+                                                                 size_t                              chat_id,
+                                                                 nxs_string_t *                      file_path,
+                                                                 size_t *                            message_id)
+{
+	nxs_string_t                               message;
+	nxs_chat_srv_u_tlgrm_attachments_upload_t *u;
+	nxs_chat_srv_m_tlgrm_message_t             tlgrm_message;
+	nxs_chat_srv_err_t                         rc;
+	nxs_bool_t                                 response_status;
+	size_t                                     i;
+
+	if(u_ctx == NULL || file_path == NULL || message_id == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_string_init(&message);
+
+	nxs_chat_srv_c_tlgrm_message_init(&tlgrm_message);
+
+	for(i = 0; i < nxs_array_count(&u_ctx->uploads); i++) {
+
+		u = nxs_array_get(&u_ctx->uploads, i);
+
+		if(nxs_string_cmp(&u->file_path, 0, file_path, 0) == NXS_YES) {
+
+			/* file has been uploaded into Telegram */
+
+			nxs_string_printf(&message, "{\"chat_id\":%zu,\"sticker\":\"%r\"}", chat_id, &u->file_id);
+
+			if(nxs_chat_srv_d_tlgrm_request(
+			           NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_STICKER, &message, NULL, &u_ctx->response_buf) !=
+			   NXS_CHAT_SRV_E_OK) {
+
+				nxs_log_write_error(&process,
+				                    "[%s]: can't upload file to tlgrm (chat_id: %zu, file path: %r)",
+				                    nxs_proc_get_name(&process),
+				                    chat_id,
+				                    file_path);
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+
+			if(nxs_chat_srv_c_tlgrm_message_result_pull_json(&tlgrm_message, &response_status, &u_ctx->response_buf) ==
+			   NXS_CHAT_SRV_E_OK) {
+
+				*message_id = tlgrm_message.message_id;
+			}
+
+			nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
+		}
+	}
+
+	/* if file not yet uploaded into tlgrm */
+
+	if(nxs_chat_srv_d_tlgrm_upload(
+	           NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_STICKER, file_path, chat_id, NULL, NULL, &u_ctx->response_buf) !=
+	   NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: can't upload file to tlgrm (chat_id: %zu, file path: %r)",
+		                    nxs_proc_get_name(&process),
+		                    chat_id,
+		                    file_path);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_c_tlgrm_message_result_pull_json(&tlgrm_message, &response_status, &u_ctx->response_buf) == NXS_CHAT_SRV_E_OK) {
+
+		*message_id = tlgrm_message.message_id;
+
+		u = nxs_array_add(&u_ctx->uploads);
+
+		nxs_string_init3(&u->file_path, file_path);
+		nxs_string_init3(&u->file_id, &tlgrm_message.sticker.file_id);
+	}
+
+error:
+
+	nxs_string_free(&message);
+
+	nxs_chat_srv_c_tlgrm_message_free(&tlgrm_message);
+
+	return rc;
+}
+
 nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_attachments_send_document(nxs_chat_srv_u_tlgrm_attachments_t *u_ctx,
                                                                   size_t                              chat_id,
                                                                   nxs_string_t *                      file_path,
@@ -420,6 +510,186 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_attachments_send_document(nxs_chat_srv_u
 
 		nxs_string_init3(&u->file_path, file_path);
 		nxs_string_init3(&u->file_id, &tlgrm_message.document.file_id);
+	}
+
+error:
+
+	nxs_string_free(&message);
+
+	nxs_chat_srv_c_tlgrm_message_free(&tlgrm_message);
+
+	return rc;
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_attachments_send_voice(nxs_chat_srv_u_tlgrm_attachments_t *u_ctx,
+                                                               size_t                              chat_id,
+                                                               nxs_string_t *                      file_path,
+                                                               nxs_string_t *                      caption,
+                                                               size_t *                            message_id)
+{
+	nxs_string_t                               message;
+	nxs_chat_srv_u_tlgrm_attachments_upload_t *u;
+	nxs_chat_srv_m_tlgrm_message_t             tlgrm_message;
+	nxs_chat_srv_err_t                         rc;
+	nxs_bool_t                                 response_status;
+	size_t                                     i;
+
+	if(u_ctx == NULL || file_path == NULL || message_id == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_string_init(&message);
+
+	nxs_chat_srv_c_tlgrm_message_init(&tlgrm_message);
+
+	for(i = 0; i < nxs_array_count(&u_ctx->uploads); i++) {
+
+		u = nxs_array_get(&u_ctx->uploads, i);
+
+		if(nxs_string_cmp(&u->file_path, 0, file_path, 0) == NXS_YES) {
+
+			/* file has been uploaded into Telegram */
+
+			nxs_string_printf(&message, "{\"chat_id\":%zu,\"voice\":\"%r\",\"caption\":\"%r\"}", chat_id, &u->file_id, caption);
+
+			if(nxs_chat_srv_d_tlgrm_request(NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE, &message, NULL, &u_ctx->response_buf) !=
+			   NXS_CHAT_SRV_E_OK) {
+
+				nxs_log_write_error(&process,
+				                    "[%s]: can't upload file to tlgrm (chat_id: %zu, file path: %r)",
+				                    nxs_proc_get_name(&process),
+				                    chat_id,
+				                    file_path);
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+
+			if(nxs_chat_srv_c_tlgrm_message_result_pull_json(&tlgrm_message, &response_status, &u_ctx->response_buf) ==
+			   NXS_CHAT_SRV_E_OK) {
+
+				*message_id = tlgrm_message.message_id;
+			}
+
+			nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
+		}
+	}
+
+	/* if file not yet uploaded into tlgrm */
+
+	if(nxs_chat_srv_d_tlgrm_upload(
+	           NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE, file_path, chat_id, caption, NULL, &u_ctx->response_buf) !=
+	   NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: can't upload file to tlgrm (chat_id: %zu, file path: %r)",
+		                    nxs_proc_get_name(&process),
+		                    chat_id,
+		                    file_path);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_c_tlgrm_message_result_pull_json(&tlgrm_message, &response_status, &u_ctx->response_buf) == NXS_CHAT_SRV_E_OK) {
+
+		*message_id = tlgrm_message.message_id;
+
+		u = nxs_array_add(&u_ctx->uploads);
+
+		nxs_string_init3(&u->file_path, file_path);
+		nxs_string_init3(&u->file_id, &tlgrm_message.voice.file_id);
+	}
+
+error:
+
+	nxs_string_free(&message);
+
+	nxs_chat_srv_c_tlgrm_message_free(&tlgrm_message);
+
+	return rc;
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_attachments_send_video(nxs_chat_srv_u_tlgrm_attachments_t *u_ctx,
+                                                               size_t                              chat_id,
+                                                               nxs_string_t *                      file_path,
+                                                               nxs_string_t *                      caption,
+                                                               size_t *                            message_id)
+{
+	nxs_string_t                               message;
+	nxs_chat_srv_u_tlgrm_attachments_upload_t *u;
+	nxs_chat_srv_m_tlgrm_message_t             tlgrm_message;
+	nxs_chat_srv_err_t                         rc;
+	nxs_bool_t                                 response_status;
+	size_t                                     i;
+
+	if(u_ctx == NULL || file_path == NULL || message_id == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_string_init(&message);
+
+	nxs_chat_srv_c_tlgrm_message_init(&tlgrm_message);
+
+	for(i = 0; i < nxs_array_count(&u_ctx->uploads); i++) {
+
+		u = nxs_array_get(&u_ctx->uploads, i);
+
+		if(nxs_string_cmp(&u->file_path, 0, file_path, 0) == NXS_YES) {
+
+			/* file has been uploaded into Telegram */
+
+			nxs_string_printf(&message, "{\"chat_id\":%zu,\"video\":\"%r\",\"caption\":\"%r\"}", chat_id, &u->file_id, caption);
+
+			if(nxs_chat_srv_d_tlgrm_request(NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO, &message, NULL, &u_ctx->response_buf) !=
+			   NXS_CHAT_SRV_E_OK) {
+
+				nxs_log_write_error(&process,
+				                    "[%s]: can't upload file to tlgrm (chat_id: %zu, file path: %r)",
+				                    nxs_proc_get_name(&process),
+				                    chat_id,
+				                    file_path);
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+
+			if(nxs_chat_srv_c_tlgrm_message_result_pull_json(&tlgrm_message, &response_status, &u_ctx->response_buf) ==
+			   NXS_CHAT_SRV_E_OK) {
+
+				*message_id = tlgrm_message.message_id;
+			}
+
+			nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
+		}
+	}
+
+	/* if file not yet uploaded into tlgrm */
+
+	if(nxs_chat_srv_d_tlgrm_upload(
+	           NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO, file_path, chat_id, caption, NULL, &u_ctx->response_buf) !=
+	   NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: can't upload file to tlgrm (chat_id: %zu, file path: %r)",
+		                    nxs_proc_get_name(&process),
+		                    chat_id,
+		                    file_path);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_c_tlgrm_message_result_pull_json(&tlgrm_message, &response_status, &u_ctx->response_buf) == NXS_CHAT_SRV_E_OK) {
+
+		*message_id = tlgrm_message.message_id;
+
+		u = nxs_array_add(&u_ctx->uploads);
+
+		nxs_string_init3(&u->file_path, file_path);
+		nxs_string_init3(&u->file_id, &tlgrm_message.voice.file_id);
 	}
 
 error:

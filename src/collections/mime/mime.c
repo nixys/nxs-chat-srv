@@ -47,6 +47,9 @@ nxs_chat_srv_c_mime_types_t mimes[] =
 	{nxs_string("jpeg"),			nxs_string("image/jpeg")},
 	{nxs_string("jpg"),			nxs_string("image/jpeg")},
 	{nxs_string("png"),			nxs_string("image/png")},
+	{nxs_string("webp"),			nxs_string("image/webp")},
+	{nxs_string("mp4"),			nxs_string("video/mp4")},
+	{nxs_string("ogg"),			nxs_string("audio/ogg")},
 
 	{NXS_STRING_NULL_STR,			NXS_STRING_NULL_STR},
 };
@@ -98,6 +101,49 @@ u_char *nxs_chat_srv_c_mime_get_file_extension(nxs_string_t *file_name)
 	}
 
 	return c;
+}
+
+void nxs_chat_srv_c_mime_add_file_extension(nxs_string_t *file_name_dst, nxs_string_t *file_name_src, nxs_string_t *mime_type)
+{
+	nxs_bool_t f;
+	u_char *   c;
+	size_t     i;
+
+	if(file_name_dst == NULL || nxs_string_len(file_name_src) == 0 || nxs_string_len(mime_type) == 0) {
+
+		return;
+	}
+
+	for(f = NXS_NO, i = 0; nxs_string_len(&mimes[i].content_type) > 0; i++) {
+
+		if(nxs_string_cmp(&mimes[i].content_type, 0, mime_type, 0) == NXS_YES) {
+
+			f = NXS_YES;
+
+			break;
+		}
+	}
+
+	if(f == NXS_NO) {
+
+		/* mime not found */
+
+		nxs_string_cpy(file_name_dst, 0, file_name_src, 0);
+
+		return;
+	}
+
+	if((c = nxs_chat_srv_c_mime_get_file_extension(file_name_src)) != NULL &&
+	   nxs_string_char_cmp(&mimes[i].ext_name, 0, c) == NXS_YES) {
+
+		nxs_string_cpy(file_name_dst, 0, file_name_src, 0);
+	}
+	else {
+
+		/* file has no extension or if file extension and mime type do not match */
+
+		nxs_string_printf(file_name_dst, "%r.%r", file_name_src, &mimes[i].ext_name);
+	}
 }
 
 /* Module internal (static) functions */

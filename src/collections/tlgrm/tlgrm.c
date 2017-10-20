@@ -72,6 +72,10 @@ static nxs_cfg_json_state_t
         nxs_chat_srv_c_tlgrm_extract_json_document(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
         nxs_chat_srv_c_tlgrm_extract_json_sticker(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_tlgrm_extract_json_voice(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_tlgrm_extract_json_video(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 
 // clang-format off
 
@@ -115,6 +119,9 @@ static nxs_string_t	_s_par_mime_type	= nxs_string("mime_type");
 static nxs_string_t	_s_par_emoji		= nxs_string("emoji");
 static nxs_string_t	_s_par_set_name		= nxs_string("set_name");
 static nxs_string_t	_s_par_sticker		= nxs_string("sticker");
+static nxs_string_t	_s_par_duration		= nxs_string("duration");
+static nxs_string_t	_s_par_voice		= nxs_string("voice");
+static nxs_string_t	_s_par_video		= nxs_string("video");
 
 
 static nxs_chat_srv_c_tlgrm_types_t chat_types[] =
@@ -591,6 +598,80 @@ void nxs_chat_srv_c_tlgrm_sticker_free(nxs_chat_srv_m_tlgrm_sticker_t *sticker)
 	nxs_string_free(&sticker->set_name);
 }
 
+void nxs_chat_srv_c_tlgrm_voice_init(nxs_chat_srv_m_tlgrm_voice_t *voice)
+{
+
+	if(voice == NULL) {
+
+		return;
+	}
+
+	voice->_is_used = NXS_NO;
+
+	voice->file_size = 0;
+	voice->duration  = 0;
+
+	nxs_string_init_empty(&voice->file_id);
+	nxs_string_init_empty(&voice->mime_type);
+}
+
+void nxs_chat_srv_c_tlgrm_voice_free(nxs_chat_srv_m_tlgrm_voice_t *voice)
+{
+
+	if(voice == NULL) {
+
+		return;
+	}
+
+	voice->_is_used = NXS_NO;
+
+	voice->file_size = 0;
+	voice->duration  = 0;
+
+	nxs_string_free(&voice->file_id);
+	nxs_string_free(&voice->mime_type);
+}
+
+void nxs_chat_srv_c_tlgrm_video_init(nxs_chat_srv_m_tlgrm_video_t *video)
+{
+
+	if(video == NULL) {
+
+		return;
+	}
+
+	video->_is_used = NXS_NO;
+
+	video->file_size = 0;
+	video->duration  = 0;
+
+	nxs_chat_srv_c_tlgrm_photo_size_init(&video->thumb);
+
+	nxs_string_init_empty(&video->file_id);
+	nxs_string_init_empty(&video->mime_type);
+}
+
+void nxs_chat_srv_c_tlgrm_video_free(nxs_chat_srv_m_tlgrm_video_t *video)
+{
+
+	if(video == NULL) {
+
+		return;
+	}
+
+	video->_is_used = NXS_NO;
+
+	video->file_size = 0;
+	video->width     = 0;
+	video->height    = 0;
+	video->duration  = 0;
+
+	nxs_chat_srv_c_tlgrm_photo_size_free(&video->thumb);
+
+	nxs_string_free(&video->file_id);
+	nxs_string_free(&video->mime_type);
+}
+
 void nxs_chat_srv_c_tlgrm_message_init(nxs_chat_srv_m_tlgrm_message_t *message)
 {
 
@@ -609,6 +690,8 @@ void nxs_chat_srv_c_tlgrm_message_init(nxs_chat_srv_m_tlgrm_message_t *message)
 	nxs_chat_srv_c_tlgrm_chat_init(&message->chat);
 	nxs_chat_srv_c_tlgrm_document_init(&message->document);
 	nxs_chat_srv_c_tlgrm_sticker_init(&message->sticker);
+	nxs_chat_srv_c_tlgrm_voice_init(&message->voice);
+	nxs_chat_srv_c_tlgrm_video_init(&message->video);
 
 	message->reply_to_message = NULL;
 
@@ -637,6 +720,7 @@ void nxs_chat_srv_c_tlgrm_message_free(nxs_chat_srv_m_tlgrm_message_t *message)
 	nxs_chat_srv_c_tlgrm_chat_free(&message->chat);
 	nxs_chat_srv_c_tlgrm_document_free(&message->document);
 	nxs_chat_srv_c_tlgrm_sticker_free(&message->sticker);
+	nxs_chat_srv_c_tlgrm_voice_free(&message->voice);
 
 	if(message->reply_to_message != NULL) {
 
@@ -1299,6 +1383,8 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_photo,			&var->photo,		NULL,						&nxs_chat_srv_c_tlgrm_extract_json_photo_sizes,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_document,		&var->document,		&nxs_chat_srv_c_tlgrm_extract_json_document,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_sticker,		&var->sticker,		&nxs_chat_srv_c_tlgrm_extract_json_sticker,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_voice,			&var->voice,		&nxs_chat_srv_c_tlgrm_extract_json_voice,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_video,			&var->video,		&nxs_chat_srv_c_tlgrm_extract_json_video,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -1692,6 +1778,105 @@ static nxs_cfg_json_state_t
 	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
 
 		nxs_log_write_raw(&process, "json read error: 'sticker' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_string_free(&chat_type);
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_tlgrm_extract_json_voice(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_m_tlgrm_voice_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t                cfg_json;
+	nxs_array_t                   cfg_arr;
+	nxs_string_t                  chat_type;
+	nxs_cfg_json_state_t          rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	nxs_string_init(&chat_type);
+
+	var->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_id,	&var->file_id,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_duration,	&var->duration,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_mime_type,	&var->mime_type,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_size,	&var->file_size,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_NO,		NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "json read error: 'voice' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_string_free(&chat_type);
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_tlgrm_extract_json_video(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_m_tlgrm_video_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t                cfg_json;
+	nxs_array_t                   cfg_arr;
+	nxs_string_t                  chat_type;
+	nxs_cfg_json_state_t          rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	nxs_string_init(&chat_type);
+
+	var->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_id,	&var->file_id,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_width,		&var->width,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_height,		&var->height,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_duration,	&var->duration,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_thumb,		&var->thumb,		&nxs_chat_srv_c_tlgrm_extract_json_photo_size,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_mime_type,	&var->mime_type,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_file_size,	&var->file_size,	NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_NO,		NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "json read error: 'video' block");
 
 		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
 	}

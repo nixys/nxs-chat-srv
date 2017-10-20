@@ -53,13 +53,16 @@ static extension_send_method_t extension_send_method[] =
 	{nxs_string("jpg"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
 	{nxs_string("jpeg"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
 	{nxs_string("png"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
+	{nxs_string("webp"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_STICKER},
 
 	{NXS_STRING_NULL_STR,			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT}
 };
 
 static mime_send_method_t mime_send_method[] =
 {
-	{nxs_string("image/webp"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
+	{nxs_string("image/webp"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_STICKER},
+	{nxs_string("audio/ogg"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE},
+	{nxs_string("video/mp4"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
 
 	{NXS_STRING_NULL_STR,			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT}
 };
@@ -177,6 +180,38 @@ nxs_chat_srv_err_t
 				case NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO:
 
 					if(nxs_chat_srv_u_tlgrm_attachments_send_photo(
+					           tlgrm_attachments_ctx, tlgrm_userid, &file_path, &description, &message_id) ==
+					   NXS_CHAT_SRV_E_OK) {
+
+						nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, message_id, update->data.issue.id);
+					}
+
+					break;
+
+				case NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_STICKER:
+
+					if(nxs_chat_srv_u_tlgrm_attachments_send_sticker(
+					           tlgrm_attachments_ctx, tlgrm_userid, &file_path, &message_id) == NXS_CHAT_SRV_E_OK) {
+
+						nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, message_id, update->data.issue.id);
+					}
+
+					break;
+
+				case NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE:
+
+					if(nxs_chat_srv_u_tlgrm_attachments_send_voice(
+					           tlgrm_attachments_ctx, tlgrm_userid, &file_path, &description, &message_id) ==
+					   NXS_CHAT_SRV_E_OK) {
+
+						nxs_chat_srv_u_db_issues_set(db_issue_ctx, tlgrm_userid, message_id, update->data.issue.id);
+					}
+
+					break;
+
+				case NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO:
+
+					if(nxs_chat_srv_u_tlgrm_attachments_send_video(
 					           tlgrm_attachments_ctx, tlgrm_userid, &file_path, &description, &message_id) ==
 					   NXS_CHAT_SRV_E_OK) {
 

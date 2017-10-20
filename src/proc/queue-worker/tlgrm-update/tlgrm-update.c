@@ -2165,12 +2165,33 @@ static nxs_chat_srv_err_t messages_queue_extract_files(nxs_chat_srv_u_db_sess_t 
 		}
 	}
 
-	/* TODO: Not fully support. Telegram send sticker file in webp format and without file extension. */
 	if(update->message.sticker._is_used == NXS_YES) {
 
 		rc = NXS_CHAT_SRV_E_OK;
 
 		if(nxs_chat_srv_u_db_sess_add_file(sess_ctx, &update->message.sticker.file_id, NULL, &_s_stickers_mime) !=
+		   NXS_CHAT_SRV_E_OK) {
+
+			return NXS_CHAT_SRV_E_ERR;
+		}
+	}
+
+	if(update->message.voice._is_used == NXS_YES) {
+
+		rc = NXS_CHAT_SRV_E_OK;
+
+		if(nxs_chat_srv_u_db_sess_add_file(sess_ctx, &update->message.voice.file_id, NULL, &update->message.voice.mime_type) !=
+		   NXS_CHAT_SRV_E_OK) {
+
+			return NXS_CHAT_SRV_E_ERR;
+		}
+	}
+
+	if(update->message.video._is_used == NXS_YES) {
+
+		rc = NXS_CHAT_SRV_E_OK;
+
+		if(nxs_chat_srv_u_db_sess_add_file(sess_ctx, &update->message.video.file_id, NULL, &update->message.video.mime_type) !=
 		   NXS_CHAT_SRV_E_OK) {
 
 			return NXS_CHAT_SRV_E_ERR;
