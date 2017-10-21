@@ -105,26 +105,39 @@ u_char *nxs_chat_srv_c_mime_get_file_extension(nxs_string_t *file_name)
 
 void nxs_chat_srv_c_mime_add_file_extension(nxs_string_t *file_name_dst, nxs_string_t *file_name_src, nxs_string_t *mime_type)
 {
-	nxs_bool_t f;
-	u_char *   c;
-	size_t     i;
+	u_char *c;
+	size_t  i;
+	ssize_t mime_index;
 
 	if(file_name_dst == NULL || nxs_string_len(file_name_src) == 0 || nxs_string_len(mime_type) == 0) {
 
 		return;
 	}
 
-	for(f = NXS_NO, i = 0; nxs_string_len(&mimes[i].content_type) > 0; i++) {
+	for(mime_index = -1, i = 0; nxs_string_len(&mimes[i].content_type) > 0; i++) {
 
 		if(nxs_string_cmp(&mimes[i].content_type, 0, mime_type, 0) == NXS_YES) {
 
-			f = NXS_YES;
+			/* mime type matched */
 
-			break;
+			if(mime_index == -1) {
+
+				mime_index = i;
+			}
+
+			if((c = nxs_chat_srv_c_mime_get_file_extension(file_name_src)) != NULL &&
+			   nxs_string_char_cmp(&mimes[i].ext_name, 0, c) == NXS_YES) {
+
+				/* file extansion matched */
+
+				nxs_string_cpy(file_name_dst, 0, file_name_src, 0);
+
+				return;
+			}
 		}
 	}
 
-	if(f == NXS_NO) {
+	if(mime_index == -1) {
 
 		/* mime not found */
 
@@ -133,17 +146,9 @@ void nxs_chat_srv_c_mime_add_file_extension(nxs_string_t *file_name_dst, nxs_str
 		return;
 	}
 
-	if((c = nxs_chat_srv_c_mime_get_file_extension(file_name_src)) != NULL &&
-	   nxs_string_char_cmp(&mimes[i].ext_name, 0, c) == NXS_YES) {
+	/* file has no extension or if file extension and mime type do not match */
 
-		nxs_string_cpy(file_name_dst, 0, file_name_src, 0);
-	}
-	else {
-
-		/* file has no extension or if file extension and mime type do not match */
-
-		nxs_string_printf(file_name_dst, "%r.%r", file_name_src, &mimes[i].ext_name);
-	}
+	nxs_string_printf(file_name_dst, "%r.%r", file_name_src, &mimes[mime_index].ext_name);
 }
 
 /* Module internal (static) functions */
