@@ -52,7 +52,7 @@ static nxs_cfg_json_state_t
 static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_rdmn(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_queue_worker(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+        nxs_chat_srv_conf_file_json_read_ra_queue(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_cache(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
@@ -86,12 +86,9 @@ static nxs_string_t _s_par_pass				= nxs_string("pass");
 static nxs_string_t _s_par_host				= nxs_string("host");
 static nxs_string_t _s_par_redmine			= nxs_string("redmine");
 static nxs_string_t _s_par_api_key			= nxs_string("api_key");
-static nxs_string_t _s_par_queue_worker			= nxs_string("queue_worker");
-static nxs_string_t _s_par_sock_path			= nxs_string("sock_path");
-static nxs_string_t _s_par_sock_user			= nxs_string("sock_user");
-static nxs_string_t _s_par_sock_group			= nxs_string("sock_group");
-static nxs_string_t _s_par_sock_mode			= nxs_string("sock_mode");
-static nxs_string_t _s_par_sock_max_conn		= nxs_string("sock_max_conn");
+static nxs_string_t _s_par_ra_queue			= nxs_string("ra_queue");
+static nxs_string_t _s_par_pop_timeout			= nxs_string("pop_timeout");
+static nxs_string_t _s_par_queue_workers		= nxs_string("queue_workers");
 static nxs_string_t _s_par_daemonize			= nxs_string("daemonize");
 static nxs_string_t _s_par_auth_token			= nxs_string("auth_token");
 static nxs_string_t _s_par_cache			= nxs_string("cache");
@@ -139,7 +136,7 @@ nxs_chat_srv_err_t nxs_chat_srv_conf_file_json_runtime(nxs_chat_srv_cfg_ctx_t *c
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_mysql,		&nxs_chat_srv_cfg.mysql,	&nxs_chat_srv_conf_file_json_read_mysql,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_redis,		&nxs_chat_srv_cfg.redis,	&nxs_chat_srv_conf_file_json_read_redis,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_redmine,	&nxs_chat_srv_cfg.rdmn,		&nxs_chat_srv_conf_file_json_read_rdmn,		NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_queue_worker,	&nxs_chat_srv_cfg.queue_worker,	&nxs_chat_srv_conf_file_json_read_queue_worker,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ra_queue,	&nxs_chat_srv_cfg.ra_queue,	&nxs_chat_srv_conf_file_json_read_ra_queue,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_cache,		&nxs_chat_srv_cfg.cache,	&nxs_chat_srv_conf_file_json_read_cache,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_dev_accounts,	&nxs_chat_srv_cfg.dev_accounts,	NULL,						NULL,	NXS_CFG_JSON_TYPE_ARRAY_STRING,	0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_attachments,	&nxs_chat_srv_cfg.attachments,	&nxs_chat_srv_conf_file_json_read_attachments,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
@@ -502,28 +499,23 @@ error:
 }
 
 static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_queue_worker(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+        nxs_chat_srv_conf_file_json_read_ra_queue(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
 {
-	nxs_chat_srv_cfg_queue_worker_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
-	nxs_cfg_json_t                   cfg_json;
-	nxs_array_t                      cfg_arr;
-	nxs_string_t                     mode;
-	size_t                           i;
-	nxs_cfg_json_state_t             rc;
+	nxs_chat_srv_cfg_ra_queue_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t               cfg_json;
+	nxs_array_t                  cfg_arr;
+	nxs_cfg_json_state_t         rc;
 
 	rc = NXS_CFG_JSON_CONF_OK;
-
-	nxs_string_init(&mode);
 
 	nxs_cfg_json_conf_array_init(&cfg_arr);
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_sock_path,	&var->sock_path,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_sock_user,	&var->sock_user,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_sock_group,	&var->sock_group,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_sock_mode,	&mode,			NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_sock_max_conn,	&var->sock_max_conn,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_host,		&var->host,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_port,		&var->port,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT_16,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_pop_timeout,	&var->pop_timeout,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_queue_workers,	&var->queue_workers,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -531,26 +523,12 @@ static nxs_cfg_json_state_t
 
 	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
 
-		nxs_log_write_raw(&process, "config read error: 'queue_worker' block");
+		nxs_log_write_raw(&process, "config read error: 'ra_queue' block");
 
 		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
 	}
 
-	for(i = 0; i < nxs_string_len(&mode); i++) {
-
-		if(nxs_string_get_char(&mode, i) < '0' || nxs_string_get_char(&mode, i) > '7') {
-
-			nxs_log_write_error(&process, "option '%r' has wrong value (value: \"%r\")", &_s_par_sock_mode, &mode);
-
-			nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
-		}
-	}
-
-	sscanf((char *)nxs_string_str(&mode), "%o", &var->sock_mode);
-
 error:
-
-	nxs_string_free(&mode);
 
 	nxs_cfg_json_free(&cfg_json);
 

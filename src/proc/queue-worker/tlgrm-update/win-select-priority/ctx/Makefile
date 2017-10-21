@@ -4,6 +4,7 @@ objs/nxs-chat-srv-p-queue-worker-tlgrm-update-win-select-priority-ctx.o: ./src/p
 				./src/proc/queue-worker/tlgrm-update/win-select-priority/ctx/win-select-priority-ctx.h \
 				$(PROJ_CORE_HEADERS) \
 				$(PROJ_META_HEADERS) \
+				$(PROJ_UNITS_HEADERS) \
 				$(PROJ_COLLECTOINS_HEADERS) \
 				$(NXS_CORE_HEADERS)
 

@@ -4,6 +4,7 @@ objs/nxs-chat-srv-p-rest-api-rdmn-ctx.o: ./src/proc/rest-api/rdmn/ctx/rdmn-ctx.c
 				./src/proc/rest-api/rdmn/ctx/rdmn-ctx.h \
 				$(PROJ_CORE_HEADERS) \
 				$(PROJ_META_HEADERS) \
+				$(PROJ_UNITS_HEADERS) \
 				$(PROJ_COLLECTOINS_HEADERS) \
 				$(NXS_CORE_HEADERS)
 

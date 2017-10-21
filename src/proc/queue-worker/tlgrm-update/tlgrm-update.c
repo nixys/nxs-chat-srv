@@ -152,7 +152,7 @@ static nxs_string_t _s_stickers_mime	= nxs_string("image/webp");
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_queue_com_types_t type, nxs_string_t *data)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_ra_queue_type_t type, nxs_string_t *data)
 {
 	nxs_string_t                  base64_decoded;
 	nxs_chat_srv_m_tlgrm_update_t update;

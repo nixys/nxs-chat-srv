@@ -4,6 +4,7 @@ objs/nxs-chat-srv-p-queue-worker-tlgrm-update-win-new-issue-ctx.o: ./src/proc/qu
 				./src/proc/queue-worker/tlgrm-update/win-new-issue/ctx/win-new-issue-ctx.h \
 				$(PROJ_CORE_HEADERS) \
 				$(PROJ_META_HEADERS) \
+				$(PROJ_UNITS_HEADERS) \
 				$(PROJ_COLLECTOINS_HEADERS) \
 				$(NXS_CORE_HEADERS)
 

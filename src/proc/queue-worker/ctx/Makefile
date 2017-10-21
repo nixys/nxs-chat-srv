@@ -4,6 +4,7 @@ objs/nxs-chat-srv-p-queue-worker-ctx.o: ./src/proc/queue-worker/ctx/queue-worker
 				./src/proc/queue-worker/ctx/queue-worker-ctx.h \
 				$(PROJ_CORE_HEADERS) \
 				$(PROJ_META_HEADERS) \
+				$(PROJ_UNITS_HEADERS) \
 				$(PROJ_COLLECTOINS_HEADERS) \
 				$(NXS_CORE_HEADERS)
 

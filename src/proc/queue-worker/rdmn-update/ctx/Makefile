@@ -4,6 +4,7 @@ objs/nxs-chat-srv-p-queue-worker-rdmn-update-ctx.o: ./src/proc/queue-worker/rdmn
 				./src/proc/queue-worker/rdmn-update/ctx/rdmn-update-ctx.h \
 				$(PROJ_CORE_HEADERS) \
 				$(PROJ_META_HEADERS) \
+				$(PROJ_UNITS_HEADERS) \
 				$(PROJ_COLLECTOINS_HEADERS) \
 				$(NXS_CORE_HEADERS)
 

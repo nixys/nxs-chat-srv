@@ -4,6 +4,7 @@
 // clang-format off
 
 /*%%_NXS_TPL_HEADERS_TYPEDEF_BEGIN_%%*/
+#include <units/ra-queue/ra-queue-typedefs.h>
 #include <units/tlgrm-answercallbackquery/tlgrm-answercallbackquery-typedefs.h>
 #include <units/tlgrm-attachments/tlgrm-attachments-typedefs.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage-typedefs.h>
@@ -20,6 +21,7 @@
 /*%%_NXS_TPL_HEADERS_TYPEDEF_END_%%*/
 
 /*%%_NXS_TPL_HEADERS_BEGIN_%%*/
+#include <units/ra-queue/ra-queue.h>
 #include <units/tlgrm-answercallbackquery/tlgrm-answercallbackquery.h>
 #include <units/tlgrm-attachments/tlgrm-attachments.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage.h>

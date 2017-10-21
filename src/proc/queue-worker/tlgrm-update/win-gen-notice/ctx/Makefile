@@ -4,6 +4,7 @@ objs/nxs-chat-srv-p-queue-worker-tlgrm-update-win-gen-notice-ctx.o: ./src/proc/q
 				./src/proc/queue-worker/tlgrm-update/win-gen-notice/ctx/win-gen-notice-ctx.h \
 				$(PROJ_CORE_HEADERS) \
 				$(PROJ_META_HEADERS) \
+				$(PROJ_UNITS_HEADERS) \
 				$(PROJ_COLLECTOINS_HEADERS) \
 				$(NXS_CORE_HEADERS)
 

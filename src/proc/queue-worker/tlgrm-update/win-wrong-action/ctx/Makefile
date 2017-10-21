@@ -4,6 +4,7 @@ objs/nxs-chat-srv-p-queue-worker-tlgrm-update-win-wrong-action-ctx.o: ./src/proc
 				./src/proc/queue-worker/tlgrm-update/win-wrong-action/ctx/win-wrong-action-ctx.h \
 				$(PROJ_CORE_HEADERS) \
 				$(PROJ_META_HEADERS) \
+				$(PROJ_UNITS_HEADERS) \
 				$(PROJ_COLLECTOINS_HEADERS) \
 				$(NXS_CORE_HEADERS)
 

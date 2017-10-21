@@ -47,11 +47,9 @@ static nxs_string_t _s_ra_arg_key_token			= nxs_string("token");
 
 void nxs_chat_srv_p_rest_api_tlgrm_handler_post(nxs_rest_api_ctx_t *rest_api_ctx, nxs_rest_api_request_t *req, void *custom_ctx)
 {
-	nxs_string_t *auth_token, q_com_out, base64_encoded;
-	nxs_buf_t *   bdy_in;
-
-	nxs_string_init(&base64_encoded);
-	nxs_string_init(&q_com_out);
+	nxs_chat_srv_u_ra_queue_t *ra_queue_ctx = custom_ctx;
+	nxs_string_t *             auth_token;
+	nxs_buf_t *                bdy_in;
 
 	nxs_rest_api_header_add(req, &_s_ra_header_ct_key, &_s_ra_header_ct_val);
 
@@ -63,14 +61,14 @@ void nxs_chat_srv_p_rest_api_tlgrm_handler_post(nxs_rest_api_ctx_t *rest_api_ctx
 
 		nxs_rest_api_page_std(req, NXS_REST_API_FORMAT_ERR_JSON, NXS_HTTP_CODE_403_FORBIDDEN, (u_char *)"");
 
-		goto error;
+		return;
 	}
 
 	if(nxs_string_cmp(&nxs_chat_srv_cfg.tlgrm.auth_token, 0, auth_token, 0) == NXS_NO) {
 
 		nxs_rest_api_page_std(req, NXS_REST_API_FORMAT_ERR_JSON, NXS_HTTP_CODE_403_FORBIDDEN, (u_char *)"");
 
-		goto error;
+		return;
 	}
 
 	nxs_log_write_debug(&process,
@@ -80,23 +78,15 @@ void nxs_chat_srv_p_rest_api_tlgrm_handler_post(nxs_rest_api_ctx_t *rest_api_ctx
 	                    bdy_in,
 	                    0);
 
-	nxs_base64_encode_string(&base64_encoded, (nxs_string_t *)bdy_in);
-
-	nxs_chat_srv_c_queue_com_serialize(&q_com_out, NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_UPDATE, &base64_encoded);
-
-	if(nxs_chat_srv_c_unix_sock_send(&q_com_out) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_u_ra_queue_add(ra_queue_ctx, NXS_CHAT_SRV_M_RA_QUEUE_TYPE_TLGRM_UPDATE, (nxs_string_t *)bdy_in) !=
+	   NXS_CHAT_SRV_E_OK) {
 
 		nxs_rest_api_page_std(req, NXS_REST_API_FORMAT_ERR_JSON, NXS_HTTP_CODE_500_INTERNAL_SERVER_ERROR, (u_char *)"");
 
-		goto error;
+		return;
 	}
 
 	nxs_rest_api_page_std(req, NXS_REST_API_FORMAT_ERR_JSON, NXS_HTTP_CODE_200_OK, (u_char *)"");
-
-error:
-
-	nxs_string_free(&base64_encoded);
-	nxs_string_free(&q_com_out);
 }
 
 /* Module internal (static) functions */

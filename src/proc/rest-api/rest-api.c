@@ -114,10 +114,18 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_rest_api_handlers_init(nxs_chat_srv_p_r
 
 	nxs_rest_api_handler_add_log(api_ctx, NULL, NULL, &nxs_chat_srv_p_rest_api_log_handler);
 
-	nxs_rest_api_handler_add(
-	        api_ctx, &_s_ra_handler_tlgrm, NXS_REST_API_COMMON_CMD_POST, NXS_YES, NULL, &nxs_chat_srv_p_rest_api_tlgrm_handler_post);
-	nxs_rest_api_handler_add(
-	        api_ctx, &_s_ra_handler_redmine, NXS_REST_API_COMMON_CMD_POST, NXS_YES, NULL, &nxs_chat_srv_p_rest_api_rdmn_handler_post);
+	nxs_rest_api_handler_add(api_ctx,
+	                         &_s_ra_handler_tlgrm,
+	                         NXS_REST_API_COMMON_CMD_POST,
+	                         NXS_YES,
+	                         nxs_chat_srv_p_rest_api_ctx_get_ra_queue(p_ctx),
+	                         &nxs_chat_srv_p_rest_api_tlgrm_handler_post);
+	nxs_rest_api_handler_add(api_ctx,
+	                         &_s_ra_handler_redmine,
+	                         NXS_REST_API_COMMON_CMD_POST,
+	                         NXS_YES,
+	                         nxs_chat_srv_p_rest_api_ctx_get_ra_queue(p_ctx),
+	                         &nxs_chat_srv_p_rest_api_rdmn_handler_post);
 
 	return NXS_CHAT_SRV_E_OK;
 }

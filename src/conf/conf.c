@@ -116,9 +116,7 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init(&nxs_chat_srv_cfg.rdmn.host);
 	nxs_string_init(&nxs_chat_srv_cfg.rdmn.api_key);
 	nxs_string_init(&nxs_chat_srv_cfg.rdmn.auth_token);
-	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_path);
-	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_user);
-	nxs_string_init(&nxs_chat_srv_cfg.queue_worker.sock_group);
+	nxs_string_init(&nxs_chat_srv_cfg.ra_queue.host);
 	nxs_string_init(&nxs_chat_srv_cfg.cache.lock_file);
 	nxs_string_init(&nxs_chat_srv_cfg.attachments.tlgrm_download_tmp_dir);
 	nxs_string_init(&nxs_chat_srv_cfg.attachments.rdmn_download_tmp_dir);
@@ -132,8 +130,9 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_chat_srv_cfg.bind.port                      = 0;
 	nxs_chat_srv_cfg.mysql.port                     = 0;
 	nxs_chat_srv_cfg.redis.port                     = 0;
-	nxs_chat_srv_cfg.queue_worker.sock_mode         = 0;
-	nxs_chat_srv_cfg.queue_worker.sock_max_conn     = 0;
+	nxs_chat_srv_cfg.ra_queue.port                  = 0;
+	nxs_chat_srv_cfg.ra_queue.pop_timeout           = 0;
+	nxs_chat_srv_cfg.ra_queue.queue_workers         = 0;
 	nxs_chat_srv_cfg.cache.rdmn_cf_telegram         = 0;
 	nxs_chat_srv_cfg.cache.projects_ttl             = 0;
 	nxs_chat_srv_cfg.cache.users_ttl                = 0;

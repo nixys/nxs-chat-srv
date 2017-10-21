@@ -4,6 +4,7 @@ objs/nxs-chat-srv-p-cache-worker-ctx.o: ./src/proc/cache-worker/ctx/cache-worker
 				./src/proc/cache-worker/ctx/cache-worker-ctx.h \
 				$(PROJ_CORE_HEADERS) \
 				$(PROJ_META_HEADERS) \
+				$(PROJ_UNITS_HEADERS) \
 				$(PROJ_COLLECTOINS_HEADERS) \
 				$(NXS_CORE_HEADERS)
 

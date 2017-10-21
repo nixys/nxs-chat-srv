@@ -4,6 +4,7 @@ objs/nxs-chat-srv-p-rest-api-tlgrm-ctx.o: ./src/proc/rest-api/tlgrm/ctx/tlgrm-ct
 				./src/proc/rest-api/tlgrm/ctx/tlgrm-ctx.h \
 				$(PROJ_CORE_HEADERS) \
 				$(PROJ_META_HEADERS) \
+				$(PROJ_UNITS_HEADERS) \
 				$(PROJ_COLLECTOINS_HEADERS) \
 				$(NXS_CORE_HEADERS)
 

@@ -6,6 +6,7 @@
 #include <nxs-chat-srv-core.h>
 #include <nxs-chat-srv-meta.h>
 #include <nxs-chat-srv-collections.h>
+#include <nxs-chat-srv-units.h>
 
 #include <proc/queue-worker/tlgrm-update/win-begin/ctx/win-begin-ctx.h>
 
@@ -40,14 +41,10 @@ extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 
 void nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin_ctx_init(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin_ctx_t *p_ctx)
 {
-
-
 }
 
 void nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin_ctx_free(nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin_ctx_t *p_ctx)
 {
-
-
 }
 
 /* Module internal (static) functions */

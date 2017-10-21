@@ -6,6 +6,7 @@
 #include <nxs-chat-srv-core.h>
 #include <nxs-chat-srv-meta.h>
 #include <nxs-chat-srv-collections.h>
+#include <nxs-chat-srv-units.h>
 
 #include <proc/rest-api/ctx/rest-api-ctx.h>
 
@@ -55,6 +56,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_rest_api_ctx_init(nxs_chat_srv_p_rest_api_ctx_
 		return NXS_CHAT_SRV_E_ERR;
 	}
 
+	p_ctx->ra_queue_ctx = nxs_chat_srv_u_ra_queue_init();
+
 	nxs_rest_api_set_max_header_size(&p_ctx->ra_conn, NXS_CHAT_SRV_REST_API_MAX_HEADER_SIZE);
 
 	return NXS_CHAT_SRV_E_OK;
@@ -64,6 +67,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_rest_api_ctx_free(nxs_chat_srv_p_rest_api_ctx_
 {
 
 	nxs_rest_api_free(&p_ctx->ra_conn);
+
+	p_ctx->ra_queue_ctx = nxs_chat_srv_u_ra_queue_free(p_ctx->ra_queue_ctx);
 
 	return NXS_CHAT_SRV_E_OK;
 }
@@ -77,6 +82,17 @@ nxs_rest_api_ctx_t *nxs_chat_srv_p_rest_api_ctx_get_ra_conn(nxs_chat_srv_p_rest_
 	}
 
 	return &p_ctx->ra_conn;
+}
+
+nxs_chat_srv_u_ra_queue_t *nxs_chat_srv_p_rest_api_ctx_get_ra_queue(nxs_chat_srv_p_rest_api_ctx_t *p_ctx)
+{
+
+	if(p_ctx == NULL) {
+
+		return NULL;
+	}
+
+	return p_ctx->ra_queue_ctx;
 }
 
 /* Module internal (static) functions */

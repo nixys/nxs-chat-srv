@@ -1,0 +1,13 @@
+#ifndef _INCLUDE_NXS_CHAT_SRV_M_RA_QUEUE_H
+#define _INCLUDE_NXS_CHAT_SRV_M_RA_QUEUE_H
+
+// clang-format off
+
+typedef enum
+{
+	NXS_CHAT_SRV_M_RA_QUEUE_TYPE_NONE,
+	NXS_CHAT_SRV_M_RA_QUEUE_TYPE_TLGRM_UPDATE,
+	NXS_CHAT_SRV_M_RA_QUEUE_TYPE_RDMN_UPDATE,
+} nxs_chat_srv_m_ra_queue_type_t;
+
+#endif /* _INCLUDE_NXS_CHAT_SRV_M_RA_QUEUE_H */

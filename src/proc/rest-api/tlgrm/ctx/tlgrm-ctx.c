@@ -6,6 +6,7 @@
 #include <nxs-chat-srv-core.h>
 #include <nxs-chat-srv-meta.h>
 #include <nxs-chat-srv-collections.h>
+#include <nxs-chat-srv-units.h>
 
 #include <proc/rest-api/tlgrm/ctx/tlgrm-ctx.h>
 

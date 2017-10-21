@@ -206,12 +206,11 @@ typedef struct
 
 typedef struct
 {
-	nxs_string_t				sock_path;
-	nxs_string_t				sock_user;
-	nxs_string_t				sock_group;
-	mode_t					sock_mode;
-	size_t					sock_max_conn;
-} nxs_chat_srv_cfg_queue_worker_t;
+	nxs_string_t				host;
+	uint16_t				port;
+	size_t					pop_timeout;
+	size_t					queue_workers;
+} nxs_chat_srv_cfg_ra_queue_t;
 
 typedef struct
 {
@@ -237,7 +236,7 @@ typedef struct
 	nxs_chat_srv_cfg_mysql_t		mysql;
 	nxs_chat_srv_cfg_redis_t		redis;
 	nxs_chat_srv_cfg_rdmn_t			rdmn;
-	nxs_chat_srv_cfg_queue_worker_t		queue_worker;
+	nxs_chat_srv_cfg_ra_queue_t		ra_queue;
 	nxs_chat_srv_cfg_cache_t		cache;
 	nxs_array_t				dev_accounts;
 	nxs_chat_srv_cfg_attachments_t		attachments;

@@ -4,6 +4,7 @@
 // clang-format off
 
 /*%%_NXS_TPL_HEADERS_TYPEDEF_BEGIN_%%*/
+#include <dal/ra-queue/ra-queue-typedefs.h>
 #include <dal/rdmn-last-issue/rdmn-last-issue-typedefs.h>
 #include <dal/rdmn-attachments/rdmn-attachments-typedefs.h>
 #include <dal/rdmn-issues/rdmn-issues-typedefs.h>
@@ -20,6 +21,7 @@
 /*%%_NXS_TPL_HEADERS_TYPEDEF_END_%%*/
 
 /*%%_NXS_TPL_HEADERS_BEGIN_%%*/
+#include <dal/ra-queue/ra-queue.h>
 #include <dal/rdmn-last-issue/rdmn-last-issue.h>
 #include <dal/rdmn-attachments/rdmn-attachments.h>
 #include <dal/rdmn-issues/rdmn-issues.h>

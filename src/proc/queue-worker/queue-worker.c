@@ -28,8 +28,8 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 typedef struct
 {
-	nxs_chat_srv_m_queue_com_types_t	type;
-	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_queue_com_types_t type, nxs_string_t *data);
+	nxs_chat_srv_m_ra_queue_type_t		type;
+	nxs_chat_srv_err_t			(*handler)(nxs_chat_srv_m_ra_queue_type_t type, nxs_string_t *data);
 } nxs_chat_srv_p_queue_worker_type_handler_t;
 
 /* Module internal (static) functions prototypes */
@@ -47,10 +47,10 @@ static void nxs_chat_srv_p_queue_worker_sighandler_usr1(int sig, void *data);
 
 nxs_chat_srv_p_queue_worker_type_handler_t type_handlers[] =
 {
-	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_TLGRM_UPDATE,	&nxs_chat_srv_p_queue_worker_tlgrm_update_add},
-	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_RDMN_UPDATE,	&nxs_chat_srv_p_queue_worker_rdmn_update_runtime},
+	{NXS_CHAT_SRV_M_RA_QUEUE_TYPE_TLGRM_UPDATE,	&nxs_chat_srv_p_queue_worker_tlgrm_update_add},
+	{NXS_CHAT_SRV_M_RA_QUEUE_TYPE_RDMN_UPDATE,	&nxs_chat_srv_p_queue_worker_rdmn_update_runtime},
 
-	{NXS_CHAT_SRV_M_QUEUE_COM_TYPE_NONE,	NULL}
+	{NXS_CHAT_SRV_M_RA_QUEUE_TYPE_NONE,	NULL}
 };
 
 /* Module global functions */
@@ -64,10 +64,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_runtime(void)
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if(nxs_chat_srv_p_queue_worker_ctx_init(&p_ctx) != NXS_CHAT_SRV_E_OK) {
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
+	nxs_chat_srv_p_queue_worker_ctx_init(&p_ctx);
 
 	nxs_proc_signal_set(
 	        &process, SIGTERM, NXS_PROCESS_SA_FLAG_EMPTY, &nxs_chat_srv_p_queue_worker_sighandler_term, &p_ctx, NXS_PROCESS_FORCE_NO);
@@ -110,12 +107,11 @@ error:
 
 static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_queue_worker_ctx_t *p_ctx)
 {
-	nxs_string_t                     body;
-	nxs_buf_t                        data;
-	nxs_chat_srv_m_queue_com_types_t com_type;
-	nxs_chat_srv_err_t               rc;
-	nxs_bool_t                       f;
-	size_t                           i;
+	nxs_string_t                   data;
+	nxs_chat_srv_m_ra_queue_type_t type;
+	nxs_chat_srv_err_t             rc;
+	nxs_bool_t                     f;
+	size_t                         i;
 
 	if(p_ctx == NULL) {
 
@@ -124,16 +120,15 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_que
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	nxs_buf_init(&data, 1);
-	nxs_string_init(&body);
+	nxs_string_init(&data);
 
-	switch(nxs_chat_srv_c_unix_sock_recv(nxs_chat_srv_p_queue_worker_ctx_get_sock(p_ctx), &data)) {
+	switch(nxs_chat_srv_u_ra_queue_get(nxs_chat_srv_p_queue_worker_ctx_get_ra_queue(p_ctx), &type, &data)) {
 
 		case NXS_CHAT_SRV_E_OK:
 
 			break;
 
-		case NXS_CHAT_SRV_E_TIMEOUT:
+		case NXS_CHAT_SRV_E_EXIST:
 
 			nxs_error(rc, NXS_CHAT_SRV_E_TIMEOUT, error);
 
@@ -144,27 +139,24 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_process(nxs_chat_srv_p_que
 
 	/* request processing */
 
-	nxs_chat_srv_c_queue_com_deserialize(&data, &com_type, &body);
+	for(f = NXS_NO, i = 0; type_handlers[i].type != NXS_CHAT_SRV_M_RA_QUEUE_TYPE_NONE; i++) {
 
-	for(f = NXS_NO, i = 0; type_handlers[i].type != NXS_CHAT_SRV_M_QUEUE_COM_TYPE_NONE; i++) {
-
-		if(type_handlers[i].type == com_type) {
+		if(type_handlers[i].type == type) {
 
 			f = NXS_YES;
 
-			type_handlers[i].handler(com_type, &body);
+			type_handlers[i].handler(type, &data);
 		}
 	}
 
 	if(f == NXS_NO) {
 
-		nxs_log_write_warn(&process, "[%s]: unknown queue com type (type: %d)", nxs_proc_get_name(&process), com_type);
+		nxs_log_write_warn(&process, "[%s]: unknown rest-api queue type (type: %d)", nxs_proc_get_name(&process), type);
 	}
 
 error:
 
-	nxs_buf_free(&data);
-	nxs_string_free(&body);
+	nxs_string_free(&data);
 
 	return rc;
 }
