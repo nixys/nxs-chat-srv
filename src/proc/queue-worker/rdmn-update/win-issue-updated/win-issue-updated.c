@@ -80,7 +80,19 @@ static extension_send_method_t extension_send_method[] =
 	{nxs_string("jpg"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
 	{nxs_string("jpeg"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
 	{nxs_string("png"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_PHOTO},
+
 	{nxs_string("webp"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_STICKER},
+
+	{nxs_string("mp3"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE},
+	{nxs_string("ogg"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE},
+
+	{nxs_string("3gp"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
+	{nxs_string("3gpp"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
+	{nxs_string("mp4"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
+	{nxs_string("mpeg"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
+	{nxs_string("mpg"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
+	{nxs_string("flv"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
+	{nxs_string("avi"),			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
 
 	{NXS_STRING_NULL_STR,			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT}
 };
@@ -88,8 +100,15 @@ static extension_send_method_t extension_send_method[] =
 static mime_send_method_t mime_send_method[] =
 {
 	{nxs_string("image/webp"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_STICKER},
+
 	{nxs_string("audio/ogg"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE},
+	{nxs_string("audio/mpeg"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE},
+
 	{nxs_string("video/mp4"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
+	{nxs_string("video/mpeg"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
+	{nxs_string("video/3gpp"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
+	{nxs_string("video/x-msvideo"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
+	{nxs_string("video/x-flv"),		NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO},
 
 	{NXS_STRING_NULL_STR,			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT}
 };
