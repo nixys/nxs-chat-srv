@@ -865,7 +865,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 			                                        callback->object_id,
 			                                        NXS_CHAT_SRV_TLGRM_ISSUES_LIMIT,
 			                                        api_key,
-			                                        &issues_count) != NXS_CHAT_SRV_E_OK) {
+			                                        &issues_count) == NXS_CHAT_SRV_E_ERR) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}

@@ -219,11 +219,23 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_issues_get_query(nxs_chat_srv_u_rdmn_issu
 
 	rc = NXS_CHAT_SRV_E_OK;
 
+	*total_count = 0;
+
 	nxs_buf_init2(&out_buf);
 
 	if(nxs_chat_srv_d_rdmn_issues_get_query(issue_query_id, api_key, offset, limit, &http_code, &out_buf) != NXS_CHAT_SRV_E_OK) {
 
-		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		switch(http_code) {
+
+			case NXS_HTTP_CODE_403_FORBIDDEN:
+			case NXS_HTTP_CODE_404_NOT_FOUND:
+
+				nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
+
+			default:
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
 	}
 
 	if(nxs_chat_srv_u_rdmn_issues_get_query_extract(&u_ctx->shorts, &out_buf, total_count) != NXS_CHAT_SRV_E_OK) {
@@ -238,7 +250,7 @@ error:
 	return rc;
 }
 
-nxs_string_t *nxs_chat_srv_u_rdmn_issues_shorts_get(nxs_chat_srv_u_rdmn_issues_t *u_ctx, size_t i, size_t *issue_id)
+nxs_string_t *nxs_chat_srv_u_rdmn_issues_get_shorts(nxs_chat_srv_u_rdmn_issues_t *u_ctx, size_t i, size_t *issue_id)
 {
 	nxs_chat_srv_u_rdmn_issues_short_t *iss;
 

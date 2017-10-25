@@ -131,14 +131,27 @@ nxs_chat_srv_err_t nxs_chat_srv_u_last_issues_get(nxs_chat_srv_u_last_issues_t *
 
 			/* Last Redmine issue id found in DB. Now try to get subject for that issue from Redmine */
 
-			if(nxs_chat_srv_d_rdmn_issues_get_issue(*rdmn_last_issue_id, user_api_key, NULL, &out_buf) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_d_rdmn_issues_get_issue(*rdmn_last_issue_id, user_api_key, NULL, &out_buf) == NXS_CHAT_SRV_E_OK) {
 
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				if(nxs_chat_srv_u_last_issues_id_extract(&last_issue_ctx, &out_buf) != NXS_CHAT_SRV_E_OK) {
+
+					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				}
 			}
+			else {
 
-			if(nxs_chat_srv_u_last_issues_id_extract(&last_issue_ctx, &out_buf) != NXS_CHAT_SRV_E_OK) {
+				/* Can't get requested issue id from Remine. Trying to determine last issue from Redmine instead DB (Redis)
+				 */
 
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				if(nxs_chat_srv_d_rdmn_last_issue_get(rdmn_userid, user_api_key, NULL, &out_buf) != NXS_CHAT_SRV_E_OK) {
+
+					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				}
+
+				if(nxs_chat_srv_u_last_issues_last_extract(&last_issue_ctx, &out_buf)) {
+
+					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				}
 			}
 
 			break;

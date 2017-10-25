@@ -6,7 +6,7 @@
 #include <hiredis/hiredis.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.0.9"
+#define NXS_CHAT_SRV_VERSION						"0.0.10"
 
 /* Project basic global definitions */
 
@@ -30,10 +30,13 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_DIALOGDESTROY		"завершить текущий диалог"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_ISSUECREATE			"создать новую задачу"
 
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_LINK_FMT			"<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_LAST_ISSUE_EMPTY			"<i>отсутствует</i>"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_HELP					"...Справка по использованию бота...\n\nОписание команд:\n\n%r\n"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_DUMMY				"На текущий момент данная команда не реализована"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_HELLO				"%r, добро пожаловать в чат поддержки Nixys!\nТут будет краткая инструкция по использованию ..."
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_FULL				"<b>Создание новой задачи</b>\n\n" \
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_EMPTY			"К сожалению, невозможно создать задачу, т.к. Вы пока не подключены ни к одному проекту"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_FULL			"<b>Создание новой задачи</b>\n\n" \
 									"<b>Проект:</b> %r\n" \
 									"<b>Приоритет:</b> %r\n" \
 									"<b>Тема:</b> %r\n" \
@@ -41,7 +44,7 @@
 									"<b>Описание:</b> %r\n" \
 									"<b>Вложенных файлов:</b> %zu\n---------\n" \
 									"<i>Ниже Вы можете изменить параметры новой задачи</i>"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_SHORT				"<b>Создание новой задачи</b>\n\n" \
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_SHORT			"<b>Создание новой задачи</b>\n\n" \
 									"<b>Проект:</b> %r\n" \
 									"<b>Приоритет:</b> %r\n" \
 									"<b>Тема:</b> %r\n" \
@@ -52,7 +55,7 @@
 									"Добавить в последнюю задачу, выбрать задачу из списка " \
 									"или создать новую?%r\n" \
 									"<b>Вложенных файлов:</b> %zu\n---------\n" \
-									"Последняя задача: <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>"
+									"Последняя задача: %r"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_SUBJECT			"Напишите название задачи?"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT			"<i>Будет задана при создании задачи</i>"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR				"%s Произошла внутрення ошибка сервера, мы уже получили уведомление об этом и работаем над решением проблемы. Пожалуйста, <a href=\"%r\">воспользуйтесь web-версией системы задач</a> или повторите свой запрос позже."
@@ -64,6 +67,7 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED			"Задача <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a> создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE			"Ваш комментарий отправлен в задачу <a href=\"%r/issues/%zu\">#%zu</a>"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE				"Пожалуйста, выберите задачу в которую необходимо отправить Ваш комментарий"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE_EMPTY			"К сожалению, в Вашем проекте ещё не создано ни одной задачи или Вы не подключены ни к одному проекту."
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_PRIVACY			"<b>Приватная задача %s</b>\n"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ADD_NOTE_EXT				"Для добавления комментария необходимо выбрать одно из следующих действий"
 

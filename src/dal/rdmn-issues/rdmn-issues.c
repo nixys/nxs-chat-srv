@@ -465,7 +465,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_get_query(size_t           issue_q
 	                        offset,
 	                        limit)) != NXS_CURL_E_OK) {
 
-		nxs_log_write_warn(
+		nxs_log_write_error(
 		        &process,
 		        "[%s]: rdmn get issues by query error: curl error (issues query id: %zu, offset: %zu, limit: %zu, rc: %d)",
 		        nxs_proc_get_name(&process),
@@ -507,15 +507,15 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_get_query(size_t           issue_q
 
 		default:
 
-			nxs_log_write_error(&process,
-			                    "[%s]: rdmn get issues by query error: wrong Redmine response code (issues query id: %zu, "
-			                    "offset: %zu, limit: %zu, response code: %d, response body: \"%s\")",
-			                    nxs_proc_get_name(&process),
-			                    issue_query_id,
-			                    offset,
-			                    limit,
-			                    ret_code,
-			                    nxs_buf_get_subbuf(b, 0));
+			nxs_log_write_warn(&process,
+			                   "[%s]: rdmn get issues by query error: wrong Redmine response code (issues query id: %zu, "
+			                   "offset: %zu, limit: %zu, response code: %d, response body: \"%s\")",
+			                   nxs_proc_get_name(&process),
+			                   issue_query_id,
+			                   offset,
+			                   limit,
+			                   ret_code,
+			                   nxs_buf_get_subbuf(b, 0));
 
 			rc = NXS_CHAT_SRV_E_WARN;
 

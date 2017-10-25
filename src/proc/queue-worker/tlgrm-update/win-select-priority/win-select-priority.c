@@ -39,6 +39,7 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
 
 static nxs_string_t	_s_msg_empty_subject	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT);
+static nxs_string_t	_s_msg_empty_project	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_EMPTY);
 
 /* Module global functions */
 
@@ -57,7 +58,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(
 	nxs_chat_srv_m_db_cache_issue_priority_t *issue_priority;
 	nxs_array_t                               priorities;
 	nxs_bool_t                                is_private;
-	size_t                                    i, files_count;
+	size_t                                    i, files_count, project_id;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -87,47 +88,65 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_priority(
 		nxs_chat_srv_u_db_cache_prio_get(cache_ctx, &priorities);
 
 		nxs_chat_srv_u_db_sess_t_get_new_issue(
-		        sess_ctx, NULL, &project_name, NULL, &priority_name, &subject, &description, &is_private, NULL, NULL);
+		        sess_ctx, &project_id, &project_name, NULL, &priority_name, &subject, &description, &is_private, NULL, NULL);
 
-		if(is_private == NXS_YES) {
+		if(project_id == 0) {
 
-			nxs_string_printf(&private_msg, NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_PRIVACY, _s_private_message);
+			/* no projects available for user */
+
+			nxs_chat_srv_u_tlgrm_editmessagetext_add(tlgrm_editmessagetext_ctx,
+			                                         chat_id,
+			                                         message_id,
+			                                         &_s_msg_empty_project,
+			                                         NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
+
+			nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(tlgrm_editmessagetext_ctx,
+			                                                                   0,
+			                                                                   0,
+			                                                                   NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_BACK,
+			                                                                   0,
+			                                                                   NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_CANCEL);
 		}
+		else {
 
-		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &project_name);
-		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &priority_name);
-		nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &subject);
+			if(is_private == NXS_YES) {
 
-		if(nxs_chat_srv_c_tlgrm_make_message_preview(&description_preview, &description) == NXS_CHAT_SRV_E_OK) {
+				nxs_string_printf(&private_msg, NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_PRIVACY, _s_private_message);
+			}
 
-			nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &description_preview);
-		}
+			nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &project_name);
+			nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &priority_name);
+			nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &subject);
 
-		nxs_string_printf(&message,
-		                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_FULL,
-		                  &project_name,
-		                  &priority_name,
-		                  nxs_string_len(&subject) > 0 ? &subject : &_s_msg_empty_subject,
-		                  &private_msg,
-		                  &description_preview,
-		                  files_count);
+			if(nxs_chat_srv_c_tlgrm_make_message_preview(&description_preview, &description) == NXS_CHAT_SRV_E_OK) {
 
-		tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
+				nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &description_preview);
+			}
 
-		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
+			nxs_string_printf(&message,
+			                  NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_FULL,
+			                  &project_name,
+			                  &priority_name,
+			                  nxs_string_len(&subject) > 0 ? &subject : &_s_msg_empty_subject,
+			                  &private_msg,
+			                  &description_preview,
+			                  files_count);
 
-		for(i = 0; i < nxs_array_count(&priorities); i++) {
+			nxs_chat_srv_u_tlgrm_editmessagetext_add(
+			        tlgrm_editmessagetext_ctx, chat_id, message_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
-			issue_priority = nxs_array_get(&priorities, i);
+			for(i = 0; i < nxs_array_count(&priorities); i++) {
 
-			nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
-			        tlgrm_editmessagetext_ctx,
-			        i,
-			        0,
-			        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,
-			        issue_priority->id,
-			        nxs_string_str(issue_priority->name));
+				issue_priority = nxs_array_get(&priorities, i);
+
+				nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(
+				        tlgrm_editmessagetext_ctx,
+				        i,
+				        0,
+				        NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SELECTED_PRIORITY,
+				        issue_priority->id,
+				        nxs_string_str(issue_priority->name));
+			}
 		}
 
 		if(nxs_chat_srv_u_tlgrm_editmessagetext_push(tlgrm_editmessagetext_ctx) != NXS_CHAT_SRV_E_OK) {

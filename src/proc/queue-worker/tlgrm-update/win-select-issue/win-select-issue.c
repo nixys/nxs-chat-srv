@@ -36,7 +36,8 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module initializations */
 
-static nxs_string_t _s_msg_select_issue	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE);
+static nxs_string_t _s_msg_select_issue		= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE);
+static nxs_string_t _s_msg_select_issue_empty	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE_EMPTY);
 
 /* Module global functions */
 
@@ -68,12 +69,24 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_select_issue(nxs
 
 		/* update existing comment */
 
-		tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
+		if(issues_count == 0) {
 
-		nxs_chat_srv_u_tlgrm_editmessagetext_add(
-		        tlgrm_editmessagetext_ctx, chat_id, message_id, &_s_msg_select_issue, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE);
+			nxs_chat_srv_u_tlgrm_editmessagetext_add(tlgrm_editmessagetext_ctx,
+			                                         chat_id,
+			                                         message_id,
+			                                         &_s_msg_select_issue_empty,
+			                                         NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE);
+		}
+		else {
 
-		for(i = 0; (issue_subject = nxs_chat_srv_u_rdmn_issues_shorts_get(rdmn_issues_ctx, i, &issue_id)) != NULL; i++) {
+			nxs_chat_srv_u_tlgrm_editmessagetext_add(tlgrm_editmessagetext_ctx,
+			                                         chat_id,
+			                                         message_id,
+			                                         &_s_msg_select_issue,
+			                                         NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE);
+		}
+
+		for(i = 0; (issue_subject = nxs_chat_srv_u_rdmn_issues_get_shorts(rdmn_issues_ctx, i, &issue_id)) != NULL; i++) {
 
 			nxs_chat_srv_u_tlgrm_editmessagetext_inline_keybutton_callback_add(tlgrm_editmessagetext_ctx,
 			                                                                   i,
