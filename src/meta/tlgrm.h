@@ -48,10 +48,10 @@ enum nxs_chat_srv_m_tlgrm_chat_type_e
 enum nxs_chat_srv_m_tlgrm_reply_markup_type_e
 {
 	NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_NONE,
-	NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_IKM,			/* InlineKeyboardMarkup */
-	NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_RKM,			/* ReplyKeyboardMarkup */
-	NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_RKR,			/* ReplyKeyboardRemove */
-	NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_FR			/* ForceReply */
+	NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_IKM,				/* InlineKeyboardMarkup */
+	NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_RKM,				/* ReplyKeyboardMarkup */
+	NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_RKR,				/* ReplyKeyboardRemove */
+	NXS_CHAT_SRV_M_TLGRM_REPLY_MARKUP_TYPE_FR				/* ForceReply */
 };
 
 enum nxs_chat_srv_m_tlgrm_parse_mode_e
@@ -85,168 +85,168 @@ enum nxs_chat_srv_m_tlgrm_bttn_callback_type_e
 
 struct nxs_chat_srv_m_tlgrm_file_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_string_t				file_id;
-	size_t					file_size;		/* Optional */
-	nxs_string_t				file_path;
+	nxs_string_t					file_id;		/* Required */
+	size_t						file_size;		/* Optional */
+	nxs_string_t					file_path;		/* Required */
 };
 
 struct nxs_chat_srv_m_tlgrm_force_reply_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_bool_t				force_reply;
+	nxs_bool_t					force_reply;		/* Required */
 };
 
 struct nxs_chat_srv_m_tlgrm_inl_keybutton_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_string_t				text;
-	nxs_string_t				url;			/* Optional */
-	nxs_string_t				callback_data;		/* Optional */
+	nxs_string_t					text;			/* Required */
+	nxs_string_t					url;			/* Optional */
+	nxs_string_t					callback_data;		/* Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_inl_keyboard_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_array_t				inline_keyboard;	/* type: array of arrays nxs_chat_srv_m_tlgrm_inl_keybutton_t */
+	nxs_array_t					inline_keyboard;	/* type: array of arrays nxs_chat_srv_m_tlgrm_inl_keybutton_t */
 };
 
 struct nxs_chat_srv_m_tlgrm_user_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	size_t					id;
-	nxs_string_t				first_name;
-	nxs_string_t				last_name;		/* Optional */
-	nxs_string_t				username;		/* Optional */
-	nxs_string_t				language_code;		/* Optional */
+	size_t						id;			/* Required */
+	nxs_string_t					first_name;		/* Required */
+	nxs_string_t					last_name;		/* Optional */
+	nxs_string_t					username;		/* Optional */
+	nxs_string_t					language_code;		/* Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_chat_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	size_t					id;
-	nxs_string_t				username;		/* Optional */
-	nxs_chat_srv_m_tlgrm_chat_type_t	type;
+	size_t						id;			/* Required */
+	nxs_string_t					username;		/* Optional */
+	nxs_chat_srv_m_tlgrm_chat_type_t		type;			/* Required */
 };
 
 struct nxs_chat_srv_m_tlgrm_message_entity_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_string_t				type;
-	size_t					offset;
-	size_t					length;
-	nxs_string_t				url;			/* Optional */
+	nxs_string_t					type;			/* Required */
+	size_t						offset;			/* Required */
+	size_t						length;			/* Required */
+	nxs_string_t					url;			/* Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_photo_size_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_string_t				file_id;
-	size_t					width;
-	size_t					height;
-	size_t					file_size;		/* Optional */
+	nxs_string_t					file_id;		/* Required */
+	size_t						width;			/* Required */
+	size_t						height;			/* Required */
+	size_t						file_size;		/* Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_document_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_string_t				file_id;
-	nxs_chat_srv_m_tlgrm_photo_size_t	thumb;			/* Optional */
-	nxs_string_t				file_name;		/* Optional */
-	nxs_string_t				mime_type;		/* Optional */
-	size_t					file_size;		/* Optional */
+	nxs_string_t					file_id;		/* Required */
+	nxs_chat_srv_m_tlgrm_photo_size_t		thumb;			/* Optional */
+	nxs_string_t					file_name;		/* Optional */
+	nxs_string_t					mime_type;		/* Optional */
+	size_t						file_size;		/* Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_sticker_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_string_t				file_id;
-	size_t					width;
-	size_t					height;
-	nxs_chat_srv_m_tlgrm_photo_size_t	thumb;			/* Optional */
-	nxs_string_t				emoji;			/* Optional */
-	nxs_string_t				set_name;		/* Optional */
-	size_t					file_size;		/* Optional */
+	nxs_string_t					file_id;		/* Required */
+	size_t						width;			/* Required */
+	size_t						height;			/* Required */
+	nxs_chat_srv_m_tlgrm_photo_size_t		thumb;			/* Optional */
+	nxs_string_t					emoji;			/* Optional */
+	nxs_string_t					set_name;		/* Optional */
+	size_t						file_size;		/* Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_voice_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_string_t				file_id;
-	size_t					duration;
-	nxs_string_t				mime_type;		/* Optional */
-	size_t					file_size;		/* Optional */
+	nxs_string_t					file_id;		/* Required */
+	size_t						duration;		/* Required */
+	nxs_string_t					mime_type;		/* Optional */
+	size_t						file_size;		/* Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_video_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_string_t				file_id;
-	size_t					width;
-	size_t					height;
-	size_t					duration;
-	nxs_chat_srv_m_tlgrm_photo_size_t	thumb;			/* Optional */
-	nxs_string_t				mime_type;		/* Optional */
-	size_t					file_size;		/* Optional */
+	nxs_string_t					file_id;		/* Required */
+	size_t						width;			/* Required */
+	size_t						height;			/* Required */
+	size_t						duration;		/* Required */
+	nxs_chat_srv_m_tlgrm_photo_size_t		thumb;			/* Optional */
+	nxs_string_t					mime_type;		/* Optional */
+	size_t						file_size;		/* Optional */
 };
 
 
 struct nxs_chat_srv_m_tlgrm_message_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	size_t					message_id;
-	nxs_chat_srv_m_tlgrm_user_t		from;			/* Optional */
-	nxs_chat_srv_m_tlgrm_chat_t		chat;
-	nxs_chat_srv_m_tlgrm_message_t		*reply_to_message;	/* Optional */
-	nxs_string_t				text;			/* Optional */
-	nxs_string_t				caption;		/* Optional */
+	size_t						message_id;		/* Required */
+	nxs_chat_srv_m_tlgrm_user_t			from;			/* Optional */
+	nxs_chat_srv_m_tlgrm_chat_t			chat;			/* Required */
+	nxs_chat_srv_m_tlgrm_message_t			*reply_to_message;	/* Optional */
+	nxs_string_t					text;			/* Optional */
+	nxs_string_t					caption;		/* Optional */
 
-	nxs_array_t				photo;			/* type: nxs_chat_srv_m_tlgrm_photo_size_t. Optional */
-	nxs_chat_srv_m_tlgrm_document_t		document;		/* Optional */
-	nxs_chat_srv_m_tlgrm_sticker_t		sticker;		/* Optional */
-	nxs_chat_srv_m_tlgrm_voice_t		voice;			/* Optional */
-	nxs_chat_srv_m_tlgrm_video_t		video;			/* Optional */
+	nxs_array_t					photo;			/* type: nxs_chat_srv_m_tlgrm_photo_size_t. Optional */
+	nxs_chat_srv_m_tlgrm_document_t			document;		/* Optional */
+	nxs_chat_srv_m_tlgrm_sticker_t			sticker;		/* Optional */
+	nxs_chat_srv_m_tlgrm_voice_t			voice;			/* Optional */
+	nxs_chat_srv_m_tlgrm_video_t			video;			/* Optional */
 
-	nxs_array_t				entities;		/* type: nxs_chat_srv_m_tlgrm_message_entity_t. Optional */
+	nxs_array_t					entities;		/* type: nxs_chat_srv_m_tlgrm_message_entity_t. Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_callback_query_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	nxs_string_t				id;
-	nxs_chat_srv_m_tlgrm_user_t		from;
-	nxs_chat_srv_m_tlgrm_message_t		message;		/* Optional */
-	nxs_string_t				chat_instance;
-	nxs_string_t				data;			/* Optional */
+	nxs_string_t					id;			/* Required */
+	nxs_chat_srv_m_tlgrm_user_t			from;			/* Required */
+	nxs_chat_srv_m_tlgrm_message_t			message;		/* Optional */
+	nxs_string_t					chat_instance;		/* Required */
+	nxs_string_t					data;			/* Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_update_s
 {
-	nxs_bool_t				_is_used;
+	nxs_bool_t					_is_used;
 
-	size_t					update_id;
-	nxs_chat_srv_m_tlgrm_message_t		message;		/* Optional */
-	nxs_chat_srv_m_tlgrm_callback_query_t	callback_query;		/* Optional */
+	size_t						update_id;		/* Required */
+	nxs_chat_srv_m_tlgrm_message_t			message;		/* Optional */
+	nxs_chat_srv_m_tlgrm_callback_query_t		callback_query;		/* Optional */
 };
 
 struct nxs_chat_srv_m_tlgrm_bttn_callback_s
 {
-	nxs_chat_srv_m_tlgrm_bttn_callback_type_t	type;
-	size_t						object_id;
+	nxs_chat_srv_m_tlgrm_bttn_callback_type_t	type;			/* Required */
+	size_t						object_id;		/* Required */
 };
 
 #endif /* _INCLUDE_NXS_CHAT_SRV_M_TLGRM_H */

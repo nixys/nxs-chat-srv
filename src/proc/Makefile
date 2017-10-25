@@ -14,6 +14,7 @@ objs/nxs-chat-srv-p-bootstrap.o: ./src/proc/bootstrap.c \
 					./src/proc/bootstrap-subproc.h \
 					$(PROJ_CORE_HEADERS) \
 					$(PROJ_META_HEADERS) \
+					$(PROJ_COLLECTOINS_HEADERS) \
 					$(PROJ_PROC_SUB_HEADERS) \
 					$(NXS_CORE_HEADERS)
 

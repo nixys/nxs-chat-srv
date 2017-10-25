@@ -5,6 +5,7 @@
 /* Project core include */
 #include <nxs-chat-srv-core.h>
 #include <nxs-chat-srv-meta.h>
+#include <nxs-chat-srv-collections.h>
 #include <nxs-chat-srv-proc.h>
 
 #include <proc/bootstrap-subproc.h>
@@ -70,7 +71,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap(void)
 		return NXS_CHAT_SRV_E_ERR;
 	}
 
-	nxs_array_init(&p_ctx.queue_worker_pids, nxs_chat_srv_cfg.ra_queue.queue_workers, sizeof(pid_t), 1);
+	nxs_array_init(&p_ctx.queue_worker_pids, nxs_chat_srv_cfg.ra_queue.queue_workers, sizeof(pid_t), 1, NULL, NULL);
 
 	p_ctx.cache_worker_pid = 0;
 	p_ctx.rest_api_pid     = 0;

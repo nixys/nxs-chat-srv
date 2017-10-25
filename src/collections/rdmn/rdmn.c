@@ -854,9 +854,9 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,						NULL,							NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,	&var->subject,		NULL,						NULL,							NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,	&var->description,	NULL,						NULL,							NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_done_ratio,	&var->done_ratio,	NULL,						NULL,							NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,	&var->is_private,	NULL,						NULL,							NXS_CFG_JSON_TYPE_BOOL,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_spent_hours,	&var->spent_hours,	NULL,						NULL,							NXS_CFG_JSON_TYPE_REAL,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_done_ratio,	&var->done_ratio,	NULL,						NULL,							NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,	&var->is_private,	NULL,						NULL,							NXS_CFG_JSON_TYPE_BOOL,			0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_spent_hours,	&var->spent_hours,	NULL,						NULL,							NXS_CFG_JSON_TYPE_REAL,			0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_journals,	&var->journals,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_journals,		NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_watchers,	&var->watchers,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_users,		NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_project,	&var->project,		&nxs_chat_srv_c_rdmn_extract_json_project,	NULL,							NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
@@ -907,7 +907,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_users(nxs_process_t
 	// clang-format off
 
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&u->id,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,		&u->name,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,		&u->name,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -933,7 +933,7 @@ static nxs_cfg_json_state_t
 	// clang-format off
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -973,9 +973,9 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_journals(nxs_proces
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&j->id,			NULL,					NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_notes,		&j->notes,		NULL,					NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_private_notes,	&j->private_notes,	NULL,					NULL,						NXS_CFG_JSON_TYPE_BOOL,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&j->id,			NULL,					NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_notes,		&j->notes,		NULL,					NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_private_notes,	&j->private_notes,	NULL,					NULL,						NXS_CFG_JSON_TYPE_BOOL,			0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_user,		&j->user,		&nxs_chat_srv_c_rdmn_extract_json_user,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_details,	&j->details,		NULL,					&nxs_chat_srv_c_rdmn_extract_json_details,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 
@@ -1119,7 +1119,7 @@ static nxs_cfg_json_state_t
 	// clang-format off
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -1160,7 +1160,7 @@ static nxs_cfg_json_state_t
 	// clang-format off
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -1201,7 +1201,7 @@ static nxs_cfg_json_state_t
 	// clang-format off
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -1242,8 +1242,8 @@ static nxs_cfg_json_state_t
 	// clang-format off
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,	NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_members,	&var->members,		NULL,	&nxs_chat_srv_c_rdmn_extract_json_members,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_name,		&var->name,		NULL,	NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_members,	&var->members,		NULL,	&nxs_chat_srv_c_rdmn_extract_json_members,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -1378,7 +1378,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_members(nxs_process
 	// clang-format off
 
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&m->id,			NULL,						NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,		&m->name,		NULL,						NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,		&m->name,		NULL,						NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_access,		&m->access,		&nxs_chat_srv_c_rdmn_extract_json_access,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_roles,		&m->roles,		NULL,						&nxs_chat_srv_c_rdmn_extract_json_roles,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,		0,	0,	NXS_YES,	NULL);
 
@@ -1447,7 +1447,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_roles(nxs_process_t
 	// clang-format off
 
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&r->id,			NULL,						NULL,						NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,		&r->name,		NULL,						NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_name,		&r->name,		NULL,						NULL,						NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_permissions,	&r->permissions,	&nxs_chat_srv_c_rdmn_extract_json_permissions,	NULL,						NXS_CFG_JSON_TYPE_VOID,			0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
@@ -1530,12 +1530,12 @@ static nxs_cfg_json_state_t
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_filename,	&var->filename,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_filesize,	&var->filesize,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_content_type,	&var->content_type,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,	&var->description,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_filesize,	&var->filesize,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_content_type,	&var->content_type,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,	&var->description,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_content_url,	&var->content_url,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_created_on,	&var->created_on,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_author,		&var->author,		&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_created_on,	&var->created_on,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_author,		&var->author,		&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -1577,12 +1577,12 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_attachments(nxs_pro
 
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_id,		&a->id,			NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_filename,	&a->filename,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_filesize,	&a->filesize,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_content_type,	&a->content_type,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_description,	&a->description,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_filesize,	&a->filesize,		NULL,						NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_content_type,	&a->content_type,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_description,	&a->description,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_content_url,	&a->content_url,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_created_on,	&a->created_on,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_author,		&a->author,		&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_created_on,	&a->created_on,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_author,		&a->author,		&nxs_chat_srv_c_rdmn_extract_json_user,		NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
