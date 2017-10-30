@@ -292,7 +292,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_rdmn_user_extract_user_custom_fields(
                                                                                 nxs_cfg_json_par_t *cfg_json_par_el,
                                                                                 nxs_array_t *       cfg_arr)
 {
-	nxs_string_t *tlgrm_username = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_string_t *tlgrm_username = nxs_cfg_json_get_val(cfg_json_par_el), *s;
 	nxs_json_t *  j;
 
 	if((j = nxs_json_child_get_by_key(json, nxs_string_str(&_s_par_id))) == NULL) {
@@ -332,7 +332,16 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_rdmn_user_extract_user_custom_fields(
 			return NXS_CFG_JSON_CONF_ERROR;
 		}
 
-		nxs_string_clone(tlgrm_username, nxs_json_string_val(j));
+		s = nxs_json_string_val(j);
+
+		if(nxs_string_get_char(s, 0) == (u_char)'@') {
+
+			nxs_string_cpy(tlgrm_username, 0, s, 1);
+		}
+		else {
+
+			nxs_string_clone(tlgrm_username, s);
+		}
 	}
 
 	return NXS_CFG_JSON_CONF_OK;
