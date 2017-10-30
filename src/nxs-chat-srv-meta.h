@@ -10,6 +10,7 @@
 #include <meta/db-sess.h>
 #include <meta/db-cache.h>
 #include <meta/rdmn.h>
+#include <meta/redis.h>
 /*%%_NXS_TPL_HEADERS_END_%%*/
 
 #endif /* _INCLUDE_NXS_CHAT_SRV_META_H */

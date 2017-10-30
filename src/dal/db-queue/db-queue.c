@@ -17,9 +17,7 @@
 
 /* Definitions */
 
-#define NXS_CHAT_SRV_D_DB_QUEUE_META_PREFIX	"nxs-chat-srv:queue:meta"
-#define NXS_CHAT_SRV_D_DB_QUEUE_PREFIX		"nxs-chat-srv:queue"
-#define NXS_CHAT_SRV_D_DB_QUEUE_LOCK_PREFIX	"nxs-chat-srv:queue-lock"
+
 
 /* Project globals */
 extern		nxs_process_t		process;
@@ -33,7 +31,10 @@ extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 
 struct nxs_chat_srv_d_db_queue_s
 {
-	redisContext		*redis_ctx;
+	nxs_string_t			redis_prefix;
+	nxs_string_t			redis_prefix_meta;
+	nxs_string_t			redis_prefix_lock;
+	nxs_chat_srv_m_redis_ctx_t	redis_ctx;
 };
 
 /* Module internal (static) functions prototypes */
@@ -56,9 +57,18 @@ nxs_chat_srv_d_db_queue_t *nxs_chat_srv_d_db_queue_init(void)
 
 	d_ctx = (nxs_chat_srv_d_db_queue_t *)nxs_malloc(NULL, sizeof(nxs_chat_srv_d_db_queue_t));
 
+	nxs_string_init(&d_ctx->redis_prefix);
+	nxs_string_init(&d_ctx->redis_prefix_meta);
+	nxs_string_init(&d_ctx->redis_prefix_lock);
+
+	nxs_chat_srv_c_redis_get_prefix(&d_ctx->redis_prefix, "nxs-chat-srv:%r:queue");
+	nxs_chat_srv_c_redis_get_prefix(&d_ctx->redis_prefix_meta, "nxs-chat-srv:%r:queue:meta");
+	nxs_chat_srv_c_redis_get_prefix(&d_ctx->redis_prefix_lock, "nxs-chat-srv:%r:queue:lock");
+
 	/* Connect to Redis */
 
-	if((d_ctx->redis_ctx = nxs_chat_srv_c_redis_init(&nxs_chat_srv_cfg.redis.host, nxs_chat_srv_cfg.redis.port)) == NULL) {
+	if(nxs_chat_srv_c_redis_init(&d_ctx->redis_ctx, &nxs_chat_srv_cfg.redis.nodes, nxs_chat_srv_cfg.redis.is_cluster) !=
+	   NXS_CHAT_SRV_E_OK) {
 
 		return nxs_chat_srv_d_db_queue_free(d_ctx);
 	}
@@ -74,10 +84,11 @@ nxs_chat_srv_d_db_queue_t *nxs_chat_srv_d_db_queue_free(nxs_chat_srv_d_db_queue_
 		return NULL;
 	}
 
-	if(d_ctx->redis_ctx != NULL) {
+	nxs_string_free(&d_ctx->redis_prefix);
+	nxs_string_free(&d_ctx->redis_prefix_meta);
+	nxs_string_free(&d_ctx->redis_prefix_lock);
 
-		d_ctx->redis_ctx = nxs_chat_srv_c_redis_free(d_ctx->redis_ctx);
-	}
+	nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 
 	return (nxs_chat_srv_d_db_queue_t *)nxs_free(d_ctx);
 }
@@ -93,37 +104,29 @@ nxs_chat_srv_err_t
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process,
-		                    "[%s]: db queue add error: Redis context is NULL (tlgrm userid: %zu)",
-		                    nxs_proc_get_name(&process),
-		                    tlgrm_userid);
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(
-	            d_ctx->redis_ctx, "HSET %s %lu %lu", NXS_CHAT_SRV_D_DB_QUEUE_META_PREFIX, tlgrm_userid, inactive_till)) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "HSET %s %lu %lu", nxs_string_str(&d_ctx->redis_prefix_meta), tlgrm_userid, inactive_till)) ==
+	   NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db queue add error, Redis reply error: %s (tlgrm userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if((redis_reply = redisCommand(
-	            d_ctx->redis_ctx, "RPUSH %s:%lu %s", NXS_CHAT_SRV_D_DB_QUEUE_PREFIX, tlgrm_userid, nxs_string_str(value))) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "RPUSH %s:%lu %s", nxs_string_str(&d_ctx->redis_prefix), tlgrm_userid, nxs_string_str(value))) ==
+	   NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db queue add error, Redis reply error: %s (tlgrm userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -138,9 +141,9 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_c_redis_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;
@@ -158,32 +161,27 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_get(nxs_chat_srv_d_db_queue_t *d_ctx,
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process, "[%s]: db queue get error: Redis context is NULL", nxs_proc_get_name(&process));
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "HDEL %s %lu", NXS_CHAT_SRV_D_DB_QUEUE_META_PREFIX, tlgrm_userid)) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "HDEL %s %lu", nxs_string_str(&d_ctx->redis_prefix_meta), tlgrm_userid)) == NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db queue get error, Redis reply error: %s (stage: del value from meta, tlgrm user id: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "LLEN %s:%lu", NXS_CHAT_SRV_D_DB_QUEUE_PREFIX, tlgrm_userid)) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "LLEN %s:%lu", nxs_string_str(&d_ctx->redis_prefix), tlgrm_userid)) == NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db queue get error, Redis reply error: %s (stage: get queue len, tlgrm user id: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -206,38 +204,40 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_get(nxs_chat_srv_d_db_queue_t *d_ctx,
 		                    REDIS_REPLY_INTEGER,
 		                    redis_reply->type);
 
-		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		nxs_error(rc, NXS_CHAT_SRV_E_WARN, error);
 	}
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "LRANGE %s:%lu 0 %lu", NXS_CHAT_SRV_D_DB_QUEUE_PREFIX, tlgrm_userid, len)) ==
-	   NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "LRANGE %s:%lu 0 %lu", nxs_string_str(&d_ctx->redis_prefix), tlgrm_userid, len)) == NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db queue get error, Redis reply error: %s (stage: get queue range, tlgrm user id: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(redis_reply->type == REDIS_REPLY_ARRAY) {
+	switch(redis_reply->type) {
 
-		nxs_log_write_debug(
-		        &process, "[%s]: db queue get: success (tlgrm user id: %zu)", nxs_proc_get_name(&process), tlgrm_userid);
+		case REDIS_REPLY_ARRAY:
 
-		for(i = 0; i < redis_reply->elements; i++) {
+			nxs_log_write_debug(
+			        &process, "[%s]: db queue get: success (tlgrm user id: %zu)", nxs_proc_get_name(&process), tlgrm_userid);
 
-			s = nxs_array_add(values);
+			for(i = 0; i < redis_reply->elements; i++) {
 
-			nxs_string_init(s);
+				s = nxs_array_add(values);
 
-			nxs_string_char_ncpy(s, 0, (u_char *)redis_reply->element[i]->str, (size_t)redis_reply->element[i]->len);
-		}
-	}
-	else {
+				nxs_string_init(s);
 
-		if(redis_reply->type == REDIS_REPLY_NIL) {
+				nxs_string_char_ncpy(s, 0, (u_char *)redis_reply->element[i]->str, (size_t)redis_reply->element[i]->len);
+			}
+
+			break;
+
+		case REDIS_REPLY_NIL:
 
 			/* value not found by specified key */
 
@@ -247,8 +247,8 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_get(nxs_chat_srv_d_db_queue_t *d_ctx,
 			                    tlgrm_userid);
 
 			nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
-		}
-		else {
+
+		default:
 
 			nxs_log_write_error(&process,
 			                    "[%s]: db queue get error: unexpected Redis reply type (tlgrm user id: %zu, expected type: %d, "
@@ -258,17 +258,16 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_get(nxs_chat_srv_d_db_queue_t *d_ctx,
 			                    REDIS_REPLY_ARRAY,
 			                    redis_reply->type);
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
+			nxs_error(rc, NXS_CHAT_SRV_E_WARN, error);
 	}
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "LTRIM %s:%lu %lu -1", NXS_CHAT_SRV_D_DB_QUEUE_PREFIX, tlgrm_userid, len)) ==
-	   NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "LTRIM %s:%lu %lu -1", nxs_string_str(&d_ctx->redis_prefix), tlgrm_userid, len)) == NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db queue get error, Redis reply error: %s (stage: trim queue, tlgrm user id: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -281,9 +280,9 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK && rc != NXS_CHAT_SRV_E_EXIST) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_c_redis_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;
@@ -299,51 +298,44 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_lock_set(nxs_chat_srv_d_db_queue_t *d
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process,
-		                    "[%s]: db queue set lock error: Redis context is NULL (tlgrm userid: %zu)",
-		                    nxs_proc_get_name(&process),
-		                    tlgrm_userid);
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(
-	            d_ctx->redis_ctx, "SET %s:%lu locked NX PX %lu", NXS_CHAT_SRV_D_DB_QUEUE_LOCK_PREFIX, tlgrm_userid, expire)) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "SET %s:%lu locked NX PX %lu", nxs_string_str(&d_ctx->redis_prefix_lock), tlgrm_userid, expire)) ==
+	   NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db queue set lock error, Redis reply error: %s (tlgrm userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(redis_reply->type == REDIS_REPLY_STATUS) {
+	switch(redis_reply->type) {
 
-		if(nxs_string_char_ncmp(&_s_answer_ok, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len) != NXS_YES) {
+		case REDIS_REPLY_STATUS:
 
-			nxs_log_write_error(&process,
-			                    "[%s]: db queue set lock error: wrong string answer (tlgrm userid: %zu)",
+			if(nxs_string_char_ncmp(&_s_answer_ok, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len) != NXS_YES) {
+
+				nxs_log_write_error(&process,
+				                    "[%s]: db queue set lock error: wrong string answer (tlgrm userid: %zu)",
+				                    nxs_proc_get_name(&process),
+				                    tlgrm_userid);
+
+				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			}
+
+			nxs_log_write_debug(&process,
+			                    "[%s]: db queue set lock: success (tlgrm user id: %zu, lock expire ms: %zu)",
 			                    nxs_proc_get_name(&process),
-			                    tlgrm_userid);
+			                    tlgrm_userid,
+			                    expire);
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
+			break;
 
-		nxs_log_write_debug(&process,
-		                    "[%s]: db queue set lock: success (tlgrm user id: %zu, lock expire ms: %zu)",
-		                    nxs_proc_get_name(&process),
-		                    tlgrm_userid,
-		                    expire);
-	}
-	else {
-
-		if(redis_reply->type == REDIS_REPLY_NIL) {
+		case REDIS_REPLY_NIL:
 
 			/* key is already locked by another process */
 
@@ -353,8 +345,8 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_lock_set(nxs_chat_srv_d_db_queue_t *d
 			                    tlgrm_userid);
 
 			nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
-		}
-		else {
+
+		default:
 
 			nxs_log_write_error(
 			        &process,
@@ -366,8 +358,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_lock_set(nxs_chat_srv_d_db_queue_t *d
 			        REDIS_REPLY_NIL,
 			        redis_reply->type);
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
+			nxs_error(rc, NXS_CHAT_SRV_E_WARN, error);
 	}
 
 error:
@@ -377,9 +368,9 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK && rc != NXS_CHAT_SRV_E_EXIST) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_c_redis_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;
@@ -395,25 +386,16 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_lock_update(nxs_chat_srv_d_db_queue_t
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process,
-		                    "[%s]: db queue update lock error: Redis context is NULL (tlgrm userid: %zu)",
-		                    nxs_proc_get_name(&process),
-		                    tlgrm_userid);
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(
-	            d_ctx->redis_ctx, "SET %s:%lu locked PX %lu", NXS_CHAT_SRV_D_DB_QUEUE_LOCK_PREFIX, tlgrm_userid, expire)) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "SET %s:%lu locked PX %lu", nxs_string_str(&d_ctx->redis_prefix_lock), tlgrm_userid, expire)) ==
+	   NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db queue update lock error, Redis reply error: %s (tlgrm userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -431,9 +413,9 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_c_redis_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;
@@ -449,24 +431,15 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_lock_del(nxs_chat_srv_d_db_queue_t *d
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process,
-		                    "[%s]: db queue delete lock error: Redis context is NULL (tlgrm userid: %zu)",
-		                    nxs_proc_get_name(&process),
-		                    tlgrm_userid);
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "DEL %s:%lu", NXS_CHAT_SRV_D_DB_QUEUE_LOCK_PREFIX, tlgrm_userid)) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "DEL %s:%lu", nxs_string_str(&d_ctx->redis_prefix_lock), tlgrm_userid)) == NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db queue delete lock error, Redis reply error: %s (tlgrm userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -479,9 +452,9 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_c_redis_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;
@@ -499,46 +472,42 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_metas_get(nxs_chat_srv_d_db_queue_t *
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process, "[%s]: db queue get metas error: Redis context is NULL", nxs_proc_get_name(&process));
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "HGETALL %s", NXS_CHAT_SRV_D_DB_QUEUE_META_PREFIX)) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(&d_ctx->redis_ctx, "HGETALL %s", nxs_string_str(&d_ctx->redis_prefix_meta))) ==
+	   NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db queue get metas error, Redis reply error: %s",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr);
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx));
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(redis_reply->type == REDIS_REPLY_ARRAY) {
+	switch(redis_reply->type) {
 
-		for(i = 0; i < redis_reply->elements; i += 2) {
+		case REDIS_REPLY_ARRAY:
 
-			meta = nxs_array_add(metas);
+			for(i = 0; i < redis_reply->elements; i += 2) {
 
-			meta->tlgrm_userid  = atoi(redis_reply->element[i]->str);
-			meta->inactive_till = atoi(redis_reply->element[i + 1]->str);
-		}
-	}
-	else {
+				meta = nxs_array_add(metas);
 
-		if(redis_reply->type == REDIS_REPLY_NIL) {
+				meta->tlgrm_userid  = atoi(redis_reply->element[i]->str);
+				meta->inactive_till = atoi(redis_reply->element[i + 1]->str);
+			}
+
+			break;
+
+		case REDIS_REPLY_NIL:
 
 			/* value not found by specified key */
 
 			nxs_log_write_debug(&process, "[%s]: db queue get metas: value does not exist", nxs_proc_get_name(&process));
 
 			nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
-		}
-		else {
+
+		default:
 
 			nxs_log_write_error(&process,
 			                    "[%s]: db queue get metas error: unexpected Redis reply type (expected type: %d, "
@@ -547,8 +516,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_queue_metas_get(nxs_chat_srv_d_db_queue_t *
 			                    REDIS_REPLY_ARRAY,
 			                    redis_reply->type);
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
+			nxs_error(rc, NXS_CHAT_SRV_E_WARN, error);
 	}
 
 error:
@@ -558,9 +526,9 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK && rc != NXS_CHAT_SRV_E_EXIST) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_c_redis_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;

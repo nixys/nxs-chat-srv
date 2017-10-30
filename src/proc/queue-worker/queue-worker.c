@@ -87,6 +87,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_runtime(void)
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
 
+		usleep(nxs_chat_srv_cfg.ra_queue.pop_timeout_ms);
+
 		/* processing received signals */
 		nxs_proc_signal_unblock(&process, SIGUSR1, SIGTERM, NXS_PROCESS_SIG_END_ARGS);
 		nxs_proc_signal_block(&process, SIGTERM, SIGUSR1, NXS_PROCESS_SIG_END_ARGS);

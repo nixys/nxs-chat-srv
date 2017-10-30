@@ -17,7 +17,7 @@
 
 /* Definitions */
 
-#define NXS_CHAT_SRV_D_RA_QUEUE_PREFIX		"nxs-chat-srv:ra-queue"
+
 
 /* Project globals */
 extern		nxs_process_t		process;
@@ -31,7 +31,8 @@ extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 
 struct nxs_chat_srv_d_ra_queue_s
 {
-	redisContext		*redis_ctx;
+	nxs_string_t			redis_prefix;
+	nxs_chat_srv_m_redis_ctx_t	redis_ctx;
 };
 
 /* Module internal (static) functions prototypes */
@@ -54,9 +55,14 @@ nxs_chat_srv_d_ra_queue_t *nxs_chat_srv_d_ra_queue_init(void)
 
 	d_ctx = (nxs_chat_srv_d_ra_queue_t *)nxs_malloc(NULL, sizeof(nxs_chat_srv_d_ra_queue_t));
 
+	nxs_string_init(&d_ctx->redis_prefix);
+
+	nxs_chat_srv_c_redis_get_prefix(&d_ctx->redis_prefix, "nxs-chat-srv:%r:ra-queue");
+
 	/* Connect to Redis */
 
-	if((d_ctx->redis_ctx = nxs_chat_srv_c_redis_init(&nxs_chat_srv_cfg.ra_queue.host, nxs_chat_srv_cfg.ra_queue.port)) == NULL) {
+	if(nxs_chat_srv_c_redis_init(&d_ctx->redis_ctx, &nxs_chat_srv_cfg.redis.nodes, nxs_chat_srv_cfg.redis.is_cluster) !=
+	   NXS_CHAT_SRV_E_OK) {
 
 		return nxs_chat_srv_d_ra_queue_free(d_ctx);
 	}
@@ -72,10 +78,9 @@ nxs_chat_srv_d_ra_queue_t *nxs_chat_srv_d_ra_queue_free(nxs_chat_srv_d_ra_queue_
 		return NULL;
 	}
 
-	if(d_ctx->redis_ctx != NULL) {
+	nxs_string_free(&d_ctx->redis_prefix);
 
-		d_ctx->redis_ctx = nxs_chat_srv_c_redis_free(d_ctx->redis_ctx);
-	}
+	nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 
 	return (nxs_chat_srv_d_ra_queue_t *)nxs_free(d_ctx);
 }
@@ -90,19 +95,15 @@ nxs_chat_srv_err_t nxs_chat_srv_d_ra_queue_add(nxs_chat_srv_d_ra_queue_t *d_ctx,
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process, "[%s]: ra queue add error: Redis context is NULL", nxs_proc_get_name(&process));
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "RPUSH %s %s", NXS_CHAT_SRV_D_RA_QUEUE_PREFIX, nxs_string_str(value))) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "RPUSH %s %s", nxs_string_str(&d_ctx->redis_prefix), nxs_string_str(value))) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: ra queue add error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: ra queue add error, Redis reply error: %s",
+		                    nxs_proc_get_name(&process),
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx));
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -116,9 +117,9 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_c_redis_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;
@@ -134,48 +135,50 @@ nxs_chat_srv_err_t nxs_chat_srv_d_ra_queue_get(nxs_chat_srv_d_ra_queue_t *d_ctx,
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process, "[%s]: ra queue get error: Redis context is NULL", nxs_proc_get_name(&process));
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(
-	            d_ctx->redis_ctx, "BLPOP %s %d", NXS_CHAT_SRV_D_RA_QUEUE_PREFIX, nxs_chat_srv_cfg.ra_queue.pop_timeout)) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(&d_ctx->redis_ctx, "LPOP %s", nxs_string_str(&d_ctx->redis_prefix))) == NULL) {
 
-		nxs_log_write_error(
-		        &process, "[%s]: ra queue get error, Redis reply error: %s", nxs_proc_get_name(&process), d_ctx->redis_ctx->errstr);
+		nxs_log_write_error(&process,
+		                    "[%s]: ra queue get error, Redis reply error: %s",
+		                    nxs_proc_get_name(&process),
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx));
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(redis_reply->type == REDIS_REPLY_ARRAY) {
+	switch(redis_reply->type) {
 
-		nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->element[1]->str, (size_t)redis_reply->element[1]->len);
+		case REDIS_REPLY_STRING:
 
-		nxs_log_write_debug(&process, "[%s]: ra queue get: success", nxs_proc_get_name(&process));
-	}
-	else {
+			/*
+			 * If used "BLPOP" command:
+			 * <pre>
+			 * nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->element[1]->str, (size_t)redis_reply->element[1]->len);
+			 * </pre>
+			 */
 
-		if(redis_reply->type == REDIS_REPLY_NIL) {
+			nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len);
+
+			nxs_log_write_debug(&process, "[%s]: ra queue get: success", nxs_proc_get_name(&process));
+
+			break;
+
+		case REDIS_REPLY_NIL:
 
 			/* timeout */
 
 			nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
-		}
-		else {
+
+		default:
 
 			nxs_log_write_error(&process,
 			                    "[%s]: ra queue get error: unexpected Redis reply type (expected type: %d, received type: %d)",
 			                    nxs_proc_get_name(&process),
-			                    REDIS_REPLY_ARRAY,
+			                    REDIS_REPLY_STRING,
 			                    redis_reply->type);
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
+			nxs_error(rc, NXS_CHAT_SRV_E_WARN, error);
 	}
 
 error:
@@ -185,9 +188,9 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK && rc != NXS_CHAT_SRV_E_EXIST) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_c_redis_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;

@@ -100,28 +100,28 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 
 	/* Init config values */
 
-	nxs_string_init(&nxs_chat_srv_cfg.proc.pid_file);
-	nxs_string_init(&nxs_chat_srv_cfg.log.path);
-	nxs_string_init(&nxs_chat_srv_cfg.bind.iface);
-	nxs_string_init(&nxs_chat_srv_cfg.bind.ssl.crt);
-	nxs_string_init(&nxs_chat_srv_cfg.bind.ssl.key);
-	nxs_string_init(&nxs_chat_srv_cfg.tlgrm.bot_api_addr);
-	nxs_string_init(&nxs_chat_srv_cfg.tlgrm.bot_api_key);
-	nxs_string_init(&nxs_chat_srv_cfg.tlgrm.auth_token);
-	nxs_string_init(&nxs_chat_srv_cfg.mysql.name);
-	nxs_string_init(&nxs_chat_srv_cfg.mysql.user);
-	nxs_string_init(&nxs_chat_srv_cfg.mysql.pass);
-	nxs_string_init(&nxs_chat_srv_cfg.mysql.host);
-	nxs_string_init(&nxs_chat_srv_cfg.redis.host);
-	nxs_string_init(&nxs_chat_srv_cfg.rdmn.host);
-	nxs_string_init(&nxs_chat_srv_cfg.rdmn.api_key);
-	nxs_string_init(&nxs_chat_srv_cfg.rdmn.auth_token);
-	nxs_string_init(&nxs_chat_srv_cfg.ra_queue.host);
-	nxs_string_init(&nxs_chat_srv_cfg.cache.lock_file);
-	nxs_string_init(&nxs_chat_srv_cfg.attachments.tlgrm_download_tmp_dir);
-	nxs_string_init(&nxs_chat_srv_cfg.attachments.rdmn_download_tmp_dir);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.proc.pid_file);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.log.path);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.bind.iface);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.bind.ssl.crt);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.bind.ssl.key);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.bot_api_addr);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.bot_api_key);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.auth_token);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.name);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.user);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.pass);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.host);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.redis.keys_space);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.host);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.api_key);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.auth_token);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.cache.lock_file);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.attachments.tlgrm_download_tmp_dir);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.attachments.rdmn_download_tmp_dir);
 
 	nxs_array_init2(&nxs_chat_srv_cfg.dev_accounts, nxs_string_t);
+	nxs_array_init2(&nxs_chat_srv_cfg.redis.nodes, nxs_chat_srv_cfg_redis_node_t);
 
 	nxs_chat_srv_cfg.proc.queue_worker_term_timeout = 10;
 	nxs_chat_srv_cfg.proc.rest_api_term_timeout     = 10;
@@ -129,9 +129,8 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_chat_srv_cfg.log.level                      = NXS_LOG_LEVEL_MEM | NXS_LOG_LEVEL_INFO | NXS_LOG_LEVEL_WARN | NXS_LOG_LEVEL_ERROR;
 	nxs_chat_srv_cfg.bind.port                      = 0;
 	nxs_chat_srv_cfg.mysql.port                     = 0;
-	nxs_chat_srv_cfg.redis.port                     = 0;
-	nxs_chat_srv_cfg.ra_queue.port                  = 0;
-	nxs_chat_srv_cfg.ra_queue.pop_timeout           = 0;
+	nxs_chat_srv_cfg.redis.is_cluster               = NXS_NO;
+	nxs_chat_srv_cfg.ra_queue.pop_timeout_ms        = 0;
 	nxs_chat_srv_cfg.ra_queue.queue_workers         = 0;
 	nxs_chat_srv_cfg.cache.rdmn_cf_telegram         = 0;
 	nxs_chat_srv_cfg.cache.projects_ttl             = 0;

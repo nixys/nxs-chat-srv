@@ -4,9 +4,10 @@
 // clang-format off
 
 #include <hiredis/hiredis.h>
+#include <hiredis/hircluster.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.0.10"
+#define NXS_CHAT_SRV_VERSION						"0.1.0"
 
 /* Project basic global definitions */
 
@@ -192,6 +193,13 @@ typedef struct
 {
 	nxs_string_t				host;
 	uint16_t				port;
+} nxs_chat_srv_cfg_redis_node_t;
+
+typedef struct
+{
+	nxs_string_t				keys_space;
+	nxs_bool_t				is_cluster;
+	nxs_array_t				nodes;				/* type: nxs_chat_srv_cfg_redis_node_t */
 } nxs_chat_srv_cfg_redis_t;
 
 typedef struct
@@ -210,9 +218,7 @@ typedef struct
 
 typedef struct
 {
-	nxs_string_t				host;
-	uint16_t				port;
-	size_t					pop_timeout;
+	size_t					pop_timeout_ms;
 	size_t					queue_workers;
 } nxs_chat_srv_cfg_ra_queue_t;
 
@@ -242,7 +248,7 @@ typedef struct
 	nxs_chat_srv_cfg_rdmn_t			rdmn;
 	nxs_chat_srv_cfg_ra_queue_t		ra_queue;
 	nxs_chat_srv_cfg_cache_t		cache;
-	nxs_array_t				dev_accounts;
+	nxs_array_t				dev_accounts;			/* type: nxs_string_t */
 	nxs_chat_srv_cfg_attachments_t		attachments;
 } nxs_chat_srv_cfg_t;
 

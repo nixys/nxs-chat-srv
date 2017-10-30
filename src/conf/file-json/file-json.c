@@ -49,6 +49,10 @@ static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_mysql(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_redis(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_redis_nodes(nxs_process_t *     proc,
+                                                                         nxs_json_t *        json,
+                                                                         nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                         nxs_array_t *       cfg_arr);
 static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_rdmn(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
@@ -87,7 +91,7 @@ static nxs_string_t _s_par_host				= nxs_string("host");
 static nxs_string_t _s_par_redmine			= nxs_string("redmine");
 static nxs_string_t _s_par_api_key			= nxs_string("api_key");
 static nxs_string_t _s_par_ra_queue			= nxs_string("ra_queue");
-static nxs_string_t _s_par_pop_timeout			= nxs_string("pop_timeout");
+static nxs_string_t _s_par_pop_timeout_ms		= nxs_string("pop_timeout_ms");
 static nxs_string_t _s_par_queue_workers		= nxs_string("queue_workers");
 static nxs_string_t _s_par_daemonize			= nxs_string("daemonize");
 static nxs_string_t _s_par_auth_token			= nxs_string("auth_token");
@@ -108,6 +112,9 @@ static nxs_string_t _s_par_status_need_feedback		= nxs_string("status_need_feedb
 static nxs_string_t _s_par_attachments			= nxs_string("attachments");
 static nxs_string_t _s_par_tlgrm_download_tmp_dir	= nxs_string("tlgrm_download_tmp_dir");
 static nxs_string_t _s_par_rdmn_download_tmp_dir	= nxs_string("rdmn_download_tmp_dir");
+static nxs_string_t _s_par_cluster			= nxs_string("cluster");
+static nxs_string_t _s_par_nodes			= nxs_string("nodes");
+static nxs_string_t _s_par_keys_space			= nxs_string("keys_space");
 
 /* Module global functions */
 
@@ -179,6 +186,15 @@ static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_post(nxs_cfg_json_t cfg)
 {
 
 	/* check all defined config values and prepare program runtime (on error - NXS_CFG_CONF_ERROR value must be returned)*/
+
+	if(nxs_array_count(&nxs_chat_srv_cfg.redis.nodes) == 0) {
+
+		nxs_log_write_raw(&process, "config read error: empty array of Redis nodes");
+
+		return NXS_CFG_JSON_CONF_ERROR;
+	}
+
+	nxs_chat_srv_cfg.ra_queue.pop_timeout_ms *= 1000;
 
 	return NXS_CFG_JSON_CONF_OK;
 }
@@ -430,8 +446,9 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_host,	&var->host,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_port,	&var->port,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT_16,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_keys_space,	&var->keys_space,	NULL,	NULL,						NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_cluster,	&var->is_cluster,	NULL,	NULL,						NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_nodes,		&var->nodes,		NULL,	&nxs_chat_srv_conf_file_json_read_redis_nodes,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
@@ -451,6 +468,32 @@ error:
 	nxs_cfg_json_conf_array_free(&cfg_arr);
 
 	return rc;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_redis_nodes(nxs_process_t *     proc,
+                                                                         nxs_json_t *        json,
+                                                                         nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                         nxs_array_t *       cfg_arr)
+{
+	nxs_array_t *                  nodes = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_chat_srv_cfg_redis_node_t *n;
+
+	n = nxs_array_add(nodes);
+
+	n->port = 0;
+
+	nxs_string_init(&n->host);
+
+	nxs_cfg_json_conf_array_skip_undef(cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_port,	&n->port,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT_16,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_host,	&n->host,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	return NXS_CFG_JSON_CONF_OK;
 }
 
 static nxs_cfg_json_state_t
@@ -512,9 +555,7 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_host,		&var->host,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_port,		&var->port,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT_16,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_pop_timeout,	&var->pop_timeout,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_pop_timeout_ms,	&var->pop_timeout_ms,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_queue_workers,	&var->queue_workers,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 
 	// clang-format on

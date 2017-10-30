@@ -17,7 +17,7 @@
 
 /* Definitions */
 
-#define NXS_CHAT_SRV_D_DB_SESS_REDIS_PREFIX	"nxs-chat-srv:sess"
+
 
 /* Project globals */
 extern		nxs_process_t			process;
@@ -31,14 +31,13 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 struct nxs_chat_srv_d_db_sess_s
 {
-	redisContext					*redis_ctx;
+	nxs_string_t			redis_prefix;
+	nxs_chat_srv_m_redis_ctx_t	redis_ctx;
 };
 
 /* Module internal (static) functions prototypes */
 
 // clang-format on
-
-static redisContext *nxs_chat_srv_d_db_sess_redis_ctx_free(redisContext *redis_ctx);
 
 // clang-format off
 
@@ -56,27 +55,14 @@ nxs_chat_srv_d_db_sess_t *nxs_chat_srv_d_db_sess_init(void)
 
 	d_ctx = (nxs_chat_srv_d_db_sess_t *)nxs_malloc(NULL, sizeof(nxs_chat_srv_d_db_sess_t));
 
+	nxs_string_init(&d_ctx->redis_prefix);
+
+	nxs_chat_srv_c_redis_get_prefix(&d_ctx->redis_prefix, "nxs-chat-srv:%r:sess");
+
 	/* Connect to Redis */
 
-	d_ctx->redis_ctx = redisConnect((char *)nxs_string_str(&nxs_chat_srv_cfg.redis.host), nxs_chat_srv_cfg.redis.port);
-
-	if(d_ctx->redis_ctx == NULL || d_ctx->redis_ctx->err != 0) {
-
-		/* Redis connection in error state */
-
-		if(d_ctx->redis_ctx != NULL) {
-
-			nxs_log_write_error(&process,
-			                    "[%s]: db sessions error, can't connect to Redis: %s",
-			                    nxs_proc_get_name(&process),
-			                    d_ctx->redis_ctx->errstr);
-		}
-		else {
-
-			nxs_log_write_error(&process,
-			                    "[%s]: db sessions error, can't connect to Redis: can't allocate Redis context",
-			                    nxs_proc_get_name(&process));
-		}
+	if(nxs_chat_srv_c_redis_init(&d_ctx->redis_ctx, &nxs_chat_srv_cfg.redis.nodes, nxs_chat_srv_cfg.redis.is_cluster) !=
+	   NXS_CHAT_SRV_E_OK) {
 
 		return nxs_chat_srv_d_db_sess_free(d_ctx);
 	}
@@ -92,7 +78,9 @@ nxs_chat_srv_d_db_sess_t *nxs_chat_srv_d_db_sess_free(nxs_chat_srv_d_db_sess_t *
 		return NULL;
 	}
 
-	d_ctx->redis_ctx = nxs_chat_srv_d_db_sess_redis_ctx_free(d_ctx->redis_ctx);
+	nxs_string_free(&d_ctx->redis_prefix);
+
+	nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 
 	return (nxs_chat_srv_d_db_sess_t *)nxs_free(d_ctx);
 }
@@ -107,39 +95,32 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_get(nxs_chat_srv_d_db_sess_t *d_ctx, s
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process,
-		                    "[%s]: db session get error: Redis context is NULL (tlgrm userid: %zu)",
-		                    nxs_proc_get_name(&process),
-		                    tlgrm_userid);
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "GET %s:%lu", NXS_CHAT_SRV_D_DB_SESS_REDIS_PREFIX, tlgrm_userid)) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "GET %s:%lu", nxs_string_str(&d_ctx->redis_prefix), tlgrm_userid)) == NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db session get error, Redis reply error: %s (tlgrm userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(redis_reply->type == REDIS_REPLY_STRING) {
+	switch(redis_reply->type) {
 
-		nxs_log_write_debug(
-		        &process, "[%s]: db session get: success (tlgrm userid: %zu)", nxs_proc_get_name(&process), tlgrm_userid);
+		case REDIS_REPLY_STRING:
 
-		nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len);
-	}
-	else {
+			nxs_log_write_debug(
+			        &process, "[%s]: db session get: success (tlgrm userid: %zu)", nxs_proc_get_name(&process), tlgrm_userid);
 
-		if(redis_reply->type == REDIS_REPLY_NIL) {
+			nxs_string_char_ncpy(value, 0, (u_char *)redis_reply->str, (size_t)redis_reply->len);
+
+			break;
+
+		case REDIS_REPLY_NIL:
 
 			/* value not found by specified key */
 
@@ -149,19 +130,18 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_get(nxs_chat_srv_d_db_sess_t *d_ctx, s
 			                    tlgrm_userid);
 
 			nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
-		}
-		else {
 
-			nxs_log_write_error(&process,
-			                    "[%s]: db session get error: unexpected Redis reply type (tlgrm userid: %zu, expected type: "
-			                    "%d, received type: %d)",
-			                    nxs_proc_get_name(&process),
-			                    tlgrm_userid,
-			                    REDIS_REPLY_STRING,
-			                    redis_reply->type);
+		default:
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-		}
+			nxs_log_write_warn(&process,
+			                   "[%s]: db session get error: unexpected Redis reply type (tlgrm userid: %zu, expected type: "
+			                   "%d, received type: %d)",
+			                   nxs_proc_get_name(&process),
+			                   tlgrm_userid,
+			                   REDIS_REPLY_STRING,
+			                   redis_reply->type);
+
+			nxs_error(rc, NXS_CHAT_SRV_E_WARN, error);
 	}
 
 error:
@@ -171,9 +151,9 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK && rc != NXS_CHAT_SRV_E_EXIST) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_d_db_sess_redis_ctx_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;
@@ -189,25 +169,16 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_put(nxs_chat_srv_d_db_sess_t *d_ctx, s
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process,
-		                    "[%s]: db session put error: Redis context is NULL (tlgrm userid: %zu)",
-		                    nxs_proc_get_name(&process),
-		                    tlgrm_userid);
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(
-	            d_ctx->redis_ctx, "SET %s:%lu %s", NXS_CHAT_SRV_D_DB_SESS_REDIS_PREFIX, tlgrm_userid, nxs_string_str(value))) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "SET %s:%lu %s", nxs_string_str(&d_ctx->redis_prefix), tlgrm_userid, nxs_string_str(value))) ==
+	   NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db session put error, Redis reply error: %s (tlgrm userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -222,9 +193,9 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_d_db_sess_redis_ctx_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;
@@ -240,24 +211,15 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_sess_del(nxs_chat_srv_d_db_sess_t *d_ctx, s
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	if(d_ctx->redis_ctx == NULL) {
-
-		nxs_log_write_error(&process,
-		                    "[%s]: db session del error: Redis context is NULL (tlgrm userid: %zu)",
-		                    nxs_proc_get_name(&process),
-		                    tlgrm_userid);
-
-		return NXS_CHAT_SRV_E_ERR;
-	}
-
 	rc = NXS_CHAT_SRV_E_OK;
 
-	if((redis_reply = redisCommand(d_ctx->redis_ctx, "DEL %s:%lu", NXS_CHAT_SRV_D_DB_SESS_REDIS_PREFIX, tlgrm_userid)) == NULL) {
+	if((redis_reply = nxs_chat_srv_c_redis_command(
+	            &d_ctx->redis_ctx, "DEL %s:%lu", nxs_string_str(&d_ctx->redis_prefix), tlgrm_userid)) == NULL) {
 
 		nxs_log_write_error(&process,
 		                    "[%s]: db session del error, Redis reply error: %s (tlgrm userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    d_ctx->redis_ctx->errstr,
+		                    nxs_chat_srv_c_redis_get_error(&d_ctx->redis_ctx),
 		                    tlgrm_userid);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
@@ -272,23 +234,12 @@ error:
 		freeReplyObject(redis_reply);
 	}
 
-	if(rc != NXS_CHAT_SRV_E_OK) {
+	if(rc == NXS_CHAT_SRV_E_ERR) {
 
-		d_ctx->redis_ctx = nxs_chat_srv_d_db_sess_redis_ctx_free(d_ctx->redis_ctx);
+		nxs_chat_srv_c_redis_free(&d_ctx->redis_ctx);
 	}
 
 	return rc;
 }
 
 /* Module internal (static) functions */
-
-static redisContext *nxs_chat_srv_d_db_sess_redis_ctx_free(redisContext *redis_ctx)
-{
-
-	if(redis_ctx != NULL) {
-
-		redisFree(redis_ctx);
-	}
-
-	return NULL;
-}
