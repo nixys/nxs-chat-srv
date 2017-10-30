@@ -1,0 +1,12 @@
+[Unit]
+Description=Nixys Chat Server
+After=network.target
+Documentation=
+
+[Service]
+Type=forking
+ExecStart=/usr/sbin/nxs-chat-srv -c /etc/nxs-chat-srv/nxs-chat-srv.conf
+PIDFile=/var/run/nxs-chat-srv.pid
+
+[Install]
+WantedBy=multi-user.target
