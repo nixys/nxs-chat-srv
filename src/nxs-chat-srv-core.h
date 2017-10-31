@@ -35,7 +35,7 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_LAST_ISSUE_EMPTY			"<i>отсутствует</i>"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_HELP					"...Справка по использованию бота...\n\nОписание команд:\n\n%r\n"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_DUMMY				"На текущий момент данная команда не реализована"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_HELLO				"%r, добро пожаловать в чат поддержки Nixys!\nТут будет краткая инструкция по использованию ..."
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_HELLO				"%r, добро пожаловать в чат поддержки Nixys!\nС нетерпением ждём Ваших задач :)"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_EMPTY			"К сожалению, невозможно создать задачу, т.к. Вы пока не подключены ни к одному проекту"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_FULL			"<b>Создание новой задачи</b>\n\n" \
 									"<b>Проект:</b> %r\n" \
