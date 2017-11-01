@@ -7,6 +7,7 @@
 #include <units/ra-queue/ra-queue-typedefs.h>
 #include <units/tlgrm-answercallbackquery/tlgrm-answercallbackquery-typedefs.h>
 #include <units/tlgrm-attachments/tlgrm-attachments-typedefs.h>
+#include <units/db-statistic/db-statistic-typedefs.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage-typedefs.h>
 #include <units/tlgrm-editmessagetext/tlgrm-editmessagetext-typedefs.h>
 #include <units/rdmn-attachments/rdmn-attachments-typedefs.h>
@@ -24,6 +25,7 @@
 #include <units/ra-queue/ra-queue.h>
 #include <units/tlgrm-answercallbackquery/tlgrm-answercallbackquery.h>
 #include <units/tlgrm-attachments/tlgrm-attachments.h>
+#include <units/db-statistic/db-statistic.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage.h>
 #include <units/tlgrm-editmessagetext/tlgrm-editmessagetext.h>
 #include <units/rdmn-attachments/rdmn-attachments.h>

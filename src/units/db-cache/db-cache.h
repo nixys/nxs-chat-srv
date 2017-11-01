@@ -21,6 +21,7 @@ nxs_chat_srv_err_t		nxs_chat_srv_u_db_cache_update_issue_priorities		(nxs_chat_s
 nxs_chat_srv_err_t		nxs_chat_srv_u_db_cache_projects_get			(nxs_chat_srv_u_db_cache_t *u_ctx, nxs_array_t *projects);
 
 nxs_chat_srv_err_t		nxs_chat_srv_u_db_cache_user_get			(nxs_chat_srv_u_db_cache_t *u_ctx, nxs_string_t *tlgrm_username, nxs_chat_srv_m_user_ctx_t *user_ctx);
+nxs_chat_srv_err_t		nxs_chat_srv_u_db_cache_user_get_by_rdmn_id		(nxs_chat_srv_u_db_cache_t *u_ctx, size_t rdmn_userid, nxs_chat_srv_m_user_ctx_t *user_ctx);
 
 nxs_chat_srv_err_t		nxs_chat_srv_u_db_cache_prio_get			(nxs_chat_srv_u_db_cache_t *u_ctx, nxs_array_t *priorities);
 nxs_chat_srv_err_t		nxs_chat_srv_u_db_cache_prio_get_default		(nxs_chat_srv_u_db_cache_t *u_ctx, nxs_chat_srv_m_db_cache_issue_priority_t *issue_priority);

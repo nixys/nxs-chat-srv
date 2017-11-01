@@ -48,6 +48,7 @@ static void nxs_chat_srv_p_rest_api_sighandler_usr1(int sig, void *data);
 
 static nxs_string_t _s_ra_handler_tlgrm			= nxs_string("/tlgrm");
 static nxs_string_t _s_ra_handler_redmine		= nxs_string("/redmine");
+static nxs_string_t _s_ra_handler_statistic		= nxs_string("/statistic");
 
 static nxs_string_t _s_header_user_agent		= nxs_string("User-Agent");
 
@@ -126,6 +127,12 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_rest_api_handlers_init(nxs_chat_srv_p_r
 	                         NXS_YES,
 	                         nxs_chat_srv_p_rest_api_ctx_get_ra_queue(p_ctx),
 	                         &nxs_chat_srv_p_rest_api_rdmn_handler_post);
+	nxs_rest_api_handler_add(api_ctx,
+	                         &_s_ra_handler_statistic,
+	                         NXS_REST_API_COMMON_CMD_GET,
+	                         NXS_YES,
+	                         NULL,
+	                         &nxs_chat_srv_p_rest_api_statistic_handler_get);
 
 	return NXS_CHAT_SRV_E_OK;
 }

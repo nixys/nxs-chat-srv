@@ -7,7 +7,7 @@
 #include <hiredis/hircluster.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.1.0"
+#define NXS_CHAT_SRV_VERSION						"0.1.1"
 
 /* Project basic global definitions */
 
@@ -103,6 +103,19 @@
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TO_PRIVATE_NOTE		(u_char *)"Сделать комментарий париватным"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_IGNORE_STATUS			(u_char *)"Игнорировать ошибки статуса"
 #define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TAKE_ISSUE			(u_char *)"Взять задачу в работу"
+
+#define NXS_CHAT_SRV_STATISTIC_TOTAL					"Полная статистика"
+#define NXS_CHAT_SRV_STATISTIC_BY_USER					"Статистика по пользователям"
+#define NXS_CHAT_SRV_STATISTIC_COUNT_RDMN_ISSUE_CREATE			"Количество задач, созданных в системе задач"
+#define NXS_CHAT_SRV_STATISTIC_COUNT_RDMN_ISSUE_UPDATE			"Количество задач, обновлённых в системе задач"
+#define NXS_CHAT_SRV_STATISTIC_RDMN_USER_NAME				"Имя пользователя"
+#define NXS_CHAT_SRV_STATISTIC_COUNT_TLGRM_SESSION_DESTROY		"Количество принудительно завершённых сессий через бота"
+#define NXS_CHAT_SRV_STATISTIC_COUNT_TLGRM_CREATE_ISSUE			"Количество задач, созданных через бота"
+#define NXS_CHAT_SRV_STATISTIC_COUNT_TLGRM_REPLY_COMMENT		"Количество комментариев, добавленных через бота как ответ на предыдущее сообщение"
+#define NXS_CHAT_SRV_STATISTIC_COUNT_TLGRM_REPLY_EMPTY			"Количество комментариев, добавленных через бота, для которых задача была выбрана позже"
+#define NXS_CHAT_SRV_STATISTIC_COUNT_TLGRM_REPLY_EXT			"Количество расширенных комментариев, добавленных через бота"
+#define NXS_CHAT_SRV_STATISTIC_LAST_ACTION				"Дата и время последего события"
+
 
 /* Project global typedefs */
 
@@ -239,6 +252,11 @@ typedef struct
 
 typedef struct
 {
+	nxs_string_t				auth_token;
+} nxs_chat_srv_cfg_statistic_t;
+
+typedef struct
+{
 	nxs_chat_srv_cfg_proc_t			proc;
 	nxs_chat_srv_cfg_log_t			log;
 	nxs_chat_srv_cfg_bind_t			bind;
@@ -250,6 +268,7 @@ typedef struct
 	nxs_chat_srv_cfg_cache_t		cache;
 	nxs_array_t				dev_accounts;			/* type: nxs_string_t */
 	nxs_chat_srv_cfg_attachments_t		attachments;
+	nxs_chat_srv_cfg_statistic_t		statistic;
 } nxs_chat_srv_cfg_t;
 
 /* Project includes */

@@ -115,6 +115,8 @@ static void messages_queue_clean_reply(nxs_chat_srv_u_db_queue_t *queue_ctx);
 static nxs_chat_srv_err_t messages_queue_elt_parse(nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_m_tlgrm_update_t *update);
 static nxs_chat_srv_err_t messages_queue_extract_files(nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_m_tlgrm_update_t *update);
 
+static void statistic_add(nxs_chat_srv_u_db_statistic_action_type_t action_type, size_t rdmn_userid);
+
 // clang-format off
 
 /* Module initializations */
@@ -640,17 +642,18 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
                                                              nxs_chat_srv_u_db_cache_t *           cache_ctx,
                                                              nxs_chat_srv_m_user_ctx_t *           user_ctx)
 {
-	nxs_chat_srv_err_t                       rc;
-	nxs_chat_srv_m_db_cache_issue_priority_t issue_priority;
-	nxs_chat_srv_m_db_sess_file_t *          file;
-	nxs_array_t                              cache_projects, *files, *rdmn_uploads;
-	nxs_string_t *                           api_key, *message, file_name, file_path;
-	nxs_chat_srv_u_db_issues_t *             db_issue_ctx;
-	nxs_chat_srv_u_last_issues_t *           last_issue_ctx;
-	nxs_chat_srv_u_tlgrm_attachments_t *     tlgrm_attachments_ctx;
-	nxs_chat_srv_u_rdmn_attachments_t *      rdmn_attachments_ctx;
-	nxs_chat_srv_u_rdmn_issues_t *           rdmn_issues_ctx;
-	nxs_bool_t                               private_notes;
+	nxs_chat_srv_err_t                        rc;
+	nxs_chat_srv_m_db_cache_issue_priority_t  issue_priority;
+	nxs_chat_srv_m_db_sess_file_t *           file;
+	nxs_chat_srv_u_db_statistic_action_type_t statistic_action_type;
+	nxs_array_t                               cache_projects, *files, *rdmn_uploads;
+	nxs_string_t *                            api_key, *message, file_name, file_path;
+	nxs_chat_srv_u_db_issues_t *              db_issue_ctx;
+	nxs_chat_srv_u_last_issues_t *            last_issue_ctx;
+	nxs_chat_srv_u_tlgrm_attachments_t *      tlgrm_attachments_ctx;
+	nxs_chat_srv_u_rdmn_attachments_t *       rdmn_attachments_ctx;
+	nxs_chat_srv_u_rdmn_issues_t *            rdmn_issues_ctx;
+	nxs_bool_t                                private_notes;
 	size_t chat_id, bot_message_id, usr_message_id, issues_count, status_id, assigned_to_id, i, files_count;
 
 	rc = NXS_CHAT_SRV_E_OK;
@@ -722,11 +725,15 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_IN_PROGRESS:
 
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
+
 					status_id = nxs_chat_srv_cfg.rdmn.status_in_progress;
 
 					break;
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_NEED_FEEDBACK:
+
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
 
 					status_id = nxs_chat_srv_cfg.rdmn.status_need_feedback;
 
@@ -734,17 +741,23 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_RESOLVED:
 
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
+
 					status_id = nxs_chat_srv_cfg.rdmn.status_resolved;
 
 					break;
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_PRIVATE:
 
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
+
 					private_notes = NXS_YES;
 
 					break;
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_WF_IGNORE:
+
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
 
 					nxs_chat_srv_u_rdmn_issues_cf_add(
 					        rdmn_issues_ctx, nxs_chat_srv_cfg.rdmn.cf_ignore_status, &_s_cf_ignore_value);
@@ -753,12 +766,16 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_TAKE_ISSUE:
 
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
+
 					status_id      = nxs_chat_srv_cfg.rdmn.status_in_progress;
 					assigned_to_id = user_ctx->r_userid;
 
 					break;
 
 				default:
+
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EMPTY;
 
 					if(nxs_chat_srv_u_db_sess_t_get_message_is_ext(sess_ctx) == NXS_YES) {
 
@@ -804,6 +821,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_E_OK:
 
+					statistic_add(statistic_action_type, user_ctx->r_userid);
+
 					/* set issue 'callback->object_id' as last for telegram user 'tlgrm_userid' */
 					nxs_chat_srv_u_last_issues_set(last_issue_ctx, chat_id, callback->object_id);
 
@@ -847,6 +866,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 			break;
 
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SESSION_DESTROY:
+
+			statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_SESSION_DESTROY, user_ctx->r_userid);
 
 			nxs_chat_srv_u_db_sess_destroy(sess_ctx);
 
@@ -1091,6 +1112,8 @@ static nxs_chat_srv_err_t handler_callback_sess_type_new_issue(nxs_chat_srv_m_tl
 		*/
 
 		case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_SESSION_DESTROY:
+
+			statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_SESSION_DESTROY, user_ctx->r_userid);
 
 			nxs_chat_srv_u_db_sess_destroy(sess_ctx);
 
@@ -1512,6 +1535,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
+			statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_CREATE_ISSUE, user_ctx->r_userid);
+
 			/* set issue 'new_issue_id' as last for telegram user 'chat_id' */
 			nxs_chat_srv_u_last_issues_set(last_issue_ctx, chat_id, new_issue_id);
 
@@ -1836,6 +1861,8 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 
 			case NXS_CHAT_SRV_E_OK:
 
+				statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_COMMENT, user_ctx->r_userid);
+
 				/* set issue 'issue_id' as last for telegram user 'tlgrm_userid' */
 				nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, issue_id);
 
@@ -2015,6 +2042,8 @@ static nxs_chat_srv_err_t handler_command_dialogdestroy(nxs_chat_srv_m_tlgrm_upd
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
+
+	statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_SESSION_DESTROY, user_ctx->r_userid);
 
 	nxs_chat_srv_u_db_sess_destroy(sess_ctx);
 
@@ -2199,4 +2228,22 @@ static nxs_chat_srv_err_t messages_queue_extract_files(nxs_chat_srv_u_db_sess_t 
 	}
 
 	return rc;
+}
+
+static void statistic_add(nxs_chat_srv_u_db_statistic_action_type_t action_type, size_t rdmn_userid)
+{
+	nxs_chat_srv_u_db_statistic_t *statistic_ctx;
+
+	statistic_ctx = nxs_chat_srv_u_db_statistic_init();
+
+	if(nxs_chat_srv_u_db_statistic_add(statistic_ctx, action_type, rdmn_userid) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_warn(&process,
+		                   "[%s]: can't save user action statistic (action id: %d, rdmn user id: %zu)",
+		                   nxs_proc_get_name(&process),
+		                   action_type,
+		                   rdmn_userid);
+	}
+
+	statistic_ctx = nxs_chat_srv_u_db_statistic_free(statistic_ctx);
 }

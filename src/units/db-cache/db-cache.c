@@ -335,12 +335,12 @@ error:
 /* update 'users' Redis cache from Redmine */
 nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_update_users(nxs_chat_srv_u_db_cache_t *u_ctx)
 {
-	nxs_chat_srv_err_t              rc;
-	nxs_buf_t                       out_buf;
-	nxs_string_t                    serialized_str;
-	nxs_chat_srv_u_db_cache_user_t *u;
-	nxs_chat_srv_d_db_cache_t *     db_cache_ctx;
-	size_t                          total_count, offset;
+	nxs_chat_srv_err_t rc;
+	nxs_buf_t          out_buf;
+	nxs_string_t       serialized_str;
+	//	nxs_chat_srv_u_db_cache_user_t *u;
+	nxs_chat_srv_d_db_cache_t *db_cache_ctx;
+	size_t                     total_count, offset;
 
 	if(u_ctx == NULL) {
 
@@ -382,21 +382,23 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_update_users(nxs_chat_srv_u_db_cache_
 		offset += NXS_CHAT_SRV_RDMN_QUERY_LIMIT;
 	} while(total_count > offset);
 
-	/* remove from lists inactive values */
+	/* remove inactive values from list */
 
+	/* TODO: add remove from list inactive users
 	for(u = nxs_list_ptr_init(&u_ctx->users, NXS_LIST_PTR_INIT_HEAD); u != NULL;) {
 
-		if(nxs_string_len(&u->r_tlgrm_username) == 0) {
+	        if(nxs_string_len(&u->r_tlgrm_username) == 0) {
 
-			nxs_chat_srv_u_db_cache_users_el_free(u);
+	                nxs_chat_srv_u_db_cache_users_el_free(u);
 
-			u = nxs_list_del(&u_ctx->users, NXS_LIST_MOVE_NEXT);
-		}
-		else {
+	                u = nxs_list_del(&u_ctx->users, NXS_LIST_MOVE_NEXT);
+	        }
+	        else {
 
-			u = nxs_list_ptr_next(&u_ctx->users);
-		}
+	                u = nxs_list_ptr_next(&u_ctx->users);
+	        }
 	}
+	*/
 
 	/*
 	 * push context into Redis
@@ -519,6 +521,35 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_user_get(nxs_chat_srv_u_db_cache_t *u
 	for(u = nxs_list_ptr_init(&u_ctx->users, NXS_LIST_PTR_INIT_HEAD); u != NULL; u = nxs_list_ptr_next(&u_ctx->users)) {
 
 		if(nxs_string_cmp(&u->r_tlgrm_username, 0, tlgrm_username, 0) == NXS_YES) {
+
+			user_ctx->r_userid = u->r_id;
+
+			nxs_string_clone(&user_ctx->t_username, &u->r_tlgrm_username);
+			nxs_string_clone(&user_ctx->r_username, &u->r_login);
+			nxs_string_clone(&user_ctx->r_userfname, &u->r_userfname);
+			nxs_string_clone(&user_ctx->r_userlname, &u->r_userlname);
+
+			return NXS_CHAT_SRV_E_OK;
+		}
+	}
+
+	return NXS_CHAT_SRV_E_EXIST;
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_user_get_by_rdmn_id(nxs_chat_srv_u_db_cache_t *u_ctx,
+                                                               size_t                     rdmn_userid,
+                                                               nxs_chat_srv_m_user_ctx_t *user_ctx)
+{
+	nxs_chat_srv_u_db_cache_user_t *u;
+
+	if(u_ctx == NULL || user_ctx == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	for(u = nxs_list_ptr_init(&u_ctx->users, NXS_LIST_PTR_INIT_HEAD); u != NULL; u = nxs_list_ptr_next(&u_ctx->users)) {
+
+		if(u->r_id == rdmn_userid) {
 
 			user_ctx->r_userid = u->r_id;
 

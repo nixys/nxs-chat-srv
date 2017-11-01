@@ -5,6 +5,7 @@
 
 /*%%_NXS_TPL_HEADERS_BEGIN_%%*/
 #include <proc/rest-api/rdmn/rdmn.h>
+#include <proc/rest-api/statistic/statistic.h>
 #include <proc/rest-api/tlgrm/tlgrm.h>
 /*%%_NXS_TPL_HEADERS_END_%%*/
 

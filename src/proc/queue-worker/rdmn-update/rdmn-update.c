@@ -45,6 +45,8 @@ static void receivers_add(nxs_array_t *                  receivers,
                           nxs_array_t *                  members,
                           nxs_chat_srv_m_rdmn_journal_t *journal);
 
+static void statistic_add(nxs_chat_srv_u_db_statistic_action_type_t action_type, size_t rdmn_userid);
+
 // clang-format off
 
 /* Module initializations */
@@ -124,6 +126,8 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
 
 	nxs_array_init2(&receivers, size_t);
+
+	statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_RDMN_ISSUE_CREATE, update->data.issue.author.id);
 
 	/* add to receivers array assigned to user */
 	receivers_add(
@@ -214,6 +218,8 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_init();
 	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_init();
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
+
+	statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_RDMN_ISSUE_UPDATE, journal->user.id);
 
 	/* add to receivers array author of issue */
 	receivers_add(&receivers, journal->user.id, update->data.issue.author.id, &update->data.issue.project.members, journal);
@@ -347,4 +353,22 @@ static void receivers_add(nxs_array_t *                  receivers,
 			return;
 		}
 	}
+}
+
+static void statistic_add(nxs_chat_srv_u_db_statistic_action_type_t action_type, size_t rdmn_userid)
+{
+	nxs_chat_srv_u_db_statistic_t *statistic_ctx;
+
+	statistic_ctx = nxs_chat_srv_u_db_statistic_init();
+
+	if(nxs_chat_srv_u_db_statistic_add(statistic_ctx, action_type, rdmn_userid) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_warn(&process,
+		                   "[%s]: can't save user action statistic (action id: %d, rdmn user id: %zu)",
+		                   nxs_proc_get_name(&process),
+		                   action_type,
+		                   rdmn_userid);
+	}
+
+	statistic_ctx = nxs_chat_srv_u_db_statistic_free(statistic_ctx);
 }
