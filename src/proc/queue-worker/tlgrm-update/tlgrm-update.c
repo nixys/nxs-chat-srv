@@ -112,6 +112,7 @@ static nxs_chat_srv_err_t handler_command_dummy(nxs_chat_srv_m_tlgrm_update_t *u
 
 static void messages_queue_clean_text_messages(nxs_chat_srv_u_db_queue_t *queue_ctx);
 static void messages_queue_clean_reply(nxs_chat_srv_u_db_queue_t *queue_ctx);
+static void messages_queue_clean_no_reply(nxs_chat_srv_u_db_queue_t *queue_ctx);
 static nxs_chat_srv_err_t messages_queue_elt_parse(nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_m_tlgrm_update_t *update);
 static nxs_chat_srv_err_t messages_queue_extract_files(nxs_chat_srv_u_db_sess_t *sess_ctx, nxs_chat_srv_m_tlgrm_update_t *update);
 
@@ -1215,6 +1216,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_u_db_queu
 
 	if(nxs_chat_srv_u_rdmn_user_pull(rdmn_user_ctx, user_ctx->r_userid) != NXS_CHAT_SRV_E_OK) {
 
+		messages_queue_clean_no_reply(queue_ctx);
+
 		nxs_log_write_warn(&process,
 		                   "[%s]: can't get user data from Redmine ("
 		                   "rdmn user id: %zu)",
@@ -1227,6 +1230,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_u_db_queu
 	rdmn_api_key = nxs_chat_srv_u_rdmn_user_get_api_key(rdmn_user_ctx);
 
 	if(nxs_string_len(rdmn_api_key) == 0) {
+
+		messages_queue_clean_no_reply(queue_ctx);
 
 		nxs_log_write_warn(
 		        &process, "[%s]: user api key has zero size (rdmn user id: %zu)", nxs_proc_get_name(&process), user_ctx->r_userid);
@@ -1242,6 +1247,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_u_db_queu
 	                                NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE,
 	                                NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) != NXS_CHAT_SRV_E_OK) {
 
+		messages_queue_clean_no_reply(queue_ctx);
+
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
@@ -1255,6 +1262,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_u_db_queu
 		else {
 
 			if(messages_queue_elt_parse(sess_ctx, update) != NXS_CHAT_SRV_E_OK) {
+
+				messages_queue_clean_no_reply(queue_ctx);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -1332,7 +1341,9 @@ static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_u_db_qu
 
 		if((rc = messages_queue_extract_files(sess_ctx, update)) == NXS_CHAT_SRV_E_ERR) {
 
-			return NXS_CHAT_SRV_E_ERR;
+			messages_queue_clean_no_reply(queue_ctx);
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
 
 		if(rc == NXS_CHAT_SRV_E_TYPE) {
@@ -1366,6 +1377,8 @@ error:
 
 	if(rc != NXS_CHAT_SRV_E_OK) {
 
+		nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, tlgrm_userid, NULL);
+
 		nxs_log_write_warn(&process,
 		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_message_sess_type_message' ("
 		                   "user id: %zu, "
@@ -1398,6 +1411,12 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	nxs_buf_t                           response_buf;
 	nxs_chat_srv_err_t                  rc;
 
+	api_key        = nxs_chat_srv_u_db_sess_get_rdmn_api_key(sess_ctx);
+	chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
+	bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
+	usr_message_id = nxs_chat_srv_u_db_sess_get_usr_message_id(sess_ctx);
+	files          = nxs_chat_srv_u_db_sess_get_files(sess_ctx);
+
 	/*
 	 * Processing queue and add all files into existing session (updating windown on client).
 	 */
@@ -1405,6 +1424,10 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	    update = nxs_chat_srv_u_db_queue_list_del_head(queue_ctx)) {
 
 		if((rc = messages_queue_extract_files(sess_ctx, update)) == NXS_CHAT_SRV_E_ERR) {
+
+			nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, chat_id, NULL);
+
+			messages_queue_clean_no_reply(queue_ctx);
 
 			return NXS_CHAT_SRV_E_ERR;
 		}
@@ -1421,16 +1444,17 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 
 	if(f == NXS_YES) {
 
-		chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
-		bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
-
 		if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(sess_ctx, chat_id, bot_message_id, NXS_YES, NULL) !=
 		   NXS_CHAT_SRV_E_OK) {
+
+			nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, chat_id, NULL);
 
 			return NXS_CHAT_SRV_E_ERR;
 		}
 
 		if(nxs_chat_srv_u_db_sess_set_wait_for(sess_ctx, NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) != NXS_CHAT_SRV_E_OK) {
+
+			nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, chat_id, NULL);
 
 			return NXS_CHAT_SRV_E_ERR;
 		}
@@ -1451,12 +1475,6 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	nxs_array_init2(&projects, nxs_chat_srv_m_db_sess_project_t);
 
 	nxs_chat_srv_c_tlgrm_message_init(&response_message);
-
-	api_key        = nxs_chat_srv_u_db_sess_get_rdmn_api_key(sess_ctx);
-	chat_id        = nxs_chat_srv_u_db_sess_get_chat_id(sess_ctx);
-	bot_message_id = nxs_chat_srv_u_db_sess_get_bot_message_id(sess_ctx);
-	usr_message_id = nxs_chat_srv_u_db_sess_get_usr_message_id(sess_ctx);
-	files          = nxs_chat_srv_u_db_sess_get_files(sess_ctx);
 
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_init();
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_init();
@@ -1750,6 +1768,8 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 
 	if(nxs_chat_srv_u_db_issues_get(db_issue_ctx, tlgrm_userid, reply_to_message, &issue_id) != NXS_CHAT_SRV_E_OK) {
 
+		messages_queue_clean_reply(queue_ctx);
+
 		nxs_log_write_warn(&process,
 		                   "[%s]: can't send user reply into Redmine: can't get issue_id ("
 		                   "user id: %zu)",
@@ -1761,6 +1781,8 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 
 	if(issue_id == 0) {
 
+		messages_queue_clean_reply(queue_ctx);
+
 		nxs_log_write_warn(&process,
 		                   "[%s]: can't send user reply into Redmine: issue_id is 0("
 		                   "user id: %zu)",
@@ -1771,6 +1793,8 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 	}
 
 	if(nxs_chat_srv_u_rdmn_user_pull(rdmn_user_ctx, user_ctx->r_userid) != NXS_CHAT_SRV_E_OK) {
+
+		messages_queue_clean_reply(queue_ctx);
 
 		nxs_log_write_warn(&process,
 		                   "[%s]: can't send user reply into Redmine: can't get user data from Redmine ("
@@ -1784,6 +1808,8 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 	rdmn_api_key = nxs_chat_srv_u_rdmn_user_get_api_key(rdmn_user_ctx);
 
 	if(nxs_string_len(rdmn_api_key) == 0) {
+
+		messages_queue_clean_reply(queue_ctx);
 
 		nxs_log_write_warn(&process,
 		                   "[%s]: can't send user reply into Redmine: user api key has zero size (user id: %zu)",
@@ -1801,6 +1827,8 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 	                                NXS_CHAT_SRV_M_DB_SESS_TYPE_MESSAGE,
 	                                NXS_CHAT_SRV_M_DB_SESS_WAIT_FOR_TYPE_NONE) != NXS_CHAT_SRV_E_OK) {
 
+		messages_queue_clean_reply(queue_ctx);
+
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
@@ -1814,6 +1842,8 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 		else {
 
 			if(messages_queue_elt_parse(sess_ctx, update) != NXS_CHAT_SRV_E_OK) {
+
+				messages_queue_clean_reply(queue_ctx);
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -1905,6 +1935,19 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 	}
 
 error:
+
+	if(rc != NXS_CHAT_SRV_E_OK) {
+
+		nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(sess_ctx, tlgrm_userid, NULL);
+
+		nxs_log_write_warn(&process,
+		                   "[%s]: error in 'proc.queue-worker.tlgrm-update.handler_message_reply' ("
+		                   "user id: %zu, "
+		                   "error code: %d)",
+		                   nxs_proc_get_name(&process),
+		                   nxs_chat_srv_u_db_sess_get_tlgrm_userid(sess_ctx),
+		                   rc);
+	}
 
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
 	rdmn_user_ctx         = nxs_chat_srv_u_rdmn_user_free(rdmn_user_ctx);
@@ -2090,7 +2133,9 @@ static void messages_queue_clean_text_messages(nxs_chat_srv_u_db_queue_t *queue_
 	    update = nxs_chat_srv_u_db_queue_list_del_head(queue_ctx)) {
 
 		if(nxs_chat_srv_c_tlgrm_update_get_type(update) == NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE &&
-		   nxs_array_count(&update->message.photo) == 0) {
+		   nxs_array_count(&update->message.photo) == 0 && update->message.document._is_used == NXS_NO &&
+		   update->message.sticker._is_used == NXS_NO && update->message.voice._is_used == NXS_NO &&
+		   update->message.video._is_used == NXS_NO) {
 
 			continue;
 		}
@@ -2101,6 +2146,7 @@ static void messages_queue_clean_text_messages(nxs_chat_srv_u_db_queue_t *queue_
 	}
 }
 
+/* Deletes all replied messages from queue */
 static void messages_queue_clean_reply(nxs_chat_srv_u_db_queue_t *queue_ctx)
 {
 	nxs_chat_srv_m_tlgrm_update_t *update;
@@ -2110,6 +2156,22 @@ static void messages_queue_clean_reply(nxs_chat_srv_u_db_queue_t *queue_ctx)
 
 		if(nxs_chat_srv_c_tlgrm_update_get_type(update) != NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE ||
 		   update->message.reply_to_message == NULL) {
+
+			break;
+		}
+	}
+}
+
+/* Deletes all no replied messages from queue */
+static void messages_queue_clean_no_reply(nxs_chat_srv_u_db_queue_t *queue_ctx)
+{
+	nxs_chat_srv_m_tlgrm_update_t *update;
+
+	for(update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx); update != NULL;
+	    update = nxs_chat_srv_u_db_queue_list_del_head(queue_ctx)) {
+
+		if(nxs_chat_srv_c_tlgrm_update_get_type(update) != NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE ||
+		   update->message.reply_to_message != NULL) {
 
 			break;
 		}
@@ -2151,7 +2213,7 @@ static nxs_chat_srv_err_t messages_queue_elt_parse(nxs_chat_srv_u_db_sess_t *ses
 
 /*
  * Returns:
- * * NXS_CHAT_SRV_E_TYPE	- if update type is not NXS_CHAT_SRV_E_TYPE
+ * * NXS_CHAT_SRV_E_TYPE	- if update type is not NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE
  * * NXS_CHAT_SRV_E_EXIST	- if no files exists in update
  * * NXS_CHAT_SRV_E_OK		- if one or more files exists in update
  * * NXS_CHAT_SRV_E_ERR		- on error
