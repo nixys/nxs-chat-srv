@@ -1179,6 +1179,9 @@ error:
 	return rc;
 }
 
+/*
+ * This handler used for user messages (no replies) without existing session
+ */
 static nxs_chat_srv_err_t handler_message_sess_type_empty(nxs_chat_srv_u_db_queue_t *queue_ctx,
                                                           nxs_chat_srv_u_db_sess_t * sess_ctx,
                                                           nxs_chat_srv_u_db_cache_t *cache_ctx,
@@ -1313,6 +1316,9 @@ error:
 	return rc;
 }
 
+/*
+ * This handler used for user messages (no replies) if session in 'message' state
+ */
 static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_u_db_queue_t *queue_ctx,
                                                             nxs_chat_srv_u_db_sess_t * sess_ctx,
                                                             nxs_chat_srv_u_db_cache_t *cache_ctx,
@@ -1332,8 +1338,8 @@ static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_u_db_qu
 	private_notes  = nxs_chat_srv_u_db_sess_t_get_message_is_private(sess_ctx);
 
 	/*
-	 * Processing queue and add all files into existing session (updating windown on client).
-	 * Messages withot attachments will be removed from queue.
+	 * Processing queue and add all files into existing session (updating window on client).
+	 * Messages without attachments will be removed from queue.
 	 */
 
 	for(f = NXS_NO, update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx); update != NULL;
@@ -1368,10 +1374,6 @@ static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_u_db_qu
 		                  tlgrm_userid, bot_message_id, user_ctx->r_userid, api_key, private_notes, files_count, NULL),
 		          error);
 	}
-	else {
-
-		nxs_error(rc, nxs_chat_srv_p_queue_worker_tlgrm_update_win_wrong_action(sess_ctx, tlgrm_userid, NULL), error);
-	}
 
 error:
 
@@ -1391,6 +1393,9 @@ error:
 	return rc;
 }
 
+/*
+ * This handler used for user messages (no replies) if session in 'new_issue' state
+ */
 static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_queue_t *queue_ctx,
                                                               nxs_chat_srv_u_db_sess_t * sess_ctx,
                                                               nxs_chat_srv_u_db_cache_t *cache_ctx,
@@ -1418,7 +1423,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 	files          = nxs_chat_srv_u_db_sess_get_files(sess_ctx);
 
 	/*
-	 * Processing queue and add all files into existing session (updating windown on client).
+	 * Processing queue and add all files into existing session (updating window on client).
 	 */
 	for(f = NXS_NO, update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx); update != NULL;
 	    update = nxs_chat_srv_u_db_queue_list_del_head(queue_ctx)) {
@@ -1442,6 +1447,9 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 		}
 	}
 
+	/*
+	 * If found attachments in queue
+	 */
 	if(f == NXS_YES) {
 
 		if(nxs_chat_srv_p_queue_worker_tlgrm_update_win_new_issue(sess_ctx, chat_id, bot_message_id, NXS_YES, NULL) !=
