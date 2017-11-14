@@ -36,6 +36,9 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_HELP					"...Справка по использованию бота...\n\nОписание команд:\n\n%r\n"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_DUMMY				"На текущий момент данная команда не реализована"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_HELLO				"%r, добро пожаловать в чат поддержки Nixys!\nС нетерпением ждём Ваших задач :)"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_UNKNOWN_USER				"Здравствуйте! К сожалению, пока Вас не удалось авторизовать, но мы работаем над этим и в ближайшее время отпишемся о результатах :)"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_PRESALE				"К сожалению, Вас так и не удалось авторизовать. Если Вы хотите стать клиентом Nixys - просто напишите нам что-нибудь и мы ответим Вам в самое ближайшее время."
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_PRESALE_ISSUE_SUBJECT		"Клиентский запрос: %zu"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_EMPTY			"К сожалению, невозможно создать задачу, т.к. Вы пока не подключены ни к одному проекту"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_FULL			"<b>Создание новой задачи</b>\n\n" \
 									"<b>Проект:</b> %r\n" \
@@ -74,6 +77,7 @@
 
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED				"Создана новая задача <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>Автор:</b> %r\n<b>Статус:</b> %r\n<b>Приоритет:</b> %r\n<b>Назначена:</b> %r\n\n<b>Описание</b>:\n---\n"
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED				"%s<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>%r писал(а):</b>\n---\n"
+#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_PRESALE				"<b>%r писал(а):</b>\n---\n"
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE		"%s<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>%r</b>"
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_TOO_BIG				"<i>Сообщение слишком велико, пожалуйста, ознакомтесь с ним в web-интерфейсе системы задач</i>"
 #define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_TOO_BIG_PREVIEW			"<i>Сообщение слишком велико для отображения</i>"
@@ -135,6 +139,7 @@ typedef enum
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT,
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE,
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO,
+	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_CHAT,
 } nxs_chat_srv_tlgrm_request_type_t;
 
 /* Project errors */
@@ -227,6 +232,8 @@ typedef struct
 	size_t					status_in_progress;
 	size_t					status_resolved;
 	size_t					status_need_feedback;
+	nxs_string_t				presale_api_key;
+	nxs_string_t				presale_project_name;
 } nxs_chat_srv_cfg_rdmn_t;
 
 typedef struct

@@ -118,6 +118,8 @@ static nxs_string_t _s_par_cluster			= nxs_string("cluster");
 static nxs_string_t _s_par_nodes			= nxs_string("nodes");
 static nxs_string_t _s_par_keys_space			= nxs_string("keys_space");
 static nxs_string_t _s_par_statistic			= nxs_string("statistic");
+static nxs_string_t _s_par_presale_api_key		= nxs_string("presale_api_key");
+static nxs_string_t _s_par_presale_project_name		= nxs_string("presale_project_name");
 
 /* Module global functions */
 
@@ -524,6 +526,8 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status_in_progress,	&var->status_in_progress,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status_resolved,	&var->status_resolved,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status_need_feedback,	&var->status_need_feedback,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_presale_api_key,	&var->presale_api_key,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_presale_project_name,	&var->presale_project_name,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 

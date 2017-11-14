@@ -69,6 +69,7 @@ nxs_chat_srv_d_tlgrm_method_t tlgrm_methods[] =
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT,			nxs_string("sendDocument")},
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE,			nxs_string("sendVoice")},
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO,			nxs_string("sendVideo")},
+	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_CHAT,			nxs_string("getChat")},
 
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_NONE, {NULL, 0, 0}}
 };

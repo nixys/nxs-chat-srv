@@ -27,6 +27,7 @@ typedef struct			nxs_chat_srv_m_tlgrm_inl_keyboard_s		nxs_chat_srv_m_tlgrm_inl_k
 typedef struct			nxs_chat_srv_m_tlgrm_inl_keybutton_s		nxs_chat_srv_m_tlgrm_inl_keybutton_t;
 typedef struct			nxs_chat_srv_m_tlgrm_force_reply_s		nxs_chat_srv_m_tlgrm_force_reply_t;
 typedef struct			nxs_chat_srv_m_tlgrm_bttn_callback_s		nxs_chat_srv_m_tlgrm_bttn_callback_t;
+typedef struct			nxs_chat_srv_m_tlgrm_pre_uploads_s		nxs_chat_srv_m_tlgrm_pre_uploads_t;
 
 enum nxs_chat_srv_m_tlgrm_update_type_e
 {
@@ -247,6 +248,13 @@ struct nxs_chat_srv_m_tlgrm_bttn_callback_s
 {
 	nxs_chat_srv_m_tlgrm_bttn_callback_type_t	type;			/* Required */
 	size_t						object_id;		/* Required */
+};
+
+struct nxs_chat_srv_m_tlgrm_pre_uploads_s
+{
+	nxs_string_t		file_id;
+	nxs_string_t		file_name;
+	nxs_string_t		mime_type;
 };
 
 #endif /* _INCLUDE_NXS_CHAT_SRV_M_TLGRM_H */

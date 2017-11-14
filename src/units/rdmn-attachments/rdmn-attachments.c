@@ -124,6 +124,43 @@ nxs_chat_srv_u_rdmn_attachments_t *nxs_chat_srv_u_rdmn_attachments_free(nxs_chat
 	return (nxs_chat_srv_u_rdmn_attachments_t *)nxs_free(u_ctx);
 }
 
+void nxs_chat_srv_u_rdmn_attachments_clear(nxs_chat_srv_u_rdmn_attachments_t *u_ctx)
+{
+	nxs_chat_srv_u_rdmn_attachments_download_t *d;
+	nxs_string_t                                tmp_dir;
+	size_t                                      i;
+
+	if(u_ctx == NULL) {
+
+		return;
+	}
+
+	nxs_string_init(&tmp_dir);
+
+	for(i = 0; i < nxs_array_count(&u_ctx->downloads); i++) {
+
+		d = nxs_array_get(&u_ctx->downloads, i);
+
+		nxs_string_printf(&tmp_dir, "%r/%zu", &nxs_chat_srv_cfg.attachments.rdmn_download_tmp_dir, d->attachment_id);
+
+		nxs_fs_unlink(&d->file_path);
+		nxs_fs_rmdir(&tmp_dir);
+
+		d->attachment_id = 0;
+
+		nxs_string_free(&d->file_name);
+		nxs_string_free(&d->file_path);
+		nxs_string_free(&d->description);
+		nxs_string_free(&d->content_type);
+	}
+
+	nxs_array_free(&u_ctx->downloads);
+
+	nxs_chat_srv_d_rdmn_issues_uploads_free(&u_ctx->uploads);
+
+	nxs_string_free(&tmp_dir);
+}
+
 nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_attachments_t *u_ctx,
                                                             size_t                             attachment_id,
                                                             nxs_string_t *                     file_name,

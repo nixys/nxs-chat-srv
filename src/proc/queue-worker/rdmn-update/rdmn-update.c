@@ -29,15 +29,15 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 typedef struct
 {
 	nxs_string_t		action;
-	nxs_chat_srv_err_t	(*handler)(nxs_chat_srv_m_rdmn_update_t *update);
+	nxs_chat_srv_err_t	(*handler)(nxs_chat_srv_m_rdmn_update_t *update, void *p_ctx);
 } handler_update_t;
 
 /* Module internal (static) functions prototypes */
 
 // clang-format on
 
-static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update_t *update);
-static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t *update);
+static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update_t *update, void *p_meta);
+static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t *update, void *p_meta);
 
 static void receivers_add(nxs_array_t *                  receivers,
                           size_t                         author_id,
@@ -63,7 +63,7 @@ handler_update_t handlers_update[] =
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_runtime(nxs_chat_srv_m_ra_queue_type_t type, nxs_string_t *data)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_runtime(nxs_chat_srv_m_ra_queue_type_t type, nxs_string_t *data, void *p_meta)
 {
 	nxs_string_t                 base64_decoded;
 	nxs_chat_srv_m_rdmn_update_t update;
@@ -93,7 +93,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_rdmn_update_runtime(nxs_chat_srv_
 
 	if(handlers_update[i].handler != NULL) {
 
-		nxs_error(rc, handlers_update[i].handler(&update), error);
+		nxs_error(rc, handlers_update[i].handler(&update, p_meta), error);
 	}
 
 error:
@@ -107,7 +107,7 @@ error:
 
 /* Module internal (static) functions */
 
-static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update_t *update)
+static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update_t *update, void *p_meta)
 {
 	nxs_chat_srv_u_db_ids_t *           ids_ctx;
 	nxs_chat_srv_m_rdmn_user_t *        u;
@@ -188,7 +188,7 @@ error:
 	return rc;
 }
 
-static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t *update)
+static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t *update, void *p_meta)
 {
 	nxs_chat_srv_u_db_ids_t *           ids_ctx;
 	nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx;
@@ -196,9 +196,11 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	nxs_chat_srv_m_rdmn_user_t *        u;
 	nxs_chat_srv_m_rdmn_journal_t *     journal;
 	nxs_chat_srv_u_last_issues_t *      last_issue_ctx;
+	nxs_chat_srv_u_presale_t *          presale_ctx;
+	nxs_chat_srv_m_proc_queue_worker_t *p = p_meta;
 	nxs_chat_srv_err_t                  rc;
 	nxs_array_t                         receivers;
-	size_t                              i, tlgrm_userid, *id;
+	size_t                              i, tlgrm_userid, *id, tlgrm_presale_userid;
 
 	if((journal = nxs_array_get(&update->data.issue.journals, 0)) == NULL) {
 
@@ -218,6 +220,15 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_init();
 	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_init();
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
+	presale_ctx           = nxs_chat_srv_u_presale_init();
+
+	if(nxs_chat_srv_u_presale_pull(presale_ctx) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: error to get presale context while sending tlgrm message to user (issue id: %d)",
+		                    nxs_proc_get_name(&process),
+		                    update->data.issue.id);
+	}
 
 	statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_RDMN_ISSUE_UPDATE, journal->user.id);
 
@@ -259,7 +270,8 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 			nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, update->data.issue.id);
 
 			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(
-			           update, tlgrm_userid, journal, rdmn_attachments_ctx, tlgrm_attachments_ctx) != NXS_CHAT_SRV_E_OK) {
+			           update, tlgrm_userid, journal, rdmn_attachments_ctx, tlgrm_attachments_ctx, NXS_NO) !=
+			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_log_write_error(&process,
 				                    "[%s]: error while sending tlgrm message to user (issue id: %d, "
@@ -271,12 +283,29 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 		}
 	}
 
+	if(nxs_chat_srv_u_presale_p_get_by_issue_id(presale_ctx, update->data.issue.id, &tlgrm_presale_userid) == NXS_CHAT_SRV_E_OK &&
+	   tlgrm_presale_userid > 0 && journal->user.id != p->presale_rdmn_user_id) {
+
+		if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(
+		           update, tlgrm_presale_userid, journal, rdmn_attachments_ctx, tlgrm_attachments_ctx, NXS_YES) !=
+		   NXS_CHAT_SRV_E_OK) {
+
+			nxs_log_write_error(&process,
+			                    "[%s]: error while sending presale tlgrm message to user (issue id: %d, "
+			                    "tlgrm user id: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    update->data.issue.id,
+			                    tlgrm_presale_userid);
+		}
+	}
+
 error:
 
 	ids_ctx               = nxs_chat_srv_u_db_ids_free(ids_ctx);
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_free(rdmn_attachments_ctx);
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_free(tlgrm_attachments_ctx);
+	presale_ctx           = nxs_chat_srv_u_presale_free(presale_ctx);
 
 	nxs_array_free(&receivers);
 

@@ -48,6 +48,8 @@ static nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_message_result_pull_json_extract(
                                                                                 nxs_buf_t *                     json_buf);
 static nxs_chat_srv_err_t
         nxs_chat_srv_c_tlgrm_file_result_pull_json_extract(nxs_chat_srv_m_tlgrm_file_t *file, nxs_bool_t *status, nxs_buf_t *json_buf);
+static nxs_chat_srv_err_t
+        nxs_chat_srv_c_tlgrm_chat_result_pull_json_extract(nxs_chat_srv_m_tlgrm_chat_t *chat, nxs_bool_t *status, nxs_buf_t *json_buf);
 static nxs_cfg_json_state_t
         nxs_chat_srv_c_tlgrm_extract_json_message(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
@@ -76,6 +78,12 @@ static nxs_cfg_json_state_t
         nxs_chat_srv_c_tlgrm_extract_json_voice(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
         nxs_chat_srv_c_tlgrm_extract_json_video(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+
+static void nxs_chat_srv_c_tlgrm_pre_uploads_el_init(void *element);
+static void nxs_chat_srv_c_tlgrm_pre_uploads_el_free(void *element);
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_tlgrm_deserialize_base64(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 
 // clang-format off
 
@@ -122,6 +130,8 @@ static nxs_string_t	_s_par_sticker		= nxs_string("sticker");
 static nxs_string_t	_s_par_duration		= nxs_string("duration");
 static nxs_string_t	_s_par_voice		= nxs_string("voice");
 static nxs_string_t	_s_par_video		= nxs_string("video");
+
+static nxs_string_t	_s_stickers_mime	= nxs_string("image/webp");
 
 static nxs_chat_srv_c_tlgrm_types_t chat_types[] =
 {
@@ -857,6 +867,17 @@ void nxs_chat_srv_c_tlgrm_chat_free(nxs_chat_srv_m_tlgrm_chat_t *chat)
 	nxs_string_free(&chat->username);
 }
 
+nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_chat_result_pull_json(nxs_chat_srv_m_tlgrm_chat_t *chat, nxs_bool_t *status, nxs_buf_t *json_buf)
+{
+
+	if(chat == NULL || status == NULL || json_buf == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	return nxs_chat_srv_c_tlgrm_chat_result_pull_json_extract(chat, status, json_buf);
+}
+
 nxs_chat_srv_m_tlgrm_chat_type_t nxs_chat_srv_c_tlgrm_chat_type_map(nxs_string_t *type_name)
 {
 	size_t i;
@@ -1288,6 +1309,173 @@ nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_bttn_callback_deserialize(nxs_chat_srv_m
 	return rc;
 }
 
+void nxs_chat_srv_c_tlgrm_pre_uploads_init(nxs_array_t *pre_uploads)
+{
+
+	if(pre_uploads == NULL) {
+
+		return;
+	}
+
+	nxs_array_init3(pre_uploads,
+	                nxs_chat_srv_m_tlgrm_pre_uploads_t,
+	                &nxs_chat_srv_c_tlgrm_pre_uploads_el_init,
+	                &nxs_chat_srv_c_tlgrm_pre_uploads_el_free);
+}
+
+void nxs_chat_srv_c_tlgrm_pre_uploads_free(nxs_array_t *pre_uploads)
+{
+	if(pre_uploads == NULL) {
+
+		return;
+	}
+
+	nxs_array_free(pre_uploads);
+}
+
+void nxs_chat_srv_c_tlgrm_pre_uploads_clear(nxs_array_t *pre_uploads)
+{
+	if(pre_uploads == NULL) {
+
+		return;
+	}
+
+	nxs_array_clear(pre_uploads);
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_pre_uploads_add(nxs_array_t *pre_uploads, nxs_chat_srv_m_tlgrm_update_t *update)
+{
+	nxs_chat_srv_m_tlgrm_photo_size_t * p;
+	nxs_chat_srv_m_tlgrm_pre_uploads_t *el;
+	nxs_chat_srv_err_t                  rc;
+
+	if(pre_uploads == NULL || update == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if(nxs_chat_srv_c_tlgrm_update_get_type(update) != NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE) {
+
+		return NXS_CHAT_SRV_E_TYPE;
+	}
+
+	rc = NXS_CHAT_SRV_E_EXIST;
+
+	if(nxs_array_count(&update->message.photo) > 0) {
+
+		if((p = nxs_array_get(&update->message.photo, nxs_array_count(&update->message.photo) - 1)) != NULL) {
+
+			rc = NXS_CHAT_SRV_E_OK;
+
+			el = nxs_array_add(pre_uploads);
+
+			nxs_string_clone(&el->file_id, &p->file_id);
+		}
+	}
+
+	if(update->message.document._is_used == NXS_YES) {
+
+		rc = NXS_CHAT_SRV_E_OK;
+
+		el = nxs_array_add(pre_uploads);
+
+		nxs_string_clone(&el->file_id, &update->message.document.file_id);
+		nxs_string_clone(&el->file_name, &update->message.document.file_name);
+		nxs_string_clone(&el->mime_type, &update->message.document.mime_type);
+	}
+
+	if(update->message.sticker._is_used == NXS_YES) {
+
+		rc = NXS_CHAT_SRV_E_OK;
+
+		el = nxs_array_add(pre_uploads);
+
+		nxs_string_clone(&el->file_id, &update->message.sticker.file_id);
+		nxs_string_clone(&el->mime_type, &_s_stickers_mime);
+	}
+
+	if(update->message.voice._is_used == NXS_YES) {
+
+		rc = NXS_CHAT_SRV_E_OK;
+
+		el = nxs_array_add(pre_uploads);
+
+		nxs_string_clone(&el->file_id, &update->message.voice.file_id);
+		nxs_string_clone(&el->mime_type, &update->message.voice.mime_type);
+	}
+
+	if(update->message.video._is_used == NXS_YES) {
+
+		rc = NXS_CHAT_SRV_E_OK;
+
+		el = nxs_array_add(pre_uploads);
+
+		nxs_string_clone(&el->file_id, &update->message.video.file_id);
+		nxs_string_clone(&el->mime_type, &update->message.video.mime_type);
+	}
+
+	return rc;
+}
+
+void nxs_chat_srv_c_tlgrm_pre_uploads_serialize(nxs_array_t *pre_uploads, nxs_string_t *files)
+{
+	nxs_chat_srv_m_tlgrm_pre_uploads_t *el;
+	nxs_string_t                        file_name_encoding, mime_type_encoding;
+	size_t                              i;
+
+	nxs_string_clear(files);
+
+	nxs_string_init_empty(&file_name_encoding);
+	nxs_string_init_empty(&mime_type_encoding);
+
+	for(i = 0; i < nxs_array_count(pre_uploads); i++) {
+
+		el = nxs_array_get(pre_uploads, i);
+
+		if(i > 0) {
+
+			nxs_string_char_add_char(files, (u_char)',');
+		}
+
+		nxs_base64_encode_string(&file_name_encoding, &el->file_name);
+		nxs_base64_encode_string(&mime_type_encoding, &el->mime_type);
+
+		nxs_string_printf2_cat(files,
+		                       "{"
+		                       "\"file_id\":\"%r\","
+		                       "\"file_name\":\"%r\","
+		                       "\"mime_type\":\"%r\""
+		                       "}",
+		                       &el->file_id,
+		                       &file_name_encoding,
+		                       &mime_type_encoding);
+	}
+
+	nxs_string_free(&file_name_encoding);
+	nxs_string_free(&mime_type_encoding);
+}
+
+nxs_cfg_json_state_t nxs_chat_srv_c_tlgrm_pre_uploads_extract_json(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el,
+                                                                   nxs_array_t *       cfg_arr)
+{
+	nxs_array_t *                       files = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_chat_srv_m_tlgrm_pre_uploads_t *el;
+
+	el = nxs_array_add(files);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_file_id,	&el->file_id,		NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_file_name,	&el->file_name,		&nxs_chat_srv_c_tlgrm_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_mime_type,	&el->mime_type,		&nxs_chat_srv_c_tlgrm_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	return NXS_CFG_JSON_CONF_OK;
+}
+
 /* Module internal (static) functions */
 
 static nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_update_pull_json_extract(nxs_chat_srv_m_tlgrm_update_t *update, nxs_buf_t *json_buf)
@@ -1389,6 +1577,41 @@ static nxs_chat_srv_err_t
 	if(nxs_cfg_json_read_buf(&process, cfg_json, json_buf) != NXS_CFG_JSON_CONF_OK) {
 
 		nxs_log_write_error(&process, "[%s]: tlgrm file result json pull error: parse json_buf error", nxs_proc_get_name(&process));
+
+		rc = NXS_CHAT_SRV_E_ERR;
+	}
+
+	nxs_cfg_json_free(&cfg_json);
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_chat_srv_err_t
+        nxs_chat_srv_c_tlgrm_chat_result_pull_json_extract(nxs_chat_srv_m_tlgrm_chat_t *chat, nxs_bool_t *status, nxs_buf_t *json_buf)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_cfg_json_t     cfg_json;
+	nxs_array_t        cfg_arr;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_result,		chat,		&nxs_chat_srv_c_tlgrm_extract_json_chat,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ok,		status,		NULL,						NULL,	NXS_CFG_JSON_TYPE_BOOL,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_buf(&process, cfg_json, json_buf) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_error(&process, "[%s]: tlgrm chat result json pull error: parse json_buf error", nxs_proc_get_name(&process));
 
 		rc = NXS_CHAT_SRV_E_ERR;
 	}
@@ -1536,7 +1759,7 @@ static nxs_cfg_json_state_t
 
 	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
 
-		nxs_log_write_raw(&process, "json read error: 'message.chat' block");
+		nxs_log_write_raw(&process, "json read error: 'chat' block");
 
 		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
 	}
@@ -1936,4 +2159,41 @@ error:
 	nxs_cfg_json_conf_array_free(&cfg_arr);
 
 	return rc;
+}
+
+static void nxs_chat_srv_c_tlgrm_pre_uploads_el_init(void *element)
+{
+	nxs_chat_srv_m_tlgrm_pre_uploads_t *el = element;
+
+	nxs_string_init_empty(&el->file_id);
+	nxs_string_init_empty(&el->file_name);
+	nxs_string_init_empty(&el->mime_type);
+}
+
+static void nxs_chat_srv_c_tlgrm_pre_uploads_el_free(void *element)
+{
+	nxs_chat_srv_m_tlgrm_pre_uploads_t *el = element;
+
+	nxs_string_free(&el->file_id);
+	nxs_string_free(&el->file_name);
+	nxs_string_free(&el->mime_type);
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_tlgrm_deserialize_base64(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_string_t *name = nxs_cfg_json_get_val(cfg_json_par_el);
+
+	if(nxs_json_type_get(json) != NXS_JSON_TYPE_STRING) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: tlgrm collection base64 deserialize error: expected type string for base64 decoding",
+		                    nxs_proc_get_name(&process));
+
+		return NXS_CFG_JSON_CONF_ERROR;
+	}
+
+	nxs_base64_decode_string(name, nxs_json_string_val(json));
+
+	return NXS_CFG_JSON_CONF_OK;
 }

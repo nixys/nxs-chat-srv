@@ -151,7 +151,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_user_pull(nxs_chat_srv_u_rdmn_user_t *u_c
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(nxs_chat_srv_u_rdmn_user_extract(u_ctx, &out_buf)) {
+	if(nxs_chat_srv_u_rdmn_user_extract(u_ctx, &out_buf) == NXS_CHAT_SRV_E_ERR) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -161,6 +161,41 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_user_pull(nxs_chat_srv_u_rdmn_user_t *u_c
 		nxs_chat_srv_u_rdmn_user_clear(u_ctx);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_EXIST, error);
+	}
+
+error:
+
+	nxs_buf_free(&out_buf);
+
+	return rc;
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_user_pull_current(nxs_chat_srv_u_rdmn_user_t *u_ctx, nxs_string_t *api_key)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_buf_t          out_buf;
+
+	if(u_ctx == NULL || api_key == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_buf_init2(&out_buf);
+
+	/*
+	 * get data from Redmine
+	 */
+
+	if(nxs_chat_srv_d_rdmn_users_get_current(api_key, NXS_NO, NULL, &out_buf) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_u_rdmn_user_extract(u_ctx, &out_buf) == NXS_CHAT_SRV_E_ERR) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
 error:
@@ -184,6 +219,17 @@ nxs_string_t *nxs_chat_srv_u_rdmn_user_get_api_key(nxs_chat_srv_u_rdmn_user_t *u
 	}
 
 	return &u_ctx->api_key;
+}
+
+size_t nxs_chat_srv_u_rdmn_user_get_id(nxs_chat_srv_u_rdmn_user_t *u_ctx)
+{
+
+	if(u_ctx == NULL) {
+
+		return 0;
+	}
+
+	return u_ctx->id;
 }
 
 /* Module internal (static) functions */
@@ -259,11 +305,11 @@ static nxs_cfg_json_state_t
 	// clang-format off
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,			&var->id,			NULL,	NULL,							NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status,			&var->status,			NULL,	NULL,							NXS_CFG_JSON_TYPE_INT_32,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status,			&var->status,			NULL,	NULL,							NXS_CFG_JSON_TYPE_INT_32,	0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_login,			&var->login,			NULL,	NULL,							NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_firstname,		&var->firstname,		NULL,	NULL,							NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_lastname,		&var->lastname,			NULL,	NULL,							NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_mail,			&var->mail,			NULL,	NULL,							NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_mail,			&var->mail,			NULL,	NULL,							NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_api_key,		&var->api_key,			NULL,	NULL,							NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_custom_fields,		&var->tlgrm_username,		NULL,	&nxs_chat_srv_u_rdmn_user_extract_user_custom_fields,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
 

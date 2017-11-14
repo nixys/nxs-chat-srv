@@ -89,6 +89,10 @@ error:
 static nxs_chat_srv_err_t nxs_chat_srv_p_cache_worker_process(nxs_chat_srv_p_cache_worker_ctx_t *p_ctx)
 {
 	nxs_chat_srv_u_db_cache_t *db_cache_ctx;
+	nxs_chat_srv_u_presale_t * presale_ctx;
+	nxs_chat_srv_u_db_queue_t *queue_ctx;
+	nxs_string_t *             data;
+	size_t                     i, tlgrm_userid;
 
 	if(nxs_chat_srv_p_cache_worker_check_lock() == NXS_YES) {
 
@@ -96,6 +100,8 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_cache_worker_process(nxs_chat_srv_p_cac
 	}
 
 	db_cache_ctx = nxs_chat_srv_u_db_cache_init();
+	presale_ctx  = nxs_chat_srv_u_presale_init();
+	queue_ctx    = nxs_chat_srv_u_db_queue_init();
 
 	/* check and update projects cache */
 	if(time(NULL) - p_ctx->projects_updated_at > nxs_chat_srv_cfg.cache.projects_ttl) {
@@ -122,6 +128,63 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_cache_worker_process(nxs_chat_srv_p_cac
 		else {
 
 			nxs_log_write_debug(&process, "[%s]: users cache successfully updated", nxs_proc_get_name(&process));
+
+			switch(nxs_chat_srv_u_presale_pull(presale_ctx)) {
+
+				case NXS_CHAT_SRV_E_OK:
+
+					nxs_log_write_debug(
+					        &process, "[%s]: users cache pull waitings: success", nxs_proc_get_name(&process));
+
+					/* move all existing data from db_waitings to db_queue */
+					for(i = 0; (data = nxs_chat_srv_u_presale_w_get(presale_ctx, i, &tlgrm_userid)) != NULL; i++) {
+
+						if(nxs_chat_srv_u_db_queue_add(
+						           queue_ctx, tlgrm_userid, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_NONE, data) ==
+						   NXS_CHAT_SRV_E_OK) {
+
+							nxs_log_write_debug(&process,
+							                    "[%s]: users cache queue add success",
+							                    nxs_proc_get_name(&process));
+
+							if(nxs_chat_srv_u_presale_w_del(presale_ctx, tlgrm_userid) == NXS_CHAT_SRV_E_OK) {
+
+								nxs_log_write_debug(&process,
+								                    "[%s]: users cache waitings delete success",
+								                    nxs_proc_get_name(&process));
+							}
+							else {
+
+								nxs_log_write_warn(&process,
+								                   "[%s]: users cache waitings delete error",
+								                   nxs_proc_get_name(&process));
+							}
+						}
+						else {
+
+							nxs_log_write_warn(
+							        &process, "[%s]: users cache queue add error", nxs_proc_get_name(&process));
+						}
+					}
+
+					/* TODO: Add here functionality to notice registered users */
+
+					break;
+
+				case NXS_CHAT_SRV_E_EXIST:
+
+					nxs_log_write_debug(
+					        &process, "[%s]: users cache pull waitings: no values", nxs_proc_get_name(&process));
+
+					break;
+
+				default:
+
+					nxs_log_write_debug(
+					        &process, "[%s]: users cache pull waitings: error", nxs_proc_get_name(&process));
+
+					break;
+			}
 		}
 
 		p_ctx->users_updated_at = time(NULL);
@@ -143,6 +206,8 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_cache_worker_process(nxs_chat_srv_p_cac
 	}
 
 	db_cache_ctx = nxs_chat_srv_u_db_cache_free(db_cache_ctx);
+	presale_ctx  = nxs_chat_srv_u_presale_free(presale_ctx);
+	queue_ctx    = nxs_chat_srv_u_db_queue_free(queue_ctx);
 
 	return NXS_CHAT_SRV_E_OK;
 }

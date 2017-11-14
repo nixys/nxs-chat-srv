@@ -39,10 +39,34 @@ extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 
 // clang-format on
 
-void nxs_chat_srv_p_queue_worker_ctx_init(nxs_chat_srv_p_queue_worker_ctx_t *p_ctx)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_ctx_init(nxs_chat_srv_p_queue_worker_ctx_t *p_ctx)
 {
+	nxs_chat_srv_u_rdmn_user_t *user_ctx;
+	nxs_chat_srv_err_t          rc;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	user_ctx = nxs_chat_srv_u_rdmn_user_init();
 
 	p_ctx->ra_queue_ctx = nxs_chat_srv_u_ra_queue_init();
+
+	if(nxs_chat_srv_u_rdmn_user_pull_current(user_ctx, &nxs_chat_srv_cfg.rdmn.presale_api_key) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: queue worker process context init error: can't pull presale user by api key (rest api key: %r)",
+		                    nxs_proc_get_name(&process),
+		                    &nxs_chat_srv_cfg.rdmn.presale_api_key);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	p_ctx->rdmn_update_ctx.presale_rdmn_user_id = nxs_chat_srv_u_rdmn_user_get_id(user_ctx);
+
+error:
+
+	user_ctx = nxs_chat_srv_u_rdmn_user_free(user_ctx);
+
+	return rc;
 }
 
 void nxs_chat_srv_p_queue_worker_ctx_free(nxs_chat_srv_p_queue_worker_ctx_t *p_ctx)

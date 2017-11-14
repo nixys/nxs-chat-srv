@@ -116,6 +116,8 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.host);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.api_key);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.auth_token);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.presale_api_key);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.presale_project_name);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.cache.lock_file);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.attachments.tlgrm_download_tmp_dir);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.attachments.rdmn_download_tmp_dir);

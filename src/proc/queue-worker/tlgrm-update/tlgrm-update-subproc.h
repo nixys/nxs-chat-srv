@@ -5,6 +5,7 @@
 
 /*%%_NXS_TPL_HEADERS_BEGIN_%%*/
 #include <proc/queue-worker/tlgrm-update/win-added-to-issue/win-added-to-issue.h>
+#include <proc/queue-worker/tlgrm-update/win-unknown-user/win-unknown-user.h>
 #include <proc/queue-worker/tlgrm-update/win-error/win-error.h>
 #include <proc/queue-worker/tlgrm-update/win-enter-description/win-enter-description.h>
 #include <proc/queue-worker/tlgrm-update/win-select-issue/win-select-issue.h>
@@ -20,6 +21,7 @@
 #include <proc/queue-worker/tlgrm-update/win-session-destroyed/win-session-destroyed.h>
 #include <proc/queue-worker/tlgrm-update/win-select-priority/win-select-priority.h>
 #include <proc/queue-worker/tlgrm-update/win-gen-notice/win-gen-notice.h>
+#include <proc/queue-worker/tlgrm-update/win-presale/win-presale.h>
 #include <proc/queue-worker/tlgrm-update/win-begin/win-begin.h>
 /*%%_NXS_TPL_HEADERS_END_%%*/
 

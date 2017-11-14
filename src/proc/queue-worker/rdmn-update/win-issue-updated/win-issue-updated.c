@@ -124,7 +124,8 @@ nxs_chat_srv_err_t
                                                                           size_t                              tlgrm_userid,
                                                                           nxs_chat_srv_m_rdmn_journal_t *     journal,
                                                                           nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx,
-                                                                          nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx)
+                                                                          nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx,
+                                                                          nxs_bool_t                          is_presale_message)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
 	nxs_chat_srv_m_rdmn_detail_t *      d;
@@ -265,16 +266,27 @@ nxs_chat_srv_err_t
 
 		nxs_chat_srv_c_tlgrm_format_escape_html(&notes_fmt, &journal->notes);
 
-		nxs_string_printf(&message,
-		                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED,
-		                  journal->private_notes == NXS_YES ? (char *)_s_private_message : "",
-		                  &nxs_chat_srv_cfg.rdmn.host,
-		                  update->data.issue.id,
-		                  &project_fmt,
-		                  update->data.issue.id,
-		                  &subject_fmt,
-		                  &properties,
-		                  &user_fmt);
+		if(is_presale_message == NXS_YES) {
+
+			/* for presale users */
+
+			nxs_string_printf(&message, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_PRESALE, &user_fmt);
+		}
+		else {
+
+			/* for authorized users */
+
+			nxs_string_printf(&message,
+			                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED,
+			                  journal->private_notes == NXS_YES ? (char *)_s_private_message : "",
+			                  &nxs_chat_srv_cfg.rdmn.host,
+			                  update->data.issue.id,
+			                  &project_fmt,
+			                  update->data.issue.id,
+			                  &subject_fmt,
+			                  &properties,
+			                  &user_fmt);
+		}
 
 		nxs_chat_srv_c_tlgrm_make_message_chunks(&message, &notes_fmt, &m_chunks);
 	}
@@ -285,16 +297,28 @@ nxs_chat_srv_err_t
 			nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
 		}
 
-		nxs_string_printf(&message,
-		                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE,
-		                  journal->private_notes == NXS_YES ? (char *)_s_private_message : "",
-		                  &nxs_chat_srv_cfg.rdmn.host,
-		                  update->data.issue.id,
-		                  &project_fmt,
-		                  update->data.issue.id,
-		                  &subject_fmt,
-		                  &properties,
-		                  &user_fmt);
+		if(is_presale_message == NXS_YES && nxs_array_count(&attachments) == 0) {
+
+			nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
+		}
+
+		if(is_presale_message == NXS_YES) {
+
+			nxs_string_printf(&message, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_PRESALE, &user_fmt);
+		}
+		else {
+
+			nxs_string_printf(&message,
+			                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE,
+			                  journal->private_notes == NXS_YES ? (char *)_s_private_message : "",
+			                  &nxs_chat_srv_cfg.rdmn.host,
+			                  update->data.issue.id,
+			                  &project_fmt,
+			                  update->data.issue.id,
+			                  &subject_fmt,
+			                  &properties,
+			                  &user_fmt);
+		}
 
 		nxs_chat_srv_c_tlgrm_make_message_chunks(&message, NULL, &m_chunks);
 	}

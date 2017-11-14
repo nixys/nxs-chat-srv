@@ -6,6 +6,7 @@
 /*%%_NXS_TPL_HEADERS_TYPEDEF_BEGIN_%%*/
 #include <units/ra-queue/ra-queue-typedefs.h>
 #include <units/tlgrm-answercallbackquery/tlgrm-answercallbackquery-typedefs.h>
+#include <units/presale/presale-typedefs.h>
 #include <units/tlgrm-attachments/tlgrm-attachments-typedefs.h>
 #include <units/db-statistic/db-statistic-typedefs.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage-typedefs.h>
@@ -14,6 +15,7 @@
 #include <units/rdmn-issues/rdmn-issues-typedefs.h>
 #include <units/db-ids/db-ids-typedefs.h>
 #include <units/db-issues/db-issues-typedefs.h>
+#include <units/tlgrm-chat/tlgrm-chat-typedefs.h>
 #include <units/db-sess/db-sess-typedefs.h>
 #include <units/last-issues/last-issues-typedefs.h>
 #include <units/db-queue/db-queue-typedefs.h>
@@ -24,6 +26,7 @@
 /*%%_NXS_TPL_HEADERS_BEGIN_%%*/
 #include <units/ra-queue/ra-queue.h>
 #include <units/tlgrm-answercallbackquery/tlgrm-answercallbackquery.h>
+#include <units/presale/presale.h>
 #include <units/tlgrm-attachments/tlgrm-attachments.h>
 #include <units/db-statistic/db-statistic.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage.h>
@@ -32,6 +35,7 @@
 #include <units/rdmn-issues/rdmn-issues.h>
 #include <units/db-ids/db-ids.h>
 #include <units/db-issues/db-issues.h>
+#include <units/tlgrm-chat/tlgrm-chat.h>
 #include <units/db-sess/db-sess.h>
 #include <units/last-issues/last-issues.h>
 #include <units/db-queue/db-queue.h>

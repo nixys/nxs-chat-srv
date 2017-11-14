@@ -50,7 +50,10 @@ typedef struct
 
 // clang-format on
 
-static size_t check_user(nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_user_ctx_t *user_ctx, nxs_chat_srv_m_tlgrm_update_t *update);
+static nxs_chat_srv_err_t check_user(nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                     nxs_chat_srv_m_user_ctx_t *    user_ctx,
+                                     nxs_chat_srv_m_tlgrm_update_t *update,
+                                     size_t *                       tlgrm_user_id);
 
 static nxs_chat_srv_err_t handler_callback_exec(nxs_chat_srv_u_db_queue_t *queue_ctx,
                                                 nxs_chat_srv_u_db_sess_t * sess_ctx,
@@ -61,6 +64,9 @@ static nxs_chat_srv_err_t handler_message_exec(nxs_chat_srv_u_db_queue_t *queue_
                                                nxs_chat_srv_u_db_sess_t * sess_ctx,
                                                nxs_chat_srv_u_db_cache_t *cache_ctx,
                                                nxs_chat_srv_m_user_ctx_t *user_ctx);
+
+static nxs_chat_srv_err_t
+        handler_presale_exec(size_t tlgrm_user_id, nxs_chat_srv_u_db_queue_t *queue_ctx, nxs_chat_srv_u_db_cache_t *cache_ctx);
 
 static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback,
                                                              nxs_chat_srv_m_tlgrm_update_t *       update,
@@ -155,15 +161,15 @@ static nxs_string_t _s_stickers_mime	= nxs_string("image/webp");
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_ra_queue_type_t type, nxs_string_t *data)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_ra_queue_type_t type, nxs_string_t *data, void *p_meta)
 {
 	nxs_string_t                  base64_decoded;
 	nxs_chat_srv_m_tlgrm_update_t update;
-	nxs_chat_srv_u_db_sess_t *    sess_ctx;
 	nxs_chat_srv_u_db_cache_t *   cache_ctx;
 	nxs_chat_srv_u_db_ids_t *     ids_ctx;
 	nxs_chat_srv_m_user_ctx_t     user_ctx;
 	nxs_chat_srv_u_db_queue_t *   queue_ctx;
+	nxs_chat_srv_u_presale_t *    presale_ctx;
 	nxs_chat_srv_err_t            rc;
 	size_t                        tlgrm_user_id, i;
 
@@ -173,10 +179,10 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_r
 
 	nxs_chat_srv_c_tlgrm_update_init(&update);
 
-	sess_ctx  = nxs_chat_srv_u_db_sess_init();
-	cache_ctx = nxs_chat_srv_u_db_cache_init();
-	ids_ctx   = nxs_chat_srv_u_db_ids_init();
-	queue_ctx = nxs_chat_srv_u_db_queue_init();
+	cache_ctx   = nxs_chat_srv_u_db_cache_init();
+	ids_ctx     = nxs_chat_srv_u_db_ids_init();
+	queue_ctx   = nxs_chat_srv_u_db_queue_init();
+	presale_ctx = nxs_chat_srv_u_presale_init();
 
 	nxs_chat_srv_c_user_ctx_init(&user_ctx);
 
@@ -192,21 +198,36 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_r
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if((tlgrm_user_id = check_user(cache_ctx, &user_ctx, &update)) == 0) {
+	if(check_user(cache_ctx, &user_ctx, &update, &tlgrm_user_id) != NXS_CHAT_SRV_E_OK) {
 
 		/* User not found */
 
-		/* TODO: initial dialog with unknown user */
+		if(nxs_chat_srv_u_presale_pull(presale_ctx) != NXS_CHAT_SRV_E_OK) {
 
-		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
+
+		if(nxs_chat_srv_u_presale_p_get_by_user_id(presale_ctx, tlgrm_user_id, NULL) == NXS_CHAT_SRV_E_OK) {
+
+			/* presale object existing for this user */
+
+			nxs_error(rc,
+			          nxs_chat_srv_u_db_queue_add(queue_ctx, tlgrm_user_id, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE, data),
+			          error);
+		}
+		else {
+
+			/* no presale objects existing for this user */
+
+			nxs_chat_srv_p_queue_worker_tlgrm_update_win_unknown_user(tlgrm_user_id, NULL);
+
+			nxs_chat_srv_u_presale_w_set(presale_ctx, tlgrm_user_id, data);
+		}
+
+		nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
 	}
 
 	if(nxs_chat_srv_u_db_ids_set(ids_ctx, user_ctx.r_userid, tlgrm_user_id) != NXS_CHAT_SRV_E_OK) {
-
-		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
-	}
-
-	if(nxs_chat_srv_u_db_sess_pull(sess_ctx, tlgrm_user_id) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -277,10 +298,10 @@ error:
 
 	nxs_chat_srv_c_user_ctx_free(&user_ctx);
 
-	sess_ctx  = nxs_chat_srv_u_db_sess_free(sess_ctx);
-	cache_ctx = nxs_chat_srv_u_db_cache_free(cache_ctx);
-	ids_ctx   = nxs_chat_srv_u_db_ids_free(ids_ctx);
-	queue_ctx = nxs_chat_srv_u_db_queue_free(queue_ctx);
+	cache_ctx   = nxs_chat_srv_u_db_cache_free(cache_ctx);
+	ids_ctx     = nxs_chat_srv_u_db_ids_free(ids_ctx);
+	queue_ctx   = nxs_chat_srv_u_db_queue_free(queue_ctx);
+	presale_ctx = nxs_chat_srv_u_presale_free(presale_ctx);
 
 	return rc;
 }
@@ -316,13 +337,11 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime_queue(void)
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if((tlgrm_user_id = check_user(cache_ctx, &user_ctx, update)) == 0) {
+			if(check_user(cache_ctx, &user_ctx, update, &tlgrm_user_id) != NXS_CHAT_SRV_E_OK) {
 
 				/* User not found */
 
-				/* TODO: unknown user initial dialog */
-
-				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				nxs_error(rc, handler_presale_exec(tlgrm_user_id, queue_ctx, cache_ctx), error);
 			}
 
 			if(nxs_chat_srv_u_db_sess_pull(sess_ctx, tlgrm_user_id) != NXS_CHAT_SRV_E_OK) {
@@ -384,28 +403,31 @@ error:
 
 /* Module internal (static) functions */
 
-static size_t check_user(nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_user_ctx_t *user_ctx, nxs_chat_srv_m_tlgrm_update_t *update)
+static nxs_chat_srv_err_t check_user(nxs_chat_srv_u_db_cache_t *    cache_ctx,
+                                     nxs_chat_srv_m_user_ctx_t *    user_ctx,
+                                     nxs_chat_srv_m_tlgrm_update_t *update,
+                                     size_t *                       tlgrm_user_id)
 {
-	nxs_string_t *tlgrm_username, *tlgrm_userlang, *s;
-	size_t        tlgrm_user_id, i;
+	nxs_string_t *t_u_name, *t_u_lang, *s;
+	size_t        i;
 	nxs_bool_t    f;
 
 	if(cache_ctx == NULL || user_ctx == NULL || update == NULL) {
 
-		return 0;
+		return NXS_CHAT_SRV_E_PTR;
 	}
 
 	if(update->callback_query._is_used == NXS_YES) {
 
-		tlgrm_user_id  = update->callback_query.from.id;
-		tlgrm_username = &update->callback_query.from.username;
-		tlgrm_userlang = &update->callback_query.from.language_code;
+		*tlgrm_user_id = update->callback_query.from.id;
+		t_u_name       = &update->callback_query.from.username;
+		t_u_lang       = &update->callback_query.from.language_code;
 	}
 	else {
 
-		tlgrm_user_id  = update->message.from.id;
-		tlgrm_username = &update->message.from.username;
-		tlgrm_userlang = &update->message.from.language_code;
+		*tlgrm_user_id = update->message.from.id;
+		t_u_name       = &update->message.from.username;
+		t_u_lang       = &update->message.from.language_code;
 	}
 
 	if(nxs_array_count(&nxs_chat_srv_cfg.dev_accounts) > 0) {
@@ -414,7 +436,7 @@ static size_t check_user(nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_us
 
 			s = nxs_array_get(&nxs_chat_srv_cfg.dev_accounts, i);
 
-			if(nxs_string_cmp(s, 0, tlgrm_username, 0) == NXS_YES) {
+			if(nxs_string_cmp(s, 0, t_u_name, 0) == NXS_YES) {
 
 				f = NXS_YES;
 
@@ -428,27 +450,27 @@ static size_t check_user(nxs_chat_srv_u_db_cache_t *cache_ctx, nxs_chat_srv_m_us
 			        &process,
 			        "[%s]: access denied: tlgrm user not in 'dev_accounts' list (tlgrm userid: %zu, tlgrm user name: %r)",
 			        nxs_proc_get_name(&process),
-			        tlgrm_user_id,
-			        tlgrm_username);
+			        *tlgrm_user_id,
+			        t_u_name);
 
-			return 0;
+			return NXS_CHAT_SRV_E_EXIST;
 		}
 	}
 
-	if(nxs_chat_srv_u_db_cache_user_get(cache_ctx, tlgrm_username, user_ctx) == NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_u_db_cache_user_get(cache_ctx, t_u_name, user_ctx) == NXS_CHAT_SRV_E_OK) {
 
-		nxs_string_clone(&user_ctx->t_userlang, tlgrm_userlang);
+		nxs_string_clone(&user_ctx->t_userlang, t_u_lang);
 
-		return tlgrm_user_id;
+		return NXS_CHAT_SRV_E_OK;
 	}
 
 	nxs_log_write_warn(&process,
 	                   "[%s]: access denied: tlgrm user not found (tlgrm userid: %zu, tlgrm user name: %r)",
 	                   nxs_proc_get_name(&process),
-	                   tlgrm_user_id,
-	                   tlgrm_username);
+	                   *tlgrm_user_id,
+	                   t_u_name);
 
-	return 0;
+	return NXS_CHAT_SRV_E_EXIST;
 }
 
 static nxs_chat_srv_err_t handler_callback_exec(nxs_chat_srv_u_db_queue_t *queue_ctx,
@@ -633,6 +655,182 @@ error:
 		                   tlgrm_userid,
 		                   rc);
 	}
+
+	return rc;
+}
+
+static nxs_chat_srv_err_t
+        handler_presale_exec(size_t tlgrm_user_id, nxs_chat_srv_u_db_queue_t *queue_ctx, nxs_chat_srv_u_db_cache_t *cache_ctx)
+{
+	nxs_chat_srv_u_presale_t *               presale_ctx;
+	nxs_chat_srv_u_rdmn_user_t *             rdmn_presale_user_ctx;
+	nxs_chat_srv_u_rdmn_issues_t *           rdmn_issues_ctx;
+	nxs_chat_srv_u_tlgrm_attachments_t *     tlgrm_attachments_ctx;
+	nxs_chat_srv_u_rdmn_attachments_t *      rdmn_attachments_ctx;
+	nxs_chat_srv_m_db_cache_project_t *      mp;
+	nxs_chat_srv_m_db_cache_issue_priority_t issue_priority;
+	nxs_chat_srv_m_tlgrm_update_t *          update;
+	nxs_chat_srv_m_tlgrm_pre_uploads_t *     pre_upload;
+	nxs_array_t                              cache_projects, pre_uploads, *rdmn_uploads;
+	nxs_string_t                             presale_issue_subject, *s, file_name, file_path;
+	nxs_chat_srv_err_t                       rc;
+	size_t                                   rdmn_issue_id, i;
+
+	presale_ctx           = nxs_chat_srv_u_presale_init();
+	rdmn_presale_user_ctx = nxs_chat_srv_u_rdmn_user_init();
+	rdmn_issues_ctx       = nxs_chat_srv_u_rdmn_issues_init();
+	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
+	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_init();
+
+	nxs_chat_srv_c_tlgrm_pre_uploads_init(&pre_uploads);
+
+	nxs_array_init2(&cache_projects, nxs_chat_srv_m_db_cache_project_t);
+
+	nxs_string_init(&presale_issue_subject);
+	nxs_string_init(&file_name);
+	nxs_string_init(&file_path);
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	if(nxs_chat_srv_u_presale_pull(presale_ctx) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_u_presale_p_get_by_user_id(presale_ctx, tlgrm_user_id, &rdmn_issue_id) == NXS_CHAT_SRV_E_OK) {
+
+		/* presale object existing for this user */
+
+		for(update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx); update != NULL;
+		    update = nxs_chat_srv_u_db_queue_list_del_head(queue_ctx)) {
+
+			if(nxs_chat_srv_c_tlgrm_update_get_type(update) != NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE) {
+
+				continue;
+			}
+
+			nxs_chat_srv_c_tlgrm_pre_uploads_clear(&pre_uploads);
+			nxs_chat_srv_u_rdmn_attachments_clear(rdmn_attachments_ctx);
+
+			if(nxs_string_len(&update->message.text) > 0) {
+
+				s = &update->message.text;
+			}
+			else {
+
+				if(nxs_string_len(&update->message.caption) > 0) {
+
+					s = &update->message.caption;
+				}
+				else {
+
+					s = &update->message.text;
+				}
+			}
+
+			nxs_chat_srv_c_tlgrm_pre_uploads_add(&pre_uploads, update);
+
+			for(i = 0; i < nxs_array_count(&pre_uploads); i++) {
+
+				pre_upload = nxs_array_get(&pre_uploads, i);
+
+				if(nxs_chat_srv_u_tlgrm_attachments_download(tlgrm_attachments_ctx,
+				                                             tlgrm_user_id,
+				                                             (nxs_chat_srv_m_db_sess_file_t *)pre_upload,
+				                                             &file_name,
+				                                             &file_path) != NXS_CHAT_SRV_E_OK) {
+
+					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				}
+
+				if(nxs_chat_srv_u_rdmn_attachments_upload(rdmn_attachments_ctx,
+				                                          &nxs_chat_srv_cfg.rdmn.presale_api_key,
+				                                          &file_name,
+				                                          &file_path,
+				                                          &pre_upload->mime_type) != NXS_CHAT_SRV_E_OK) {
+
+					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				}
+			}
+
+			rdmn_uploads = nxs_chat_srv_u_rdmn_attachments_uploads_get(rdmn_attachments_ctx);
+
+			if(rdmn_issue_id == 0) {
+
+				/* presale issue not created yet */
+
+				nxs_chat_srv_u_db_cache_projects_get(cache_ctx, &cache_projects);
+				nxs_chat_srv_u_db_cache_prio_get_default(cache_ctx, &issue_priority);
+
+				nxs_string_printf(&presale_issue_subject, NXS_CHAT_SRV_TLGRM_MESSAGE_PRESALE_ISSUE_SUBJECT, tlgrm_user_id);
+
+				for(i = 0; i < nxs_array_count(&cache_projects); i++) {
+
+					mp = nxs_array_get(&cache_projects, i);
+
+					if(nxs_string_cmp(mp->name, 0, &nxs_chat_srv_cfg.rdmn.presale_project_name, 0) == NXS_YES) {
+
+						if(nxs_chat_srv_u_rdmn_issues_create(rdmn_issues_ctx,
+						                                     mp->id,
+						                                     issue_priority.id,
+						                                     &presale_issue_subject,
+						                                     s,
+						                                     NXS_NO,
+						                                     &rdmn_issue_id,
+						                                     rdmn_uploads,
+						                                     &nxs_chat_srv_cfg.rdmn.presale_api_key) !=
+						   NXS_CHAT_SRV_E_OK) {
+
+							nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+						}
+
+						nxs_chat_srv_u_presale_p_set(presale_ctx, tlgrm_user_id, rdmn_issue_id);
+
+						nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
+					}
+				}
+			}
+			else {
+
+				/* presale issue has been already created */
+
+				nxs_chat_srv_u_rdmn_issues_add_note(rdmn_issues_ctx,
+				                                    rdmn_issue_id,
+				                                    0,
+				                                    s,
+				                                    NXS_NO,
+				                                    0,
+				                                    rdmn_uploads,
+				                                    &nxs_chat_srv_cfg.rdmn.presale_api_key);
+			}
+		}
+	}
+	else {
+
+		/* no presale objects existing for this user */
+
+		nxs_chat_srv_p_queue_worker_tlgrm_update_win_presale(tlgrm_user_id, NULL);
+
+		nxs_chat_srv_u_presale_p_set(presale_ctx, tlgrm_user_id, 0);
+	}
+
+	nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
+
+error:
+
+	presale_ctx           = nxs_chat_srv_u_presale_free(presale_ctx);
+	rdmn_presale_user_ctx = nxs_chat_srv_u_rdmn_user_free(rdmn_presale_user_ctx);
+	rdmn_issues_ctx       = nxs_chat_srv_u_rdmn_issues_free(rdmn_issues_ctx);
+	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_free(tlgrm_attachments_ctx);
+	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_free(rdmn_attachments_ctx);
+
+	nxs_chat_srv_c_tlgrm_pre_uploads_free(&pre_uploads);
+
+	nxs_array_free(&cache_projects);
+
+	nxs_string_free(&presale_issue_subject);
+	nxs_string_free(&file_name);
+	nxs_string_free(&file_path);
 
 	return rc;
 }

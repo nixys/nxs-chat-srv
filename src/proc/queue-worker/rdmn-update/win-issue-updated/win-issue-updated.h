@@ -3,6 +3,6 @@
 
 // clang-format off
 
-nxs_chat_srv_err_t		nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime		(nxs_chat_srv_m_rdmn_update_t *update, size_t tlgrm_userid, nxs_chat_srv_m_rdmn_journal_t *journal, nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx, nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx);
+nxs_chat_srv_err_t		nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime		(nxs_chat_srv_m_rdmn_update_t *update, size_t tlgrm_userid, nxs_chat_srv_m_rdmn_journal_t *journal, nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx, nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx, nxs_bool_t is_presale_message);
 
 #endif /* _INCLUDE_NXS_CHAT_SRV_P_QUEUE_WORKER_RDMN_UPDATE_WIN_ISSUE_UPDATED_H */

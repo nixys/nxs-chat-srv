@@ -129,7 +129,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_queue_add(nxs_chat_srv_u_db_queue_t *      
 
 		default:
 
-			return NXS_CHAT_SRV_E_TYPE;
+			inactive_till = time(NULL);
 	}
 
 	return nxs_chat_srv_d_db_queue_add(u_ctx->db_queue_ctx, tlgrm_userid, inactive_till, update_encoded);
@@ -180,7 +180,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_queue_get(nxs_chat_srv_u_db_queue_t *u_ctx)
 
 				case NXS_CHAT_SRV_E_OK:
 
-					/* queue locked */
+					/* queue locked by this process */
 
 					u_ctx->tlgrm_userid = m->tlgrm_userid;
 

@@ -45,6 +45,7 @@ nxs_chat_srv_m_tlgrm_message_t		*nxs_chat_srv_c_tlgrm_message_reply_destroy	(nxs
 
 void					nxs_chat_srv_c_tlgrm_chat_init			(nxs_chat_srv_m_tlgrm_chat_t *chat);
 void					nxs_chat_srv_c_tlgrm_chat_free			(nxs_chat_srv_m_tlgrm_chat_t *chat);
+nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_chat_result_pull_json	(nxs_chat_srv_m_tlgrm_chat_t *chat, nxs_bool_t *status, nxs_buf_t *json_buf);
 nxs_chat_srv_m_tlgrm_chat_type_t	nxs_chat_srv_c_tlgrm_chat_type_map		(nxs_string_t *type_name);
 nxs_string_t 				*nxs_chat_srv_c_tlgrm_parse_mode_map		(nxs_chat_srv_m_tlgrm_parse_mode_t mode);
 
@@ -70,5 +71,12 @@ void					nxs_chat_srv_c_tlgrm_force_reply_serialize	(nxs_chat_srv_m_tlgrm_force_
 
 void					nxs_chat_srv_c_tlgrm_bttn_callback_serialize	(nxs_chat_srv_m_tlgrm_bttn_callback_t callback, nxs_string_t *callback_str);
 nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_bttn_callback_deserialize	(nxs_chat_srv_m_tlgrm_bttn_callback_t *callback, nxs_string_t *callback_str);
+
+void					nxs_chat_srv_c_tlgrm_pre_uploads_init		(nxs_array_t *pre_uploads);
+void					nxs_chat_srv_c_tlgrm_pre_uploads_free		(nxs_array_t *pre_uploads);
+void					nxs_chat_srv_c_tlgrm_pre_uploads_clear		(nxs_array_t *pre_uploads);
+nxs_chat_srv_err_t			nxs_chat_srv_c_tlgrm_pre_uploads_add(		nxs_array_t *pre_uploads, nxs_chat_srv_m_tlgrm_update_t *update);
+void					nxs_chat_srv_c_tlgrm_pre_uploads_serialize	(nxs_array_t *pre_uploads, nxs_string_t *files);
+nxs_cfg_json_state_t			nxs_chat_srv_c_tlgrm_pre_uploads_extract_json	(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el, nxs_array_t *cfg_arr);
 
 #endif /* _INCLUDE_NXS_CHAT_SRV_C_TLGRM_H */
