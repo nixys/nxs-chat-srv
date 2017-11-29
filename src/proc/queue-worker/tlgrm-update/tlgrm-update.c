@@ -1565,12 +1565,18 @@ static nxs_chat_srv_err_t handler_message_sess_type_message(nxs_chat_srv_u_db_qu
 
 	if(f == NXS_YES) {
 
+		/* If one or more files has been attached */
+
 		files_count = nxs_chat_srv_u_db_sess_get_files_count(sess_ctx);
 
 		nxs_error(rc,
 		          nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(
 		                  tlgrm_userid, bot_message_id, user_ctx->r_userid, api_key, private_notes, files_count, NULL),
 		          error);
+	}
+	else {
+
+		nxs_error(rc, nxs_chat_srv_p_queue_worker_tlgrm_update_win_wrong_action(sess_ctx, tlgrm_userid, NULL), error);
 	}
 
 error:

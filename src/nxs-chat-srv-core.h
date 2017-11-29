@@ -7,7 +7,7 @@
 #include <hiredis/hircluster.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.1.2"
+#define NXS_CHAT_SRV_VERSION						"0.1.3"
 
 /* Project basic global definitions */
 
@@ -63,7 +63,7 @@
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_SUBJECT			"Напишите название задачи?"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT			"<i>Будет задана при создании задачи</i>"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR				"%s Произошла внутрення ошибка сервера, мы уже получили уведомление об этом и работаем над решением проблемы. Пожалуйста, <a href=\"%r\">воспользуйтесь web-версией системы задач</a> или повторите свой запрос позже."
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_ACTION				"Не верное действие. Вам необходимо либо следовать указаниям мастера, либо Вы можете завершить текущий диалог"
+#define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_ACTION				"К сожалению, Ваше последнее сообщение невозможно обработать в рамках текущего диалога с ботом, поэтому оно будет проигнорировано"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_REPLY				"К сожалению, не удалось определить номер задачи в которую необходимо отправить Ваше сообщение"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_SESSION_DESTROYED			"Предыдущий диалог завершён"
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_DESCRIPTION_CHANGED			"Описание изменено"
