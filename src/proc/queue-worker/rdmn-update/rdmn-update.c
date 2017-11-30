@@ -111,9 +111,11 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 {
 	nxs_chat_srv_u_db_ids_t *           ids_ctx;
 	nxs_chat_srv_m_rdmn_user_t *        u;
+	nxs_chat_srv_m_user_ctx_t           user_ctx;
 	nxs_chat_srv_u_last_issues_t *      last_issue_ctx;
 	nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx;
 	nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx;
+	nxs_chat_srv_u_db_cache_t *         cache_ctx;
 	nxs_chat_srv_err_t                  rc;
 	nxs_array_t                         receivers;
 	size_t                              i, tlgrm_userid, *id;
@@ -124,8 +126,16 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_init();
 	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_init();
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
+	cache_ctx             = nxs_chat_srv_u_db_cache_init();
+
+	nxs_chat_srv_c_user_ctx_init(&user_ctx);
 
 	nxs_array_init2(&receivers, size_t);
+
+	if(nxs_chat_srv_u_db_cache_pull(cache_ctx) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
 
 	statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_RDMN_ISSUE_CREATE, update->data.issue.author.id);
 
@@ -153,12 +163,37 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 
 		id = nxs_array_get(&receivers, i);
 
+		if(nxs_chat_srv_u_db_cache_user_get_by_rdmn_id(cache_ctx, *id, &user_ctx) != NXS_CHAT_SRV_E_OK) {
+
+			/* if user not found by rdmn user id */
+
+			continue;
+		}
+
+		if(nxs_string_len(&user_ctx.t_username) == 0) {
+
+			/* if user has empty 'telegram' field in Redmine account settings */
+
+			continue;
+		}
+
 		if(nxs_chat_srv_u_db_ids_get(ids_ctx, *id, &tlgrm_userid) != NXS_CHAT_SRV_E_OK) {
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
 
 		if(tlgrm_userid > 0) {
+
+			nxs_log_write_debug(&process,
+			                    "[%s]: sending rdmn update to watcher (type: issue_create, issue id: %d, rdmn user: \"%r %r\", "
+			                    "rdmn user_id: %zu, "
+			                    "tlgrm user_id: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    update->data.issue.id,
+			                    &user_ctx.r_userlname,
+			                    &user_ctx.r_userfname,
+			                    *id,
+			                    tlgrm_userid);
 
 			/* set issue 'update->data.issue.id' as last for telegram user 'tlgrm_userid' */
 			nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, update->data.issue.id);
@@ -182,6 +217,9 @@ error:
 	last_issue_ctx        = nxs_chat_srv_u_last_issues_free(last_issue_ctx);
 	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_free(rdmn_attachments_ctx);
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_free(tlgrm_attachments_ctx);
+	cache_ctx             = nxs_chat_srv_u_db_cache_free(cache_ctx);
+
+	nxs_chat_srv_c_user_ctx_free(&user_ctx);
 
 	nxs_array_free(&receivers);
 
@@ -193,8 +231,10 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	nxs_chat_srv_u_db_ids_t *           ids_ctx;
 	nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx;
 	nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx;
+	nxs_chat_srv_u_db_cache_t *         cache_ctx;
 	nxs_chat_srv_m_rdmn_user_t *        u;
 	nxs_chat_srv_m_rdmn_journal_t *     journal;
+	nxs_chat_srv_m_user_ctx_t           user_ctx;
 	nxs_chat_srv_u_last_issues_t *      last_issue_ctx;
 	nxs_chat_srv_u_presale_t *          presale_ctx;
 	nxs_chat_srv_m_proc_queue_worker_t *p = p_meta;
@@ -221,6 +261,9 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_init();
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_init();
 	presale_ctx           = nxs_chat_srv_u_presale_init();
+	cache_ctx             = nxs_chat_srv_u_db_cache_init();
+
+	nxs_chat_srv_c_user_ctx_init(&user_ctx);
 
 	if(nxs_chat_srv_u_presale_pull(presale_ctx) != NXS_CHAT_SRV_E_OK) {
 
@@ -228,6 +271,11 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 		                    "[%s]: error to get presale context while sending tlgrm message to user (issue id: %d)",
 		                    nxs_proc_get_name(&process),
 		                    update->data.issue.id);
+	}
+
+	if(nxs_chat_srv_u_db_cache_pull(cache_ctx) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
 	statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_RDMN_ISSUE_UPDATE, journal->user.id);
@@ -259,12 +307,37 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 
 		id = nxs_array_get(&receivers, i);
 
+		if(nxs_chat_srv_u_db_cache_user_get_by_rdmn_id(cache_ctx, *id, &user_ctx) != NXS_CHAT_SRV_E_OK) {
+
+			/* if user not found by rdmn user id */
+
+			continue;
+		}
+
+		if(nxs_string_len(&user_ctx.t_username) == 0) {
+
+			/* if user has empty 'telegram' field in Redmine account settings */
+
+			continue;
+		}
+
 		if(nxs_chat_srv_u_db_ids_get(ids_ctx, *id, &tlgrm_userid) != NXS_CHAT_SRV_E_OK) {
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
 
 		if(tlgrm_userid > 0) {
+
+			nxs_log_write_debug(&process,
+			                    "[%s]: sending rdmn update to watcher (type: issue_edit, issue id: %d, rdmn user: \"%r %r\", "
+			                    "rdmn user_id: %zu, "
+			                    "tlgrm user_id: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    update->data.issue.id,
+			                    &user_ctx.r_userlname,
+			                    &user_ctx.r_userfname,
+			                    *id,
+			                    tlgrm_userid);
 
 			/* set issue 'update->data.issue.id' as last for telegram user 'tlgrm_userid' */
 			nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, update->data.issue.id);
@@ -286,16 +359,21 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 	if(nxs_chat_srv_u_presale_p_get_by_issue_id(presale_ctx, update->data.issue.id, &tlgrm_presale_userid) == NXS_CHAT_SRV_E_OK &&
 	   tlgrm_presale_userid > 0 && journal->user.id != p->presale_rdmn_user_id) {
 
-		if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(
-		           update, tlgrm_presale_userid, journal, rdmn_attachments_ctx, tlgrm_attachments_ctx, NXS_YES) !=
-		   NXS_CHAT_SRV_E_OK) {
+		if(journal->private_notes == NXS_NO) {
 
-			nxs_log_write_error(&process,
-			                    "[%s]: error while sending presale tlgrm message to user (issue id: %d, "
-			                    "tlgrm user id: %zu)",
-			                    nxs_proc_get_name(&process),
-			                    update->data.issue.id,
-			                    tlgrm_presale_userid);
+			/* sending only not private notes */
+
+			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(
+			           update, tlgrm_presale_userid, journal, rdmn_attachments_ctx, tlgrm_attachments_ctx, NXS_YES) !=
+			   NXS_CHAT_SRV_E_OK) {
+
+				nxs_log_write_error(&process,
+				                    "[%s]: error while sending presale tlgrm message to user (issue id: %d, "
+				                    "tlgrm user id: %zu)",
+				                    nxs_proc_get_name(&process),
+				                    update->data.issue.id,
+				                    tlgrm_presale_userid);
+			}
 		}
 	}
 
@@ -306,6 +384,9 @@ error:
 	rdmn_attachments_ctx  = nxs_chat_srv_u_rdmn_attachments_free(rdmn_attachments_ctx);
 	tlgrm_attachments_ctx = nxs_chat_srv_u_tlgrm_attachments_free(tlgrm_attachments_ctx);
 	presale_ctx           = nxs_chat_srv_u_presale_free(presale_ctx);
+	cache_ctx             = nxs_chat_srv_u_db_cache_free(cache_ctx);
+
+	nxs_chat_srv_c_user_ctx_free(&user_ctx);
 
 	nxs_array_free(&receivers);
 
