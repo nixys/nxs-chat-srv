@@ -34,6 +34,9 @@ typedef struct
 
 // clang-format on
 
+static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_mode_init(void);
+static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_mode_runtime(void);
+
 static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_write_pidfile(void);
 
 static void nxs_chat_srv_p_bootstrap_sighandler_term(int sig, void *data);
@@ -55,6 +58,25 @@ static void nxs_chat_srv_p_bootstrap_cleanup(nxs_chat_srv_p_bootstrap_ctx_t *p_c
 // clang-format on
 
 nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap(void)
+{
+
+	if(nxs_chat_srv_cfg.init_mode == NXS_CHAT_SRV_INIT_MODE_NONE) {
+
+		return nxs_chat_srv_p_bootstrap_mode_runtime();
+	}
+
+	return nxs_chat_srv_p_bootstrap_mode_init();
+}
+
+/* Module internal (static) functions */
+
+static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_mode_init(void)
+{
+
+	return nxs_chat_srv_p_setup_runtime();
+}
+
+static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_mode_runtime(void)
 {
 	nxs_chat_srv_err_t             rc;
 	nxs_chat_srv_p_bootstrap_ctx_t p_ctx;
@@ -170,8 +192,6 @@ nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap(void)
 
 	return rc;
 }
-
-/* Module internal (static) functions */
 
 static nxs_chat_srv_err_t nxs_chat_srv_p_bootstrap_write_pidfile(void)
 {

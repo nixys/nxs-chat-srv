@@ -4,6 +4,7 @@
 // clang-format off
 
 /*%%_NXS_TPL_HEADERS_BEGIN_%%*/
+#include <proc/setup/setup.h>
 #include <proc/queue-worker/queue-worker.h>
 #include <proc/rest-api/rest-api.h>
 #include <proc/cache-worker/cache-worker.h>

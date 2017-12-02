@@ -70,6 +70,8 @@ nxs_chat_srv_d_tlgrm_method_t tlgrm_methods[] =
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE,			nxs_string("sendVoice")},
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO,			nxs_string("sendVideo")},
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_CHAT,			nxs_string("getChat")},
+	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_WEBHOOKINFO,		nxs_string("getWebhookInfo")},
+	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SET_WEBHOOK,			nxs_string("setWebhook")},
 
 	{NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_NONE, {NULL, 0, 0}}
 };
@@ -97,7 +99,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_
 
 	if((method = nxs_chat_srv_d_tlgrm_get_method(type)) == NULL) {
 
-		nxs_log_write_warn(&process, "[%s]: unknown telegram request method type (type: %d)", type);
+		nxs_log_write_error(&process, "[%s]: unknown telegram request method type (type: %d)", type);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}
@@ -118,7 +120,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_
 	                        &nxs_chat_srv_cfg.tlgrm.bot_api_key,
 	                        method)) != NXS_CURL_E_OK) {
 
-		nxs_log_write_warn(&process, "[%s]: tlgrm request error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
+		nxs_log_write_error(&process, "[%s]: tlgrm request error: curl error (rc: %d)", nxs_proc_get_name(&process), ec);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -148,7 +150,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_
 
 		default:
 
-			nxs_log_write_error(
+			nxs_log_write_warn(
 			        &process,
 			        "[%s]: tlgrm request error: wrong Telegram response code (response code: %d, response body: \"%s\")",
 			        nxs_proc_get_name(&process),

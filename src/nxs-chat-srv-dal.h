@@ -7,6 +7,7 @@
 #include <dal/ra-queue/ra-queue-typedefs.h>
 #include <dal/db-presale/db-presale-typedefs.h>
 #include <dal/db-statistic/db-statistic-typedefs.h>
+#include <dal/db-mysql-setup/db-mysql-setup-typedefs.h>
 #include <dal/rdmn-last-issue/rdmn-last-issue-typedefs.h>
 #include <dal/rdmn-attachments/rdmn-attachments-typedefs.h>
 #include <dal/db-waitings/db-waitings-typedefs.h>
@@ -27,6 +28,7 @@
 #include <dal/ra-queue/ra-queue.h>
 #include <dal/db-presale/db-presale.h>
 #include <dal/db-statistic/db-statistic.h>
+#include <dal/db-mysql-setup/db-mysql-setup.h>
 #include <dal/rdmn-last-issue/rdmn-last-issue.h>
 #include <dal/rdmn-attachments/rdmn-attachments.h>
 #include <dal/db-waitings/db-waitings.h>

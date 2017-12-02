@@ -120,6 +120,7 @@ static nxs_string_t _s_par_keys_space			= nxs_string("keys_space");
 static nxs_string_t _s_par_statistic			= nxs_string("statistic");
 static nxs_string_t _s_par_presale_api_key		= nxs_string("presale_api_key");
 static nxs_string_t _s_par_presale_project_name		= nxs_string("presale_project_name");
+static nxs_string_t _s_par_webhook_host			= nxs_string("webhook_host");
 
 /* Module global functions */
 
@@ -377,6 +378,7 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bot_api_addr,	&var->bot_api_addr,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bot_api_key,	&var->bot_api_key,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_auth_token,	&var->auth_token,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_webhook_host,	&var->webhook_host,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 

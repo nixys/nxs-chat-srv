@@ -108,6 +108,7 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.bot_api_addr);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.bot_api_key);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.auth_token);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.webhook_host);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.name);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.user);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.pass);
@@ -126,6 +127,7 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_array_init2(&nxs_chat_srv_cfg.dev_accounts, nxs_string_t);
 	nxs_array_init2(&nxs_chat_srv_cfg.redis.nodes, nxs_chat_srv_cfg_redis_node_t);
 
+	nxs_chat_srv_cfg.init_mode                      = NXS_CHAT_SRV_INIT_MODE_NONE;
 	nxs_chat_srv_cfg.proc.queue_worker_term_timeout = 10;
 	nxs_chat_srv_cfg.proc.rest_api_term_timeout     = 10;
 	nxs_chat_srv_cfg.proc.daemonize                 = NXS_YES;

@@ -50,6 +50,11 @@ static nxs_chat_srv_err_t
         nxs_chat_srv_c_tlgrm_file_result_pull_json_extract(nxs_chat_srv_m_tlgrm_file_t *file, nxs_bool_t *status, nxs_buf_t *json_buf);
 static nxs_chat_srv_err_t
         nxs_chat_srv_c_tlgrm_chat_result_pull_json_extract(nxs_chat_srv_m_tlgrm_chat_t *chat, nxs_bool_t *status, nxs_buf_t *json_buf);
+static nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_webhookinfo_result_pull_json_extract(nxs_chat_srv_m_tlgrm_webhookinfo_t *webhookinfo,
+                                                                                    nxs_bool_t *                        status,
+                                                                                    nxs_buf_t *                         json_buf);
+static nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_webhookset_result_pull_json_extract(nxs_chat_srv_m_tlgrm_webhookset_t *webhookset,
+                                                                                   nxs_buf_t *                        json_buf);
 static nxs_cfg_json_state_t
         nxs_chat_srv_c_tlgrm_extract_json_message(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
@@ -78,6 +83,8 @@ static nxs_cfg_json_state_t
         nxs_chat_srv_c_tlgrm_extract_json_voice(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t
         nxs_chat_srv_c_tlgrm_extract_json_video(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_tlgrm_extract_json_webhookinfo(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 
 static void nxs_chat_srv_c_tlgrm_pre_uploads_el_init(void *element);
 static void nxs_chat_srv_c_tlgrm_pre_uploads_el_free(void *element);
@@ -89,47 +96,55 @@ static nxs_cfg_json_state_t
 
 /* Module initializations */
 
-static nxs_string_t	_s_par_update_id	= nxs_string("update_id");
-static nxs_string_t	_s_par_message		= nxs_string("message");
-static nxs_string_t	_s_par_message_id	= nxs_string("message_id");
-static nxs_string_t	_s_par_text		= nxs_string("text");
-static nxs_string_t	_s_par_chat		= nxs_string("chat");
-static nxs_string_t	_s_par_id		= nxs_string("id");
-static nxs_string_t	_s_par_username		= nxs_string("username");
-static nxs_string_t	_s_par_type		= nxs_string("type");
-static nxs_string_t	_s_par_from		= nxs_string("from");
-static nxs_string_t	_s_par_first_name	= nxs_string("first_name");
-static nxs_string_t	_s_par_last_name	= nxs_string("last_name");
-static nxs_string_t	_s_par_language_code	= nxs_string("language_code");
-static nxs_string_t	_s_par_reply_to_message	= nxs_string("reply_to_message");
-static nxs_string_t	_s_par_entities		= nxs_string("entities");
-static nxs_string_t	_s_par_callback_query	= nxs_string("callback_query");
-static nxs_string_t	_s_par_chat_instance	= nxs_string("chat_instance");
-static nxs_string_t	_s_par_data		= nxs_string("data");
-static nxs_string_t	_s_par_result		= nxs_string("result");
-static nxs_string_t	_s_par_ok		= nxs_string("ok");
-static nxs_string_t	_s_par_t		= nxs_string("t");
-static nxs_string_t	_s_par_o_id		= nxs_string("o_id");
-static nxs_string_t	_s_par_offset		= nxs_string("offset");
-static nxs_string_t	_s_par_length		= nxs_string("length");
-static nxs_string_t	_s_par_url		= nxs_string("url");
-static nxs_string_t	_s_par_caption		= nxs_string("caption");
-static nxs_string_t	_s_par_photo		= nxs_string("photo");
-static nxs_string_t	_s_par_file_id		= nxs_string("file_id");
-static nxs_string_t	_s_par_width		= nxs_string("width");
-static nxs_string_t	_s_par_height		= nxs_string("height");
-static nxs_string_t	_s_par_file_size	= nxs_string("file_size");
-static nxs_string_t	_s_par_file_path	= nxs_string("file_path");
-static nxs_string_t	_s_par_file_name	= nxs_string("file_name");
-static nxs_string_t	_s_par_document		= nxs_string("document");
-static nxs_string_t	_s_par_thumb		= nxs_string("thumb");
-static nxs_string_t	_s_par_mime_type	= nxs_string("mime_type");
-static nxs_string_t	_s_par_emoji		= nxs_string("emoji");
-static nxs_string_t	_s_par_set_name		= nxs_string("set_name");
-static nxs_string_t	_s_par_sticker		= nxs_string("sticker");
-static nxs_string_t	_s_par_duration		= nxs_string("duration");
-static nxs_string_t	_s_par_voice		= nxs_string("voice");
-static nxs_string_t	_s_par_video		= nxs_string("video");
+static nxs_string_t	_s_par_update_id		= nxs_string("update_id");
+static nxs_string_t	_s_par_message			= nxs_string("message");
+static nxs_string_t	_s_par_message_id		= nxs_string("message_id");
+static nxs_string_t	_s_par_text			= nxs_string("text");
+static nxs_string_t	_s_par_chat			= nxs_string("chat");
+static nxs_string_t	_s_par_id			= nxs_string("id");
+static nxs_string_t	_s_par_username			= nxs_string("username");
+static nxs_string_t	_s_par_type			= nxs_string("type");
+static nxs_string_t	_s_par_from			= nxs_string("from");
+static nxs_string_t	_s_par_first_name		= nxs_string("first_name");
+static nxs_string_t	_s_par_last_name		= nxs_string("last_name");
+static nxs_string_t	_s_par_language_code		= nxs_string("language_code");
+static nxs_string_t	_s_par_reply_to_message		= nxs_string("reply_to_message");
+static nxs_string_t	_s_par_entities			= nxs_string("entities");
+static nxs_string_t	_s_par_callback_query		= nxs_string("callback_query");
+static nxs_string_t	_s_par_chat_instance		= nxs_string("chat_instance");
+static nxs_string_t	_s_par_data			= nxs_string("data");
+static nxs_string_t	_s_par_result			= nxs_string("result");
+static nxs_string_t	_s_par_ok			= nxs_string("ok");
+static nxs_string_t	_s_par_t			= nxs_string("t");
+static nxs_string_t	_s_par_o_id			= nxs_string("o_id");
+static nxs_string_t	_s_par_offset			= nxs_string("offset");
+static nxs_string_t	_s_par_length			= nxs_string("length");
+static nxs_string_t	_s_par_url			= nxs_string("url");
+static nxs_string_t	_s_par_caption			= nxs_string("caption");
+static nxs_string_t	_s_par_photo			= nxs_string("photo");
+static nxs_string_t	_s_par_file_id			= nxs_string("file_id");
+static nxs_string_t	_s_par_width			= nxs_string("width");
+static nxs_string_t	_s_par_height			= nxs_string("height");
+static nxs_string_t	_s_par_file_size		= nxs_string("file_size");
+static nxs_string_t	_s_par_file_path		= nxs_string("file_path");
+static nxs_string_t	_s_par_file_name		= nxs_string("file_name");
+static nxs_string_t	_s_par_document			= nxs_string("document");
+static nxs_string_t	_s_par_thumb			= nxs_string("thumb");
+static nxs_string_t	_s_par_mime_type		= nxs_string("mime_type");
+static nxs_string_t	_s_par_emoji			= nxs_string("emoji");
+static nxs_string_t	_s_par_set_name			= nxs_string("set_name");
+static nxs_string_t	_s_par_sticker			= nxs_string("sticker");
+static nxs_string_t	_s_par_duration			= nxs_string("duration");
+static nxs_string_t	_s_par_voice			= nxs_string("voice");
+static nxs_string_t	_s_par_video			= nxs_string("video");
+static nxs_string_t	_s_par_has_custom_certificate	= nxs_string("has_custom_certificate");
+static nxs_string_t	_s_par_pending_update_count	= nxs_string("pending_update_count");
+static nxs_string_t	_s_par_last_error_date		= nxs_string("last_error_date");
+static nxs_string_t	_s_par_last_error_message	= nxs_string("last_error_message");
+static nxs_string_t	_s_par_max_connections		= nxs_string("max_connections");
+static nxs_string_t	_s_par_allowed_updates		= nxs_string("allowed_updates");
+static nxs_string_t	_s_par_error_code		= nxs_string("error_code");
+static nxs_string_t	_s_par_description		= nxs_string("description");
 
 static nxs_string_t	_s_stickers_mime	= nxs_string("image/webp");
 
@@ -1476,6 +1491,102 @@ nxs_cfg_json_state_t nxs_chat_srv_c_tlgrm_pre_uploads_extract_json(nxs_process_t
 	return NXS_CFG_JSON_CONF_OK;
 }
 
+void nxs_chat_srv_c_tlgrm_webhookinfo_init(nxs_chat_srv_m_tlgrm_webhookinfo_t *webhookinfo)
+{
+
+	if(webhookinfo == NULL) {
+
+		return;
+	}
+
+	webhookinfo->_is_used = NXS_NO;
+
+	webhookinfo->pending_update_count   = 0;
+	webhookinfo->last_error_date        = 0;
+	webhookinfo->max_connections        = 0;
+	webhookinfo->has_custom_certificate = NXS_NO;
+
+	nxs_string_init_empty(&webhookinfo->url);
+	nxs_string_init_empty(&webhookinfo->last_error_message);
+
+	nxs_array_init_string(&webhookinfo->allowed_updates);
+}
+
+void nxs_chat_srv_c_tlgrm_webhookinfo_free(nxs_chat_srv_m_tlgrm_webhookinfo_t *webhookinfo)
+{
+
+	if(webhookinfo == NULL) {
+
+		return;
+	}
+
+	webhookinfo->_is_used = NXS_NO;
+
+	webhookinfo->pending_update_count   = 0;
+	webhookinfo->last_error_date        = 0;
+	webhookinfo->max_connections        = 0;
+	webhookinfo->has_custom_certificate = NXS_NO;
+
+	nxs_string_free(&webhookinfo->url);
+	nxs_string_free(&webhookinfo->last_error_message);
+
+	nxs_array_free(&webhookinfo->allowed_updates);
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_webhookinfo_result_pull_json(nxs_chat_srv_m_tlgrm_webhookinfo_t *webhookinfo,
+                                                                     nxs_bool_t *                        status,
+                                                                     nxs_buf_t *                         json_buf)
+{
+
+	if(webhookinfo == NULL || status == NULL || json_buf == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	return nxs_chat_srv_c_tlgrm_webhookinfo_result_pull_json_extract(webhookinfo, status, json_buf);
+}
+
+void nxs_chat_srv_c_tlgrm_webhookset_init(nxs_chat_srv_m_tlgrm_webhookset_t *webhookset)
+{
+
+	if(webhookset == NULL) {
+
+		return;
+	}
+
+	webhookset->ok         = NXS_NO;
+	webhookset->result     = NXS_NO;
+	webhookset->error_code = 0;
+
+	nxs_string_init_empty(&webhookset->description);
+}
+
+void nxs_chat_srv_c_tlgrm_webhookset_free(nxs_chat_srv_m_tlgrm_webhookset_t *webhookset)
+{
+
+	if(webhookset == NULL) {
+
+		return;
+	}
+
+	webhookset->ok         = NXS_NO;
+	webhookset->result     = NXS_NO;
+	webhookset->error_code = 0;
+
+	nxs_string_free(&webhookset->description);
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_webhookset_result_pull_json(nxs_chat_srv_m_tlgrm_webhookset_t *webhookset, nxs_buf_t *json_buf)
+{
+
+	if(webhookset == NULL || json_buf == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	return nxs_chat_srv_c_tlgrm_webhookset_result_pull_json_extract(webhookset, json_buf);
+}
+
 /* Module internal (static) functions */
 
 static nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_update_pull_json_extract(nxs_chat_srv_m_tlgrm_update_t *update, nxs_buf_t *json_buf)
@@ -1612,6 +1723,84 @@ static nxs_chat_srv_err_t
 	if(nxs_cfg_json_read_buf(&process, cfg_json, json_buf) != NXS_CFG_JSON_CONF_OK) {
 
 		nxs_log_write_error(&process, "[%s]: tlgrm chat result json pull error: parse json_buf error", nxs_proc_get_name(&process));
+
+		rc = NXS_CHAT_SRV_E_ERR;
+	}
+
+	nxs_cfg_json_free(&cfg_json);
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_webhookinfo_result_pull_json_extract(nxs_chat_srv_m_tlgrm_webhookinfo_t *webhookinfo,
+                                                                                    nxs_bool_t *                        status,
+                                                                                    nxs_buf_t *                         json_buf)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_cfg_json_t     cfg_json;
+	nxs_array_t        cfg_arr;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_result,		webhookinfo,	&nxs_chat_srv_c_tlgrm_extract_json_webhookinfo,	NULL,	NXS_CFG_JSON_TYPE_VOID,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ok,		status,		NULL,						NULL,	NXS_CFG_JSON_TYPE_BOOL,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_buf(&process, cfg_json, json_buf) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_error(
+		        &process, "[%s]: tlgrm webhookinfo result json pull error: parse json_buf error", nxs_proc_get_name(&process));
+
+		rc = NXS_CHAT_SRV_E_ERR;
+	}
+
+	nxs_cfg_json_free(&cfg_json);
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_webhookset_result_pull_json_extract(nxs_chat_srv_m_tlgrm_webhookset_t *webhookset,
+                                                                                   nxs_buf_t *                        json_buf)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_cfg_json_t     cfg_json;
+	nxs_array_t        cfg_arr;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	webhookset->result     = NXS_NO;
+	webhookset->error_code = 200;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ok,		&webhookset->ok,		NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_result,		&webhookset->result,		NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_error_code,	&webhookset->error_code,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,	&webhookset->description,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_buf(&process, cfg_json, json_buf) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_error(
+		        &process, "[%s]: tlgrm webhook set result json pull error: parse json_buf error", nxs_proc_get_name(&process));
 
 		rc = NXS_CHAT_SRV_E_ERR;
 	}
@@ -2153,6 +2342,52 @@ static nxs_cfg_json_state_t
 error:
 
 	nxs_string_free(&chat_type);
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t
+        nxs_chat_srv_c_tlgrm_extract_json_webhookinfo(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_m_tlgrm_webhookinfo_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t                      cfg_json;
+	nxs_array_t                         cfg_arr;
+	nxs_cfg_json_state_t                rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	var->_is_used = NXS_YES;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
+
+	// clang-format off
+
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_url,				&var->url,			NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_has_custom_certificate,		&var->has_custom_certificate,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_pending_update_count,		&var->pending_update_count,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_last_error_date,		&var->last_error_date,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_last_error_message,		&var->last_error_message,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_max_connections,		&var->max_connections,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_NO,		NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_allowed_updates,		&var->allowed_updates,		NULL,	NULL,	NXS_CFG_JSON_TYPE_ARRAY_STRING,		0,	0,	NXS_NO,		NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "json read error: 'webhookinfo' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
 
 	nxs_cfg_json_free(&cfg_json);
 

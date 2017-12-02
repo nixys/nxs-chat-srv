@@ -7,7 +7,7 @@
 #include <hiredis/hircluster.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.1.4"
+#define NXS_CHAT_SRV_VERSION						"0.1.5"
 
 /* Project basic global definitions */
 
@@ -129,6 +129,13 @@
 
 typedef enum
 {
+	NXS_CHAT_SRV_INIT_MODE_NONE			= 0,
+	NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET		= 1,
+	NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES	= 2,
+} nxs_chat_srv_init_mode_t;
+
+typedef enum
+{
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_NONE,
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_MESSAGE,
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_EDIT_MESSAGE_TEXT,
@@ -140,6 +147,8 @@ typedef enum
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VOICE,
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_VIDEO,
 	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_CHAT,
+	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_WEBHOOKINFO,
+	NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SET_WEBHOOK,
 } nxs_chat_srv_tlgrm_request_type_t;
 
 /* Project errors */
@@ -196,6 +205,7 @@ typedef struct
 	nxs_string_t				bot_api_addr;
 	nxs_string_t				bot_api_key;
 	nxs_string_t				auth_token;
+	nxs_string_t				webhook_host;
 } nxs_chat_srv_cfg_tlgrm_t;
 
 typedef struct
@@ -264,6 +274,7 @@ typedef struct
 
 typedef struct
 {
+	nxs_chat_srv_init_mode_t		init_mode;
 	nxs_chat_srv_cfg_proc_t			proc;
 	nxs_chat_srv_cfg_log_t			log;
 	nxs_chat_srv_cfg_bind_t			bind;

@@ -9,6 +9,7 @@
 #include <units/presale/presale-typedefs.h>
 #include <units/tlgrm-attachments/tlgrm-attachments-typedefs.h>
 #include <units/db-statistic/db-statistic-typedefs.h>
+#include <units/db-mysql-setup/db-mysql-setup-typedefs.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage-typedefs.h>
 #include <units/tlgrm-editmessagetext/tlgrm-editmessagetext-typedefs.h>
 #include <units/rdmn-attachments/rdmn-attachments-typedefs.h>
@@ -18,6 +19,7 @@
 #include <units/tlgrm-chat/tlgrm-chat-typedefs.h>
 #include <units/db-sess/db-sess-typedefs.h>
 #include <units/last-issues/last-issues-typedefs.h>
+#include <units/tlgrm-webhook/tlgrm-webhook-typedefs.h>
 #include <units/db-queue/db-queue-typedefs.h>
 #include <units/rdmn-user/rdmn-user-typedefs.h>
 #include <units/db-cache/db-cache-typedefs.h>
@@ -29,6 +31,7 @@
 #include <units/presale/presale.h>
 #include <units/tlgrm-attachments/tlgrm-attachments.h>
 #include <units/db-statistic/db-statistic.h>
+#include <units/db-mysql-setup/db-mysql-setup.h>
 #include <units/tlgrm-sendmessage/tlgrm-sendmessage.h>
 #include <units/tlgrm-editmessagetext/tlgrm-editmessagetext.h>
 #include <units/rdmn-attachments/rdmn-attachments.h>
@@ -38,6 +41,7 @@
 #include <units/tlgrm-chat/tlgrm-chat.h>
 #include <units/db-sess/db-sess.h>
 #include <units/last-issues/last-issues.h>
+#include <units/tlgrm-webhook/tlgrm-webhook.h>
 #include <units/db-queue/db-queue.h>
 #include <units/rdmn-user/rdmn-user.h>
 #include <units/db-cache/db-cache.h>

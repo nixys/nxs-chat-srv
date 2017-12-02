@@ -28,6 +28,8 @@ typedef struct			nxs_chat_srv_m_tlgrm_inl_keybutton_s		nxs_chat_srv_m_tlgrm_inl_
 typedef struct			nxs_chat_srv_m_tlgrm_force_reply_s		nxs_chat_srv_m_tlgrm_force_reply_t;
 typedef struct			nxs_chat_srv_m_tlgrm_bttn_callback_s		nxs_chat_srv_m_tlgrm_bttn_callback_t;
 typedef struct			nxs_chat_srv_m_tlgrm_pre_uploads_s		nxs_chat_srv_m_tlgrm_pre_uploads_t;
+typedef struct			nxs_chat_srv_m_tlgrm_webhookinfo_s		nxs_chat_srv_m_tlgrm_webhookinfo_t;
+typedef struct			nxs_chat_srv_m_tlgrm_webhookset_s		nxs_chat_srv_m_tlgrm_webhookset_t;
 
 enum nxs_chat_srv_m_tlgrm_update_type_e
 {
@@ -255,6 +257,27 @@ struct nxs_chat_srv_m_tlgrm_pre_uploads_s
 	nxs_string_t		file_id;
 	nxs_string_t		file_name;
 	nxs_string_t		mime_type;
+};
+
+struct nxs_chat_srv_m_tlgrm_webhookinfo_s
+{
+	nxs_bool_t					_is_used;
+
+	nxs_string_t					url;			/* Required */
+	nxs_bool_t					has_custom_certificate;	/* Required */
+	size_t						pending_update_count;	/* Required */
+	size_t						last_error_date;	/* Optional */
+	nxs_string_t					last_error_message;	/* Optional */
+	size_t						max_connections;	/* Optional */
+	nxs_array_t					allowed_updates;	/* type: nxs_string_t. Optional */
+};
+
+struct nxs_chat_srv_m_tlgrm_webhookset_s
+{
+	nxs_bool_t					ok;			/* Required */
+	nxs_string_t					description;		/* Optional */
+	nxs_bool_t					result;			/* Optional */
+	size_t						error_code;		/* Optional */
 };
 
 #endif /* _INCLUDE_NXS_CHAT_SRV_M_TLGRM_H */

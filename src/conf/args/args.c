@@ -14,14 +14,18 @@
 
 #define NXS_CHAT_SRV_CONF_ARGS_HELP_MSG			"nxs-chat-srv short description \n" \
 										"Available options:\n" \
+										"\t-i: run in 'init' mode\n" \
+										"\t\tall           : set Telegram webhook and create MySQL tables\n" \
+										"\t\tset_webhook   : set Telegram webhook only\n" \
+										"\t\tcreate_tables : create MySQL tables only\n" \
 										"\t-v: show program version\n" \
 										"\t-V: show bare program version\n" \
 										"\t-h: show help (this message)\n" \
 										"\t-c CONFIG_PATH: change default config file path (default path: %s )"
 
 /* Project globals */
-extern		nxs_process_t				process;
-extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
+extern		nxs_process_t		process;
+extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 
 /* Module typedefs */
 
@@ -42,6 +46,7 @@ static int nxs_chat_srv_conf_args_help(nxs_args_t args, u_char arg, u_char *opta
 static int nxs_chat_srv_conf_args_version(nxs_args_t args, u_char arg, u_char *optarg);
 static int nxs_chat_srv_conf_args_bare_version(nxs_args_t args, u_char arg, u_char *optarg);
 static int nxs_chat_srv_conf_args_conf(nxs_args_t args, u_char arg, u_char *optarg);
+static int nxs_chat_srv_conf_args_mode_init(nxs_args_t args, u_char arg, u_char *optarg);
 
 // clang-format off
 
@@ -53,9 +58,14 @@ nxs_args_shortopt_t shortopts[] =
 	{'v',	NXS_ARGS_HAVE_ARGS_NO,		&nxs_chat_srv_conf_args_version},
 	{'V',	NXS_ARGS_HAVE_ARGS_NO,		&nxs_chat_srv_conf_args_bare_version},
 	{'c',	NXS_ARGS_HAVE_ARGS_YES,		&nxs_chat_srv_conf_args_conf},
+	{'i',	NXS_ARGS_HAVE_ARGS_YES,		&nxs_chat_srv_conf_args_mode_init},
 
 	NXS_ARGS_NULL
 };
+
+static nxs_string_t _s_val_all			= nxs_string("all");
+static nxs_string_t _s_val_set_webhook		= nxs_string("set_webhook");
+static nxs_string_t _s_val_create_tables	= nxs_string("create_tables");
 
 /* Module global functions */
 
@@ -179,4 +189,33 @@ static int nxs_chat_srv_conf_args_conf(nxs_args_t args, u_char arg, u_char *opta
 	nxs_string_char_cpy(&cfg_ctx->cfg_path, 0, optarg);
 
 	return NXS_ARGS_CONF_OK;
+}
+
+static int nxs_chat_srv_conf_args_mode_init(nxs_args_t args, u_char arg, u_char *optarg)
+{
+
+	if(nxs_string_char_cmp(&_s_val_all, 0, optarg) == NXS_YES) {
+
+		nxs_chat_srv_cfg.init_mode = NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET | NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES;
+
+		return NXS_ARGS_CONF_OK;
+	}
+
+	if(nxs_string_char_cmp(&_s_val_set_webhook, 0, optarg) == NXS_YES) {
+
+		nxs_chat_srv_cfg.init_mode |= NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET;
+
+		return NXS_ARGS_CONF_OK;
+	}
+
+	if(nxs_string_char_cmp(&_s_val_create_tables, 0, optarg) == NXS_YES) {
+
+		nxs_chat_srv_cfg.init_mode |= NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES;
+
+		return NXS_ARGS_CONF_OK;
+	}
+
+	nxs_log_write_error(&process, "unknown value for option '%c'", arg);
+
+	return NXS_ARGS_CONF_ERROR;
 }
