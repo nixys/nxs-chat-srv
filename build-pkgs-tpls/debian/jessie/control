@@ -8,5 +8,5 @@ Homepage: http://www.nixys.ru
 
 Package: #PACKAGE#
 Architecture: amd64
-Depends: ${misc:Depends}, libevent-nxs (>= 2.1.8), libssl1.0.0, libhiredis-vip
+Depends: ${misc:Depends}, libevent-nxs (>= 2.1.8), libssl1.0.0, libjansson4, libcurl3, libmysqlclient18
 Description: Nixys Chat Server
