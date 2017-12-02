@@ -25,7 +25,7 @@ NXS_INCLUDES					=	-I/usr/include/libevent-nxs
 NXS_LINKS					=	-ljansson -lcurl -L/usr/lib/mysql -lmysqlclient -L/usr/lib/x86_64-linux-gnu/libevent-nxs -levent -lssl -lcrypto -levent_openssl 
 
 NXS_USER_INCLUDES				=	
-NXS_USER_LINKS					=	-lhiredis_vip
+NXS_USER_LINKS					=	-l:libhiredis_vip.a
 
 PROJ_CORE_HEADERS				=	./src/nxs-chat-srv-core.h
 

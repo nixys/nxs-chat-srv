@@ -14,7 +14,7 @@ build:	core \
 	conf \
 	proc
 
-	$(LINK) $(NXS_LINKS) $(NXS_USER_LINKS) -o objs/nxs-chat-srv $(PROJ_OBJS) $(NXS_CORE_LINKS)
+	$(LINK) $(NXS_LINKS) -o objs/nxs-chat-srv $(PROJ_OBJS) $(NXS_CORE_LINKS) $(NXS_USER_LINKS)
 
 core:	./src/nxs-chat-srv-core.c \
 		$(PROJ_CORE_HEADERS) \
