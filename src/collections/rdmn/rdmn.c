@@ -1077,18 +1077,34 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_details(nxs_process
 
 		case NXS_CHAT_SRV_M_RDMN_DETAIL_TYPE_ATTACHMENT:
 
-			if(nxs_json_type_get(j) != NXS_JSON_TYPE_INTEGER) {
+			/*
+			 * This field has different types for different Redmine versions
+			 */
+			switch(nxs_json_type_get(j)) {
 
-				nxs_log_write_error(
-				        &process,
-				        "[%s]: rdmn json read error: parse rdmn details error, expected integer type for filed \"%r\"",
-				        nxs_proc_get_name(&process),
-				        &_s_par_name);
+				case NXS_JSON_TYPE_INTEGER:
 
-				return NXS_CFG_JSON_CONF_ERROR;
+					d->attachment.name = (size_t)nxs_json_integer_val(j);
+
+					break;
+
+				case NXS_JSON_TYPE_STRING:
+
+					d->attachment.name = (size_t)nxs_string_atoi(nxs_json_string_val(j));
+
+					break;
+
+				default:
+
+					nxs_log_write_error(
+					        &process,
+					        "[%s]: rdmn json read error: parse rdmn details error, expected integer or string types "
+					        "for filed \"%r\"",
+					        nxs_proc_get_name(&process),
+					        &_s_par_name);
+
+					return NXS_CFG_JSON_CONF_ERROR;
 			}
-
-			d->attachment.name = (size_t)nxs_json_integer_val(j);
 
 			break;
 
@@ -1300,7 +1316,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_c_rdmn_extract_json_custom_fields(nxs_p
 		return NXS_CFG_JSON_CONF_ERROR;
 	}
 
-	/* if its not cf_watchers custom field */
+	/* if it is not cf_watchers custom field */
 	if((size_t)nxs_json_integer_val(j) != nxs_chat_srv_cfg.rdmn.cf_watchers) {
 
 		return NXS_CFG_JSON_CONF_OK;

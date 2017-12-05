@@ -61,9 +61,6 @@ static nxs_cfg_json_state_t
 static nxs_string_t _s_par_upload	= nxs_string("upload");
 static nxs_string_t _s_par_token	= nxs_string("token");
 
-static nxs_string_t _s_proto_http	= nxs_string("http://");
-static nxs_string_t _s_proto_https	= nxs_string("https://");
-
 /* Module global functions */
 
 // clang-format on
@@ -170,10 +167,8 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_
 {
 	nxs_chat_srv_m_rdmn_attachment_t            attachment;
 	nxs_chat_srv_u_rdmn_attachments_download_t *d;
-	nxs_string_t                                content_url;
 	nxs_chat_srv_err_t                          rc;
 	size_t                                      i;
-	u_char *                                    c;
 
 	if(u_ctx == NULL || file_path == NULL) {
 
@@ -201,8 +196,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	nxs_string_init(&content_url);
-
 	nxs_chat_srv_c_rdmn_attachment_init(&attachment);
 
 	if(nxs_chat_srv_d_rdmn_attachments_info(attachment_id, NULL, &u_ctx->response_buf) != NXS_CHAT_SRV_E_OK) {
@@ -224,16 +217,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_
 	nxs_string_clone(description, &attachment.description);
 	nxs_string_clone(content_type, &attachment.content_type);
 
-	if((c = nxs_string_find_substr_first(&attachment.content_url, 0, nxs_string_str(&_s_proto_http), nxs_string_len(&_s_proto_http))) ==
-	   NULL) {
-
-		nxs_string_clone(&content_url, &attachment.content_url);
-	}
-	else {
-
-		nxs_string_printf(&content_url, "%r%s", &_s_proto_https, c + nxs_string_len(&_s_proto_http));
-	}
-
 	nxs_string_printf(file_path, "%r/%zu", &nxs_chat_srv_cfg.attachments.rdmn_download_tmp_dir, attachment_id);
 
 	if(nxs_fs_mkdir(file_path, DOWNLOAD_TMP_DIR_MODE) < 0) {
@@ -253,7 +236,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_
 
 	nxs_string_printf2_cat(file_path, "/%r", file_name);
 
-	if(nxs_chat_srv_d_rdmn_attachments_download(&content_url, file_path, NULL) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_d_rdmn_attachments_download(&attachment.content_url, file_path, NULL) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -268,8 +251,6 @@ nxs_chat_srv_err_t nxs_chat_srv_u_rdmn_attachments_download(nxs_chat_srv_u_rdmn_
 	nxs_string_init3(&d->content_type, content_type);
 
 error:
-
-	nxs_string_free(&content_url);
 
 	nxs_chat_srv_c_rdmn_attachment_free(&attachment);
 
@@ -399,6 +380,8 @@ static nxs_cfg_json_state_t
 	rc = NXS_CFG_JSON_CONF_OK;
 
 	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	nxs_cfg_json_conf_array_skip_undef(&cfg_arr);
 
 	// clang-format off
 
