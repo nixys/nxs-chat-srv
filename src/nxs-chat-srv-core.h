@@ -7,7 +7,7 @@
 #include <hiredis/hircluster.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.1.6"
+#define NXS_CHAT_SRV_VERSION						"0.1.7"
 
 /* Project basic global definitions */
 
@@ -237,6 +237,7 @@ typedef struct
 	nxs_string_t				auth_token;
 	size_t					issue_list_query_id;
 	nxs_bool_t				ssl_verifyhost;
+	size_t					cf_telegram;
 	size_t					cf_watchers;
 	size_t					cf_ignore_status;
 	size_t					status_in_progress;
@@ -254,7 +255,6 @@ typedef struct
 
 typedef struct
 {
-	size_t					rdmn_cf_telegram;
 	time_t					projects_ttl;
 	time_t					users_ttl;
 	time_t					issue_priorities_ttl;

@@ -362,7 +362,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_rdmn_user_extract_user_custom_fields(
 		return NXS_CFG_JSON_CONF_ERROR;
 	}
 
-	if((size_t)nxs_json_integer_val(j) == nxs_chat_srv_cfg.cache.rdmn_cf_telegram &&
+	if((size_t)nxs_json_integer_val(j) == nxs_chat_srv_cfg.rdmn.cf_telegram &&
 	   (j = nxs_json_child_get_by_key(json, nxs_string_str(&_s_par_value))) != NULL) {
 
 		/* needed custom field with value */

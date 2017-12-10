@@ -98,7 +98,6 @@ static nxs_string_t _s_par_queue_workers		= nxs_string("queue_workers");
 static nxs_string_t _s_par_daemonize			= nxs_string("daemonize");
 static nxs_string_t _s_par_auth_token			= nxs_string("auth_token");
 static nxs_string_t _s_par_cache			= nxs_string("cache");
-static nxs_string_t _s_par_rdmn_cf_telegram		= nxs_string("rdmn_cf_telegram");
 static nxs_string_t _s_par_lock_file			= nxs_string("lock_file");
 static nxs_string_t _s_par_dev_accounts			= nxs_string("dev_accounts");
 static nxs_string_t _s_par_projects_ttl			= nxs_string("projects_ttl");
@@ -106,6 +105,7 @@ static nxs_string_t _s_par_users_ttl			= nxs_string("users_ttl");
 static nxs_string_t _s_par_issue_priorities_ttl		= nxs_string("issue_priorities_ttl");
 static nxs_string_t _s_par_ssl_verifyhost		= nxs_string("ssl_verifyhost");
 static nxs_string_t _s_par_issue_list_query_id		= nxs_string("issue_list_query_id");
+static nxs_string_t _s_par_cf_telegram			= nxs_string("cf_telegram");
 static nxs_string_t _s_par_cf_watchers			= nxs_string("cf_watchers");
 static nxs_string_t _s_par_cf_ignore_status		= nxs_string("cf_ignore_status");
 static nxs_string_t _s_par_status_in_progress		= nxs_string("status_in_progress");
@@ -523,6 +523,7 @@ static nxs_cfg_json_state_t
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_auth_token,		&var->auth_token,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_issue_list_query_id,	&var->issue_list_query_id,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_ssl_verifyhost,		&var->ssl_verifyhost,		NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_cf_telegram,		&var->cf_telegram,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_cf_watchers,		&var->cf_watchers,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_cf_ignore_status,	&var->cf_ignore_status,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_status_in_progress,	&var->status_in_progress,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
@@ -602,7 +603,6 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_rdmn_cf_telegram,	&var->rdmn_cf_telegram,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_projects_ttl,		&var->projects_ttl,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_users_ttl,		&var->users_ttl,		NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_issue_priorities_ttl,	&var->issue_priorities_ttl,	NULL,	NULL,	NXS_CFG_JSON_TYPE_INT,		0,	0,	NXS_YES,	NULL);
