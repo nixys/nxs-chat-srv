@@ -1,0 +1,4 @@
+etc/nxs-chat-srv/ssl
+var/log/nxs-chat-srv
+var/spool/nxs-chat-srv/tlgrm
+var/spool/nxs-chat-srv/rdmn

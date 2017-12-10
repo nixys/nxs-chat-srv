@@ -1,10 +1,10 @@
 Source: #PACKAGE#
 Section: devel
 Priority: optional
-Maintainer: Boris Ershov <#EMAIL#>
+Maintainer: #USERNAME# <#EMAIL#>
 Build-Depends: #BUILD_DEPS#
 Standards-Version: #POLICY#
-Homepage: http://www.nixys.ru
+Homepage: http://nixys.ru
 
 Package: #PACKAGE#
 Architecture: amd64

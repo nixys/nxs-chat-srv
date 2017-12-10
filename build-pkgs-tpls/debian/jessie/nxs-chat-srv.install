@@ -1,4 +1,4 @@
 ./objs/nxs-chat-srv /usr/sbin
 ./pkg/etc/nxs-chat-srv /etc
 ./pkg/etc/logrotate.d/nxs-chat-srv /etc/logrotate.d
-./pkg/lib/systemd/system/nxs-chat-srv@.service /lib/systemd/system
+./pkg/lib/systemd/system/nxs-chat-srv.service /lib/systemd/system
