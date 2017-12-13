@@ -94,7 +94,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_webhook_get(nxs_chat_srv_u_tlgrm_webhook
 	if(nxs_chat_srv_d_tlgrm_request(NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_GET_WEBHOOKINFO, &message, NULL, &u_ctx->response_buf) !=
 	   NXS_CHAT_SRV_E_OK) {
 
-		nxs_log_write_error(&process, "[%s]: can't get webhook info from tlgrm", nxs_proc_get_name(&process));
+		nxs_log_write_warn(&process, "[%s]: can't get webhook info from tlgrm", nxs_proc_get_name(&process));
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -144,7 +144,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_webhook_set(nxs_chat_srv_u_tlgrm_webhook
 
 		default:
 
-			nxs_log_write_error(&process, "[%s]: can't set webhook to tlgrm", nxs_proc_get_name(&process));
+			nxs_log_write_warn(&process, "[%s]: can't set webhook to tlgrm", nxs_proc_get_name(&process));
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}

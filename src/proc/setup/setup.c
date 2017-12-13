@@ -50,18 +50,12 @@ nxs_chat_srv_err_t nxs_chat_srv_p_setup_runtime(void)
 
 	if((nxs_chat_srv_cfg.init_mode & NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET) == NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET) {
 
-		if(nxs_chat_srv_p_setup_set_webhook() != NXS_CHAT_SRV_E_OK) {
-
-			return NXS_CHAT_SRV_E_ERR;
-		}
+		nxs_chat_srv_p_setup_set_webhook();
 	}
 
 	if((nxs_chat_srv_cfg.init_mode & NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES) == NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES) {
 
-		if(nxs_chat_srv_p_setup_create_mysql_tables() != NXS_CHAT_SRV_E_OK) {
-
-			return NXS_CHAT_SRV_E_ERR;
-		}
+		nxs_chat_srv_p_setup_create_mysql_tables();
 	}
 
 	return NXS_CHAT_SRV_E_OK;

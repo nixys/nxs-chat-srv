@@ -58,10 +58,10 @@ nxs_chat_srv_d_db_mysql_setup_t *nxs_chat_srv_d_db_mysql_setup_init(void)
 
 	if(nxs_chat_srv_c_mysql_connect(&d_ctx->mysql_ctx) != NXS_CHAT_SRV_E_OK) {
 
-		nxs_log_write_error(&process,
-		                    "[%s]: db setup error, can't connect to MySQL: \"%s\"",
-		                    nxs_proc_get_name(&process),
-		                    d_ctx->mysql_ctx.err_str);
+		nxs_log_write_warn(&process,
+		                   "[%s]: db setup error, can't connect to MySQL: \"%s\"",
+		                   nxs_proc_get_name(&process),
+		                   d_ctx->mysql_ctx.err_str);
 
 		return nxs_chat_srv_d_db_mysql_setup_free(d_ctx);
 	}
@@ -109,7 +109,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_mysql_setup_create_table_ids(nxs_chat_srv_d
 	                   "ENGINE=InnoDB "
 	                   "DEFAULT CHARSET=utf8") != NXS_MYSQL_E_OK) {
 
-		nxs_log_write_error(
+		nxs_log_write_warn(
 		        &process, "[%s]: MySQL create table `ids` error: %s", nxs_proc_get_name(&process), d_ctx->mysql_ctx.err_str);
 
 		nxs_string_char_cpy(err_str, 0, d_ctx->mysql_ctx.err_str);
@@ -154,7 +154,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_mysql_setup_create_table_issues(nxs_chat_sr
 	                   "ENGINE=InnoDB "
 	                   "DEFAULT CHARSET=utf8") != NXS_MYSQL_E_OK) {
 
-		nxs_log_write_error(
+		nxs_log_write_warn(
 		        &process, "[%s]: MySQL create table `issues` error: %s", nxs_proc_get_name(&process), d_ctx->mysql_ctx.err_str);
 
 		nxs_string_char_cpy(err_str, 0, d_ctx->mysql_ctx.err_str);
