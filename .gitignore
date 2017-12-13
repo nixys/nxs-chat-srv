@@ -2,6 +2,6 @@
 /.autotools
 /.cproject
 /.settings
-/nxs-chat-srv.conf
+/nxs-chat-srv.conf*
 /tmp
 /ssl

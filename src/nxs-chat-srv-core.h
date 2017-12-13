@@ -7,7 +7,7 @@
 #include <hiredis/hircluster.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.1.8"
+#define NXS_CHAT_SRV_VERSION						"0.1.10"
 
 /* Project basic global definitions */
 
@@ -189,6 +189,7 @@ typedef struct
 
 typedef struct
 {
+	nxs_bool_t				use_ssl;
 	nxs_string_t				crt;
 	nxs_string_t				key;
 } nxs_chat_srv_cfg_bind_ssl_t;

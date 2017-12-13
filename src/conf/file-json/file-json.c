@@ -121,6 +121,7 @@ static nxs_string_t _s_par_statistic			= nxs_string("statistic");
 static nxs_string_t _s_par_presale_api_key		= nxs_string("presale_api_key");
 static nxs_string_t _s_par_presale_project_name		= nxs_string("presale_project_name");
 static nxs_string_t _s_par_webhook_host			= nxs_string("webhook_host");
+static nxs_string_t _s_par_use_ssl			= nxs_string("use_ssl");
 
 /* Module global functions */
 
@@ -338,8 +339,9 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_crt,	&var->crt,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_key,	&var->key,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_use_ssl,	&var->use_ssl,	NULL,	NULL,	NXS_CFG_JSON_TYPE_BOOL,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_crt,		&var->crt,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_key,		&var->key,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on
 
