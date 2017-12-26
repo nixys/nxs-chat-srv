@@ -328,7 +328,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime_queue(void)
 
 		case NXS_CHAT_SRV_E_OK:
 
-			/* got (locked) queue */
+			/* got (lock) queue */
 
 			update = nxs_chat_srv_u_db_queue_list_get_head(queue_ctx);
 

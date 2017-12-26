@@ -384,7 +384,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_update_users(nxs_chat_srv_u_db_cache_
 
 	/* remove inactive values from list */
 
-	/* TODO: add remove from list inactive users
+	/* TODO: remove from list inactive users
 	for(u = nxs_list_ptr_init(&u_ctx->users, NXS_LIST_PTR_INIT_HEAD); u != NULL;) {
 
 	        if(nxs_string_len(&u->r_tlgrm_username) == 0) {
@@ -518,6 +518,20 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_user_get(nxs_chat_srv_u_db_cache_t *u
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
+	if(nxs_string_len(tlgrm_username) == 0) {
+
+		nxs_log_write_warn(&process, "[%s]: db-cache user get warn: tlgrm username is empty string", nxs_proc_get_name(&process));
+
+		return NXS_CHAT_SRV_E_EXIST;
+	}
+
+	if(nxs_string_find_char_first(tlgrm_username, 0, (u_char)' ') != NULL) {
+
+		nxs_log_write_warn(&process, "[%s]: db-cache user get warn: tlgrm username is invalid", nxs_proc_get_name(&process));
+
+		return NXS_CHAT_SRV_E_EXIST;
+	}
+
 	for(u = nxs_list_ptr_init(&u_ctx->users, NXS_LIST_PTR_INIT_HEAD); u != NULL; u = nxs_list_ptr_next(&u_ctx->users)) {
 
 		if(nxs_string_cmp(&u->r_tlgrm_username, 0, tlgrm_username, 0) == NXS_YES) {
@@ -545,6 +559,11 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_user_get_by_rdmn_id(nxs_chat_srv_u_db
 	if(u_ctx == NULL || user_ctx == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if(rdmn_userid == 0) {
+
+		return NXS_CHAT_SRV_E_EXIST;
 	}
 
 	for(u = nxs_list_ptr_init(&u_ctx->users, NXS_LIST_PTR_INIT_HEAD); u != NULL; u = nxs_list_ptr_next(&u_ctx->users)) {
