@@ -103,8 +103,9 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_mysql_setup_create_table_ids(nxs_chat_srv_d
 	                   &res,
 	                   "CREATE TABLE "
 	                   "	`ids` ("
-	                   "		`rdmn_userid` int(11) NOT NULL, "
-	                   "		`tlgrm_userid` int(11) NOT NULL "
+	                   "		`tlgrm_userid` int(11) NOT NULL, "
+	                   "		`tlgrm_username` varchar(255) NOT NULL DEFAULT '', "
+	                   "		`rdmn_userid` int(11) NOT NULL "
 	                   "		) "
 	                   "ENGINE=InnoDB "
 	                   "DEFAULT CHARSET=utf8") != NXS_MYSQL_E_OK) {

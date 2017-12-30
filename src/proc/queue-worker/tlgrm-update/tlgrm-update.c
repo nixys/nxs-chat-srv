@@ -53,7 +53,8 @@ typedef struct
 static nxs_chat_srv_err_t check_user(nxs_chat_srv_u_db_cache_t *    cache_ctx,
                                      nxs_chat_srv_m_user_ctx_t *    user_ctx,
                                      nxs_chat_srv_m_tlgrm_update_t *update,
-                                     size_t *                       tlgrm_user_id);
+                                     size_t *                       tlgrm_user_id,
+                                     nxs_string_t *                 tlgrm_username);
 
 static nxs_chat_srv_err_t handler_callback_exec(nxs_chat_srv_u_db_queue_t *queue_ctx,
                                                 nxs_chat_srv_u_db_sess_t * sess_ctx,
@@ -163,7 +164,7 @@ static nxs_string_t _s_stickers_mime	= nxs_string("image/webp");
 
 nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_ra_queue_type_t type, nxs_string_t *data, void *p_meta)
 {
-	nxs_string_t                  base64_decoded;
+	nxs_string_t                  base64_decoded, tlgrm_username;
 	nxs_chat_srv_m_tlgrm_update_t update;
 	nxs_chat_srv_u_db_cache_t *   cache_ctx;
 	nxs_chat_srv_u_db_ids_t *     ids_ctx;
@@ -171,11 +172,12 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_r
 	nxs_chat_srv_u_db_queue_t *   queue_ctx;
 	nxs_chat_srv_u_presale_t *    presale_ctx;
 	nxs_chat_srv_err_t            rc;
-	size_t                        tlgrm_user_id, i;
+	size_t                        tlgrm_userid, i;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
 	nxs_string_init(&base64_decoded);
+	nxs_string_init(&tlgrm_username);
 
 	nxs_chat_srv_c_tlgrm_update_init(&update);
 
@@ -198,36 +200,41 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_r
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
-	if(check_user(cache_ctx, &user_ctx, &update, &tlgrm_user_id) != NXS_CHAT_SRV_E_OK) {
+	if(check_user(cache_ctx, &user_ctx, &update, &tlgrm_userid, &tlgrm_username) != NXS_CHAT_SRV_E_OK) {
 
 		/* User not found */
+
+		if(nxs_chat_srv_u_db_ids_set_tlgrm(ids_ctx, tlgrm_userid, &tlgrm_username, 0) != NXS_CHAT_SRV_E_OK) {
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
 
 		if(nxs_chat_srv_u_presale_pull(presale_ctx) != NXS_CHAT_SRV_E_OK) {
 
 			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 		}
 
-		if(nxs_chat_srv_u_presale_p_get_by_user_id(presale_ctx, tlgrm_user_id, NULL) == NXS_CHAT_SRV_E_OK) {
+		if(nxs_chat_srv_u_presale_p_get_by_user_id(presale_ctx, tlgrm_userid, NULL) == NXS_CHAT_SRV_E_OK) {
 
 			/* presale object existing for this user */
 
 			nxs_error(rc,
-			          nxs_chat_srv_u_db_queue_add(queue_ctx, tlgrm_user_id, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE, data),
+			          nxs_chat_srv_u_db_queue_add(queue_ctx, tlgrm_userid, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE, data),
 			          error);
 		}
 		else {
 
 			/* no presale objects existing for this user */
 
-			nxs_chat_srv_p_queue_worker_tlgrm_update_win_unknown_user(tlgrm_user_id, NULL);
+			nxs_chat_srv_p_queue_worker_tlgrm_update_win_unknown_user(tlgrm_userid, NULL);
 
-			nxs_chat_srv_u_presale_w_set(presale_ctx, tlgrm_user_id, data);
+			nxs_chat_srv_u_presale_w_set(presale_ctx, tlgrm_userid, data);
 		}
 
 		nxs_error(rc, NXS_CHAT_SRV_E_OK, error);
 	}
 
-	if(nxs_chat_srv_u_db_ids_set(ids_ctx, user_ctx.r_userid, tlgrm_user_id) != NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_u_db_ids_set_tlgrm(ids_ctx, tlgrm_userid, &tlgrm_username, user_ctx.r_userid) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -237,7 +244,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_r
 		case NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_CALLBACK:
 
 			nxs_error(rc,
-			          nxs_chat_srv_u_db_queue_add(queue_ctx, tlgrm_user_id, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_CALLBACK, data),
+			          nxs_chat_srv_u_db_queue_add(queue_ctx, tlgrm_userid, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_CALLBACK, data),
 			          error);
 
 			break;
@@ -252,7 +259,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_r
 
 						nxs_error(rc,
 						          nxs_chat_srv_u_db_queue_add(
-						                  queue_ctx, tlgrm_user_id, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_COMMAND, data),
+						                  queue_ctx, tlgrm_userid, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_COMMAND, data),
 						          error);
 					}
 				}
@@ -266,7 +273,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_r
 
 						nxs_error(rc,
 						          nxs_chat_srv_u_db_queue_add(
-						                  queue_ctx, tlgrm_user_id, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_COMMAND, data),
+						                  queue_ctx, tlgrm_userid, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_COMMAND, data),
 						          error);
 					}
 				}
@@ -275,7 +282,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_r
 			/* if command not found */
 
 			nxs_error(rc,
-			          nxs_chat_srv_u_db_queue_add(queue_ctx, tlgrm_user_id, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE, data),
+			          nxs_chat_srv_u_db_queue_add(queue_ctx, tlgrm_userid, NXS_CHAT_SRV_M_TLGRM_UPDATE_TYPE_MESSAGE, data),
 			          error);
 
 			break;
@@ -293,6 +300,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_add(nxs_chat_srv_m_r
 error:
 
 	nxs_string_free(&base64_decoded);
+	nxs_string_free(&tlgrm_username);
 
 	nxs_chat_srv_c_tlgrm_update_free(&update);
 
@@ -314,7 +322,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime_queue(void)
 	nxs_chat_srv_m_user_ctx_t      user_ctx;
 	nxs_chat_srv_u_db_queue_t *    queue_ctx;
 	nxs_chat_srv_err_t             rc;
-	size_t                         tlgrm_user_id;
+	nxs_string_t                   tlgrm_username;
+	size_t                         tlgrm_userid;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
@@ -323,6 +332,8 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime_queue(void)
 	queue_ctx = nxs_chat_srv_u_db_queue_init();
 
 	nxs_chat_srv_c_user_ctx_init(&user_ctx);
+
+	nxs_string_init(&tlgrm_username);
 
 	switch(nxs_chat_srv_u_db_queue_get(queue_ctx)) {
 
@@ -337,14 +348,14 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_runtime_queue(void)
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			if(check_user(cache_ctx, &user_ctx, update, &tlgrm_user_id) != NXS_CHAT_SRV_E_OK) {
+			if(check_user(cache_ctx, &user_ctx, update, &tlgrm_userid, &tlgrm_username) != NXS_CHAT_SRV_E_OK) {
 
 				/* User not found */
 
-				nxs_error(rc, handler_presale_exec(tlgrm_user_id, queue_ctx, cache_ctx), error);
+				nxs_error(rc, handler_presale_exec(tlgrm_userid, queue_ctx, cache_ctx), error);
 			}
 
-			if(nxs_chat_srv_u_db_sess_pull(sess_ctx, tlgrm_user_id) != NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_u_db_sess_pull(sess_ctx, tlgrm_userid) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
@@ -398,6 +409,8 @@ error:
 	cache_ctx = nxs_chat_srv_u_db_cache_free(cache_ctx);
 	queue_ctx = nxs_chat_srv_u_db_queue_free(queue_ctx);
 
+	nxs_string_free(&tlgrm_username);
+
 	return rc;
 }
 
@@ -406,9 +419,10 @@ error:
 static nxs_chat_srv_err_t check_user(nxs_chat_srv_u_db_cache_t *    cache_ctx,
                                      nxs_chat_srv_m_user_ctx_t *    user_ctx,
                                      nxs_chat_srv_m_tlgrm_update_t *update,
-                                     size_t *                       tlgrm_user_id)
+                                     size_t *                       tlgrm_userid,
+                                     nxs_string_t *                 tlgrm_username)
 {
-	nxs_string_t *t_u_name, *t_u_lang, *s;
+	nxs_string_t *t_u_lang, *s;
 	size_t        i;
 	nxs_bool_t    f;
 
@@ -419,15 +433,17 @@ static nxs_chat_srv_err_t check_user(nxs_chat_srv_u_db_cache_t *    cache_ctx,
 
 	if(update->callback_query._is_used == NXS_YES) {
 
-		*tlgrm_user_id = update->callback_query.from.id;
-		t_u_name       = &update->callback_query.from.username;
-		t_u_lang       = &update->callback_query.from.language_code;
+		*tlgrm_userid = update->callback_query.from.id;
+		t_u_lang      = &update->callback_query.from.language_code;
+
+		nxs_string_clone(tlgrm_username, &update->callback_query.from.username);
 	}
 	else {
 
-		*tlgrm_user_id = update->message.from.id;
-		t_u_name       = &update->message.from.username;
-		t_u_lang       = &update->message.from.language_code;
+		*tlgrm_userid = update->message.from.id;
+		t_u_lang      = &update->message.from.language_code;
+
+		nxs_string_clone(tlgrm_username, &update->message.from.username);
 	}
 
 	if(nxs_array_count(&nxs_chat_srv_cfg.dev_accounts) > 0) {
@@ -436,7 +452,7 @@ static nxs_chat_srv_err_t check_user(nxs_chat_srv_u_db_cache_t *    cache_ctx,
 
 			s = nxs_array_get(&nxs_chat_srv_cfg.dev_accounts, i);
 
-			if(nxs_string_cmp(s, 0, t_u_name, 0) == NXS_YES) {
+			if(nxs_string_cmp(s, 0, tlgrm_username, 0) == NXS_YES) {
 
 				f = NXS_YES;
 
@@ -450,14 +466,14 @@ static nxs_chat_srv_err_t check_user(nxs_chat_srv_u_db_cache_t *    cache_ctx,
 			        &process,
 			        "[%s]: access denied: tlgrm user not in 'dev_accounts' list (tlgrm userid: %zu, tlgrm user name: %r)",
 			        nxs_proc_get_name(&process),
-			        *tlgrm_user_id,
-			        t_u_name);
+			        *tlgrm_userid,
+			        tlgrm_username);
 
 			return NXS_CHAT_SRV_E_EXIST;
 		}
 	}
 
-	if(nxs_chat_srv_u_db_cache_user_get(cache_ctx, t_u_name, user_ctx) == NXS_CHAT_SRV_E_OK) {
+	if(nxs_chat_srv_u_db_cache_user_get(cache_ctx, tlgrm_username, user_ctx) == NXS_CHAT_SRV_E_OK) {
 
 		nxs_string_clone(&user_ctx->t_userlang, t_u_lang);
 
@@ -467,8 +483,8 @@ static nxs_chat_srv_err_t check_user(nxs_chat_srv_u_db_cache_t *    cache_ctx,
 	nxs_log_write_warn(&process,
 	                   "[%s]: access denied: tlgrm user not found (tlgrm userid: %zu, tlgrm user name: %r)",
 	                   nxs_proc_get_name(&process),
-	                   *tlgrm_user_id,
-	                   t_u_name);
+	                   *tlgrm_userid,
+	                   tlgrm_username);
 
 	return NXS_CHAT_SRV_E_EXIST;
 }
@@ -2099,7 +2115,7 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 		rdmn_uploads = nxs_chat_srv_u_rdmn_attachments_uploads_get(rdmn_attachments_ctx);
 
 		switch(nxs_chat_srv_u_rdmn_issues_add_note(
-		               rdmn_issues_ctx, issue_id, 0, message, private_notes, 0, rdmn_uploads, rdmn_api_key) != NXS_CHAT_SRV_E_OK) {
+		               rdmn_issues_ctx, issue_id, 0, message, private_notes, 0, rdmn_uploads, rdmn_api_key)) {
 
 			case NXS_CHAT_SRV_E_OK:
 

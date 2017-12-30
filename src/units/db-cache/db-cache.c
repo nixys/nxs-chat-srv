@@ -335,12 +335,13 @@ error:
 /* update 'users' Redis cache from Redmine */
 nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_update_users(nxs_chat_srv_u_db_cache_t *u_ctx)
 {
-	nxs_chat_srv_err_t rc;
-	nxs_buf_t          out_buf;
-	nxs_string_t       serialized_str;
-	//	nxs_chat_srv_u_db_cache_user_t *u;
-	nxs_chat_srv_d_db_cache_t *db_cache_ctx;
-	size_t                     total_count, offset;
+	nxs_chat_srv_err_t              rc;
+	nxs_buf_t                       out_buf;
+	nxs_string_t                    serialized_str;
+	nxs_chat_srv_u_db_cache_user_t *u1, *u2;
+	nxs_chat_srv_d_db_cache_t *     db_cache_ctx;
+	nxs_list_el_t *                 p;
+	size_t                          total_count, offset;
 
 	if(u_ctx == NULL) {
 
@@ -381,6 +382,45 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_update_users(nxs_chat_srv_u_db_cache_
 
 		offset += NXS_CHAT_SRV_RDMN_QUERY_LIMIT;
 	} while(total_count > offset);
+
+	/* Check for duplicates */
+	for(u1 = nxs_list_ptr_init(&u_ctx->users, NXS_LIST_PTR_INIT_HEAD); u1 != NULL; u1 = nxs_list_ptr_next(&u_ctx->users)) {
+
+		if(nxs_string_len(&u1->r_tlgrm_username) == 0) {
+
+			continue;
+		}
+
+		p = nxs_list_ptr_get(&u_ctx->users);
+
+		for(u2 = nxs_list_ptr_init(&u_ctx->users, NXS_LIST_PTR_INIT_HEAD); u2 != NULL; u2 = nxs_list_ptr_next(&u_ctx->users)) {
+
+			if(u1 != u2) {
+
+				if(nxs_string_len(&u2->r_tlgrm_username) == 0) {
+
+					continue;
+				}
+
+				if(nxs_string_cmp(&u1->r_tlgrm_username, 0, &u2->r_tlgrm_username, 0) == NXS_YES) {
+
+					/* Found duplicate tlgrm_username */
+
+					nxs_log_write_error(&process,
+					                    "[%s]: db-cache users update error: found duplicate tlgrm username fields "
+					                    "(tlgrm username: %r, rdmn userid[1]: %zu, rdmn userid[2]: %zu)",
+					                    nxs_proc_get_name(&process),
+					                    &u1->r_tlgrm_username,
+					                    u1->r_id,
+					                    u2->r_id);
+
+					nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+				}
+			}
+		}
+
+		nxs_list_ptr_set(&u_ctx->users, p);
+	}
 
 	/* remove inactive values from list */
 
@@ -505,6 +545,31 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_projects_get(nxs_chat_srv_u_db_cache_
 	}
 
 	return NXS_CHAT_SRV_E_OK;
+}
+
+void nxs_chat_srv_u_db_cache_user_get_all(nxs_chat_srv_u_db_cache_t *u_ctx, nxs_array_t *users_ctx)
+{
+	nxs_chat_srv_u_db_cache_user_t *u;
+	nxs_chat_srv_m_user_ctx_t *     u_out;
+
+	if(u_ctx == NULL || users_ctx == NULL) {
+
+		return;
+	}
+
+	for(u = nxs_list_ptr_init(&u_ctx->users, NXS_LIST_PTR_INIT_HEAD); u != NULL; u = nxs_list_ptr_next(&u_ctx->users)) {
+
+		u_out = nxs_array_add(users_ctx);
+
+		nxs_chat_srv_c_user_ctx_init(u_out);
+
+		u_out->r_userid = u->r_id;
+
+		nxs_string_clone(&u_out->t_username, &u->r_tlgrm_username);
+		nxs_string_clone(&u_out->r_username, &u->r_login);
+		nxs_string_clone(&u_out->r_userfname, &u->r_userfname);
+		nxs_string_clone(&u_out->r_userlname, &u->r_userlname);
+	}
 }
 
 nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_user_get(nxs_chat_srv_u_db_cache_t *u_ctx,
@@ -1182,11 +1247,11 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_db_cache_users_extract_users_custom_f
 
 		if(nxs_json_type_get(j) != NXS_JSON_TYPE_STRING) {
 
-			nxs_log_write_error(
-			        &process,
-			        "[%s]: db-cache unit error: parse rdmn users custom fields error, expected string type for filed \"%r\"",
-			        nxs_proc_get_name(&process),
-			        &_s_par_value);
+			nxs_log_write_error(&process,
+			                    "[%s]: db-cache unit error: parse rdmn users custom fields error, expected string type "
+			                    "for filed \"%r\"",
+			                    nxs_proc_get_name(&process),
+			                    &_s_par_value);
 
 			return NXS_CFG_JSON_CONF_ERROR;
 		}

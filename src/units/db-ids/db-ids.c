@@ -77,7 +77,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_get(nxs_chat_srv_u_db_ids_t *u_ctx, siz
 {
 	nxs_chat_srv_err_t rc;
 
-	if(tlgrm_userid == NULL) {
+	if(u_ctx == NULL || tlgrm_userid == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
 	}
@@ -116,17 +116,202 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_get(nxs_chat_srv_u_db_ids_t *u_ctx, siz
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_set(nxs_chat_srv_u_db_ids_t *u_ctx, size_t rdmn_userid, size_t tlgrm_userid)
+nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_set_tlgrm(nxs_chat_srv_u_db_ids_t *u_ctx,
+                                                   size_t                   tlgrm_userid,
+                                                   nxs_string_t *           tlgrm_username,
+                                                   size_t                   rdmn_userid)
 {
 	nxs_chat_srv_err_t rc;
 
-	if((rc = nxs_chat_srv_d_db_ids_put(u_ctx->db_ids_ctx, rdmn_userid, tlgrm_userid)) != NXS_CHAT_SRV_E_OK) {
+	if(u_ctx == NULL || tlgrm_username == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	if(nxs_chat_srv_d_db_ids_transaction_start(u_ctx->db_ids_ctx) != NXS_CHAT_SRV_E_OK) {
 
 		nxs_log_write_error(&process,
-		                    "[%s]: can't save tlgrm user id into DB (rdmn userid: %zu, tlgrm userid: %zu)",
+		                    "[%s]: can't save tlgrm ids into DB: transaction start error (tlgrm userid: %zu, tlgrm username: %r, "
+		                    "rdmn userid: %zu)",
 		                    nxs_proc_get_name(&process),
-		                    rdmn_userid,
-		                    tlgrm_userid);
+		                    tlgrm_userid,
+		                    tlgrm_username,
+		                    rdmn_userid);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_string_len(tlgrm_username) > 0) {
+
+		if(nxs_chat_srv_d_db_ids_cleanup_tlgrm_username(u_ctx->db_ids_ctx, tlgrm_userid, tlgrm_username) != NXS_CHAT_SRV_E_OK) {
+
+			nxs_log_write_error(
+			        &process,
+			        "[%s]: can't save tlgrm ids into DB: tlgrm username cleanup error (tlgrm userid: %zu, tlgrm username: %r, "
+			        "rdmn userid: %zu)",
+			        nxs_proc_get_name(&process),
+			        tlgrm_userid,
+			        tlgrm_username,
+			        rdmn_userid);
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
+	}
+
+	if(rdmn_userid > 0) {
+
+		if(nxs_chat_srv_d_db_ids_cleanup_rdmn_userid_by_tlgrm_userid(u_ctx->db_ids_ctx, tlgrm_userid, rdmn_userid) !=
+		   NXS_CHAT_SRV_E_OK) {
+
+			nxs_log_write_error(
+			        &process,
+			        "[%s]: can't save tlgrm ids into DB: rdmn userid cleanup error (tlgrm userid: %zu, tlgrm username: %r, "
+			        "rdmn userid: %zu)",
+			        nxs_proc_get_name(&process),
+			        tlgrm_userid,
+			        tlgrm_username,
+			        rdmn_userid);
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
+	}
+
+	if(nxs_chat_srv_d_db_ids_put_tlgrm(u_ctx->db_ids_ctx, tlgrm_userid, tlgrm_username, rdmn_userid) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: can't save tlgrm ids into DB: put tlgrm error (tlgrm userid: %zu, tlgrm username: %r, "
+		                    "rdmn userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_userid,
+		                    tlgrm_username,
+		                    rdmn_userid);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+error:
+
+	if(rc == NXS_CHAT_SRV_E_OK) {
+
+		if(nxs_chat_srv_d_db_ids_transaction_commit(u_ctx->db_ids_ctx) != NXS_CHAT_SRV_E_OK) {
+
+			nxs_log_write_error(
+			        &process,
+			        "[%s]: can't save tlgrm ids into DB: transaction commit error (tlgrm userid: %zu, tlgrm username: %r, "
+			        "rdmn userid: %zu)",
+			        nxs_proc_get_name(&process),
+			        tlgrm_userid,
+			        tlgrm_username,
+			        rdmn_userid);
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
+	}
+	else {
+
+		if(nxs_chat_srv_d_db_ids_transaction_rollback(u_ctx->db_ids_ctx) != NXS_CHAT_SRV_E_OK) {
+
+			nxs_log_write_error(
+			        &process,
+			        "[%s]: can't save tlgrm ids into DB: transaction rollback error (tlgrm userid: %zu, tlgrm username: %r, "
+			        "rdmn userid: %zu)",
+			        nxs_proc_get_name(&process),
+			        tlgrm_userid,
+			        tlgrm_username,
+			        rdmn_userid);
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
+	}
+
+	return rc;
+}
+
+nxs_chat_srv_err_t nxs_chat_srv_u_db_ids_set_rdmn(nxs_chat_srv_u_db_ids_t *u_ctx, nxs_string_t *tlgrm_username, size_t rdmn_userid)
+{
+
+	nxs_chat_srv_err_t rc;
+
+	if(u_ctx == NULL || tlgrm_username == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	if(nxs_string_len(tlgrm_username) == 0) {
+
+		return NXS_CHAT_SRV_E_OK;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	if(nxs_chat_srv_d_db_ids_transaction_start(u_ctx->db_ids_ctx) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: can't save rdmn ids into DB: transaction start error (tlgrm username: %r, "
+		                    "rdmn userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_username,
+		                    rdmn_userid);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_d_db_ids_cleanup_rdmn_userid_by_tlgrm_username(u_ctx->db_ids_ctx, tlgrm_username, rdmn_userid) !=
+	   NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: can't save rdmn ids into DB: rdmn userid cleanup error (tlgrm username: %r, "
+		                    "rdmn userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_username,
+		                    rdmn_userid);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	if(nxs_chat_srv_d_db_ids_put_rdmn(u_ctx->db_ids_ctx, tlgrm_username, rdmn_userid) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: can't save rdmn ids into DB: put rdmn error (tlgrm username: %r, "
+		                    "rdmn userid: %zu)",
+		                    nxs_proc_get_name(&process),
+		                    tlgrm_username,
+		                    rdmn_userid);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+error:
+
+	if(rc == NXS_CHAT_SRV_E_OK) {
+
+		if(nxs_chat_srv_d_db_ids_transaction_commit(u_ctx->db_ids_ctx) != NXS_CHAT_SRV_E_OK) {
+
+			nxs_log_write_error(&process,
+			                    "[%s]: can't save rdmn ids into DB: transaction commit error (tlgrm username: %r, "
+			                    "rdmn userid: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    tlgrm_username,
+			                    rdmn_userid);
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
+	}
+	else {
+
+		if(nxs_chat_srv_d_db_ids_transaction_rollback(u_ctx->db_ids_ctx) != NXS_CHAT_SRV_E_OK) {
+
+			nxs_log_write_error(&process,
+			                    "[%s]: can't save rdmn ids into DB: transaction rollback error (tlgrm username: %r, "
+			                    "rdmn userid: %zu)",
+			                    nxs_proc_get_name(&process),
+			                    tlgrm_username,
+			                    rdmn_userid);
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
 	}
 
 	return rc;

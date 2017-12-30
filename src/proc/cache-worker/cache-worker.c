@@ -35,7 +35,8 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 static nxs_chat_srv_err_t nxs_chat_srv_p_cache_worker_process(nxs_chat_srv_p_cache_worker_ctx_t *p_ctx);
 static void nxs_chat_srv_p_cache_worker_sighandler_term(int sig, void *data);
 static void nxs_chat_srv_p_cache_worker_sighandler_usr1(int sig, void *data);
-static nxs_bool_t nxs_chat_srv_p_cache_worker_check_lock();
+static nxs_bool_t         nxs_chat_srv_p_cache_worker_check_lock();
+static nxs_chat_srv_err_t nxs_chat_srv_p_cache_worker_ids_update(nxs_chat_srv_u_db_cache_t *db_cache_ctx);
 
 // clang-format off
 
@@ -128,6 +129,12 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_cache_worker_process(nxs_chat_srv_p_cac
 		else {
 
 			nxs_log_write_debug(&process, "[%s]: users cache successfully updated", nxs_proc_get_name(&process));
+
+			if(nxs_chat_srv_p_cache_worker_ids_update(db_cache_ctx) != NXS_CHAT_SRV_E_OK) {
+
+				nxs_log_write_warn(
+				        &process, "[%s]: users cache update error: can't update 'ids' data", nxs_proc_get_name(&process));
+			}
 
 			switch(nxs_chat_srv_u_presale_pull(presale_ctx)) {
 
@@ -248,4 +255,51 @@ static nxs_bool_t nxs_chat_srv_p_cache_worker_check_lock()
 
 		return NXS_YES;
 	}
+}
+
+static nxs_chat_srv_err_t nxs_chat_srv_p_cache_worker_ids_update(nxs_chat_srv_u_db_cache_t *db_cache_ctx)
+{
+	nxs_chat_srv_err_t         rc;
+	nxs_chat_srv_m_user_ctx_t *u;
+	nxs_chat_srv_u_db_ids_t *  ids_ctx;
+	nxs_array_t                users;
+	size_t                     i;
+
+	if(db_cache_ctx == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	ids_ctx = nxs_chat_srv_u_db_ids_init();
+
+	nxs_array_init2(&users, nxs_chat_srv_m_user_ctx_t);
+
+	nxs_chat_srv_u_db_cache_user_get_all(db_cache_ctx, &users);
+
+	for(i = 0; i < nxs_array_count(&users); i++) {
+
+		u = nxs_array_get(&users, i);
+
+		if(nxs_chat_srv_u_db_ids_set_rdmn(ids_ctx, &u->t_username, u->r_userid) != NXS_CHAT_SRV_E_OK) {
+
+			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+		}
+	}
+
+error:
+
+	ids_ctx = nxs_chat_srv_u_db_ids_free(ids_ctx);
+
+	for(i = 0; i < nxs_array_count(&users); i++) {
+
+		u = nxs_array_get(&users, i);
+
+		nxs_chat_srv_c_user_ctx_free(u);
+	}
+
+	nxs_array_free(&users);
+
+	return rc;
 }
