@@ -1,65 +1,120 @@
 #!/bin/bash
 
-if [ $# -eq 0 ];
+VER="0.1.13"
+BUILD_VERSION="2"
+
+RELEASE=""
+command='build'
+
+while getopts c:r: option
+do
+	case "${option}" in
+		r) RELEASE=${OPTARG};;
+		c) command=${OPTARG};;
+	esac
+done
+
+if [ "$RELEASE" == "" ];
 then
 
-		command='build'
-else
-
-		command=$1
+	echo -n "Input OS (e.g. debian:9): "
+	read RELEASE
 fi
 
-echo -n "Input release: "
-read RELEASE
-
-make
-
 P_NAME="nxs-chat-srv"
-VER=`./objs/nxs-chat-srv -V`
+
+USER=`whoami`
+
+function build_package_deb()
+{
+
+	r=$1
+
+	bv="deb${r}u${BUILD_VERSION}"
+
+	# Preparing docker image
+	sudo docker inspect nxs-build_${P_NAME}_debian:${r} > /dev/null 2>&1;
+
+	if [ $? -ne 0 ];
+	then
+
+		sudo docker build -t nxs-build_${P_NAME}_debian:${r} build-pkgs-conf/docker/debian-${r} || exit 1
+	fi
+
+	# Preparing build environment
+	sudo rm -rf /tmp/nxs-build/${P_NAME}/debian-${r} || exit 1
+	sudo mkdir -p /tmp/nxs-build/${P_NAME}/debian-${r}/${P_NAME} || exit 1
+	sudo mkdir -p /tmp/nxs-build/${P_NAME}/debian-${r}/${P_NAME}/objs || exit 1
+	sudo mkdir -p /tmp/nxs-build/${P_NAME}/debian-${r}/${P_NAME}/pkg || exit 1
+
+	# Coping source code into build environment
+	sudo rsync -qr \
+		.nxs-fw-settings \
+		docs \
+		src \
+		Makefile \
+		config.mk \
+		distrib.mk \
+		LICENSE \
+		README.md \
+		/tmp/nxs-build/${P_NAME}/debian-${r}/${P_NAME}
+
+	# Docker build script
+	sudo rsync build-pkgs-conf/docker/deb-build.sh /tmp/nxs-build/${P_NAME}/debian-${r}/ || exit 1
+
+	# Debian package template
+	sudo rsync -r build-pkgs-conf/tpls/debian-${r}/ /tmp/nxs-build/${P_NAME}/debian-${r}/deb-tpl || exit 1
+	sudo sed -i 's/\$\$BUILD_VERSION\$\$/'${bv}'/g' /tmp/nxs-build/${P_NAME}/debian-${r}/deb-tpl/changelog || exit 1
+
+	# Debian package content
+	sudo rsync -r build-pkgs-conf/pkg/general/ /tmp/nxs-build/${P_NAME}/debian-${r}/${P_NAME}/pkg
+	sudo rsync -r build-pkgs-conf/pkg/os/debian-${r}/ /tmp/nxs-build/${P_NAME}/debian-${r}/${P_NAME}/pkg
+
+	# Docker build package
+	sudo docker run -it --rm -v "/tmp/nxs-build/${P_NAME}/debian-${r}:/tmp/build" -e "DEBEMAIL=$DEBEMAIL" -e "DEBFULLNAME=$DEBFULLNAME" nxs-build_${P_NAME}_debian:${r} /tmp/build/deb-build.sh ${P_NAME} ${VER} || exit 1
+
+	# Remove junk
+	sudo rm -rf /tmp/nxs-build/${P_NAME}/debian-${r}/${P_NAME} 2>/dev/null
+	sudo rm -rf /tmp/nxs-build/${P_NAME}/debian-${r}/deb-tpl 2>/dev/null
+	sudo rm -rf /tmp/nxs-build/${P_NAME}/debian-${r}/deb-build.sh 2>/dev/null
+
+	# Change owner from root to current user
+	sudo chown -R ${USER} /tmp/nxs-build/${P_NAME}/debian-${r}
+
+	return 0
+}
 
 function build_package()
 {
+	case ${RELEASE} in
+		"debian:8" )
+			build_package_deb 8
+			;;
 
-	rm -rf /tmp/nxs/${P_NAME}
-	
-	mkdir -p /tmp/nxs
+		"debian:9" )
+			build_package_deb 9
+			;;
 
-	rsync -av ../${P_NAME} /tmp/nxs \
-		--exclude .git \
-		--exclude .gitignore \
-		--exclude .nxs-fw-settings \
-		--exclude build-pkgs-tpls \
-		--exclude build-pkgs \
-		--exclude tmp \
-		--exclude "objs/*" \
-		--exclude logs \
-		--exclude docs \
-		--exclude .cproject \
-		--exclude .project \
-		--exclude .autotools \
-		--exclude .settings \
-		--exclude ${P_NAME}.conf
+		"all" )
+			build_package_deb 8
+			if [ $? -ne 0 ];
+			then
+				echo "can't build package: debian:8"
+				exit 1
+			fi
 
-	rsync -av ./build-pkgs-tpls/pkg /tmp/nxs/${P_NAME}
+			build_package_deb 9
+			if [ $? -ne 0 ];
+			then
+				echo "can't build package: debian:9"
+				exit 1
+			fi
+			;;
 
-	(
-
-		TPL_PATH=`pwd`/build-pkgs-tpls/debian/${RELEASE}
-
-		cd /tmp/nxs/${P_NAME}
-
-		clean_build_files
-
-		dh_make -p ${P_NAME}_${VER} --copyright gpl3 --single --templates ${TPL_PATH} --yes --createorig
-
-		dpkg-buildpackage -b
-	)
-}
-
-function clean_build_files()
-{
-
-	rm ../${P_NAME}_${VER}.orig.tar.xz
+		*)
+			echo "unknown release"
+			;;
+	esac
 }
 
 case $command in
@@ -67,11 +122,6 @@ case $command in
 	build)
 
 		build_package
-		;;
-
-	clean)
-
-		clean_build_files
 		;;
 
 	*)
