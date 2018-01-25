@@ -50,10 +50,14 @@ Important: Bot will send notifications to Telegram account in the following case
 apt-key adv --fetch-keys http://packages.nixys.ru/packages.nixys.ru.gpg.key
 ```
 
-* Add the repository. Debian Jessie is available now:
-
+* Add the repository:
+ * Debian Jessie:
 ```
 echo "deb [arch=amd64] http://packages.nixys.ru/debian/ jessie main" > /etc/apt/sources.list.d/packages.nixys.ru.list
+```
+ * Debian Stretch:
+```
+echo "deb [arch=amd64] http://packages.nixys.ru/debian/ stretch main" > /etc/apt/sources.list.d/packages.nixys.ru.list
 ```
 
 * Make an update:
@@ -74,7 +78,7 @@ Coming soon ...
 
 ### Redmine nxs-chat Redmine plugin
 
-Also you need to install nxs-chat Redmine plugin (use this manual: ...)
+Also you need to install [nxs-chat](https://github.com/nixys/nxs-chat-redmine) Redmine plugin.
 
 ## Settings
 
@@ -208,7 +212,7 @@ Let's begin...
 
 Firstly change the default Redmine admin password :)
 
-Check that nxs-chat-redmine plugin has been installed in Redmine plugins directory.
+Check that [nxs-chat-redmine](https://github.com/nixys/nxs-chat-redmine) plugin has been installed in Redmine plugins directory.
 
 #### Basic settings
 
