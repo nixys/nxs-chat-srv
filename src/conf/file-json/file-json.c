@@ -64,6 +64,8 @@ static nxs_cfg_json_state_t
 static nxs_cfg_json_state_t
         nxs_chat_srv_conf_file_json_read_statistic(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
 
+static void nxs_chat_srv_conf_file_json_trim_url(nxs_string_t *str);
+
 // clang-format off
 
 /* Module initializations */
@@ -203,6 +205,11 @@ static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_post(nxs_cfg_json_t cfg)
 	}
 
 	nxs_chat_srv_cfg.ra_queue.pop_timeout_ms *= 1000;
+
+	/* trim trailing '/' characters */
+	nxs_chat_srv_conf_file_json_trim_url(&nxs_chat_srv_cfg.tlgrm.bot_api_addr);
+	nxs_chat_srv_conf_file_json_trim_url(&nxs_chat_srv_cfg.tlgrm.webhook_host);
+	nxs_chat_srv_conf_file_json_trim_url(&nxs_chat_srv_cfg.rdmn.host);
 
 	return NXS_CFG_JSON_CONF_OK;
 }
@@ -701,6 +708,16 @@ error:
 	nxs_cfg_json_conf_array_free(&cfg_arr);
 
 	return rc;
+}
+
+static void nxs_chat_srv_conf_file_json_trim_url(nxs_string_t *str)
+{
+	size_t l;
+
+	for(l = nxs_string_len(str); l > 0 && nxs_string_get_char(str, l - 1) == (u_char)'/'; l = nxs_string_len(str)) {
+
+		nxs_string_set_len(str, l - 1);
+	}
 }
 
 #endif /* USE_NXS_JSON */
