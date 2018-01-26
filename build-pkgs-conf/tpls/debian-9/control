@@ -8,5 +8,5 @@ Homepage: https://nixys.ru
 
 Package: #PACKAGE#
 Architecture: amd64
-Depends: ${misc:Depends}, libevent-nxs, libssl1.0.2, libjansson4, libcurl3, libmariadbclient-dev
+Depends: ${misc:Depends}, libevent-nxs, libssl1.0.2, libjansson4, libcurl3, libmariadbclient18
 Description: Nixys chat bot that integrates Telegram and Redmine
