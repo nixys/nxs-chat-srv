@@ -26,12 +26,8 @@ PROJ_INCLUDES					=	-I ./src
 NXS_CORE_HEADERS				=	$(shell find $(NXS_FW_CORE_INCLUDES_PATH)/$(NXS_FW_VERSION) -type f -name "*.h")
 NXS_CORE_LINKS					=	-L$(NXS_FW_CORE_LIBS_PATH)/$(NXS_FW_VERSION) -lnxs-general -lnxs-cfg-json -lnxs-json -lnxs-curl -lnxs-mysql -lnxs-rest-api 
 
-NXS_INCLUDES					=	-I/usr/include/libevent-nxs 
-ifeq ($(shell lsb_release -cs),stretch)
-NXS_LINKS					=	-ljansson -lcurl -lmariadbclient -L/usr/lib/x86_64-linux-gnu/libevent-nxs -levent -lssl -lcrypto -levent_openssl 
-else
-NXS_LINKS					=	-ljansson -lcurl -L/usr/lib/mysql -lmysqlclient -L/usr/lib/x86_64-linux-gnu/libevent-nxs -levent -lssl -lcrypto -levent_openssl 
-endif
+NXS_INCLUDES					=	-I/usr/include/libevent-nxs  $(NXS_DISTRIB_INCLUDES_$(OS_DISTRIB)_$(OS_RELEASE))
+NXS_LINKS					=	-ljansson -lcurl -L/usr/lib/x86_64-linux-gnu/libevent-nxs -levent -lssl -lcrypto -levent_openssl  $(NXS_DISTRIB_LINKS_$(OS_DISTRIB)_$(OS_RELEASE))
 
 NXS_USER_INCLUDES				=	
 NXS_USER_LINKS					=	-l:libhiredis_vip.a

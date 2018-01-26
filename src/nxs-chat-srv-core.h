@@ -7,7 +7,7 @@
 #include <hiredis/hircluster.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.1.13"
+#define NXS_CHAT_SRV_VERSION						"0.1.14"
 
 /* Project basic global definitions */
 
@@ -131,7 +131,8 @@ typedef enum
 {
 	NXS_CHAT_SRV_INIT_MODE_NONE			= 0,
 	NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET		= 1,
-	NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES	= 2,
+	NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET_SSC		= 2,
+	NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES	= 4,
 } nxs_chat_srv_init_mode_t;
 
 typedef enum

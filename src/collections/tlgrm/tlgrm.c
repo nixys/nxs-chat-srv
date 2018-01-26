@@ -1584,6 +1584,11 @@ nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_webhookset_result_pull_json(nxs_chat_srv
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
+	if(nxs_buf_get_len(json_buf) == 0) {
+
+		return NXS_CHAT_SRV_E_WARN;
+	}
+
 	return nxs_chat_srv_c_tlgrm_webhookset_result_pull_json_extract(webhookset, json_buf);
 }
 

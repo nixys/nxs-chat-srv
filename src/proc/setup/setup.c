@@ -48,15 +48,9 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_setup_create_mysql_tables(void);
 nxs_chat_srv_err_t nxs_chat_srv_p_setup_runtime(void)
 {
 
-	if((nxs_chat_srv_cfg.init_mode & NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET) == NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET) {
+	nxs_chat_srv_p_setup_set_webhook();
 
-		nxs_chat_srv_p_setup_set_webhook();
-	}
-
-	if((nxs_chat_srv_cfg.init_mode & NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES) == NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES) {
-
-		nxs_chat_srv_p_setup_create_mysql_tables();
-	}
+	nxs_chat_srv_p_setup_create_mysql_tables();
 
 	return NXS_CHAT_SRV_E_OK;
 }
@@ -68,29 +62,44 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_setup_set_webhook(void)
 
 	nxs_chat_srv_u_tlgrm_webhook_t *webhook_ctx;
 	nxs_chat_srv_err_t              rc;
-	nxs_bool_t                      status;
+	nxs_bool_t                      status, set_certificate;
 	nxs_string_t                    description;
 
+	if(((nxs_chat_srv_cfg.init_mode & NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET) == 0) &&
+	   ((nxs_chat_srv_cfg.init_mode & NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET_SSC) == 0)) {
+
+		return NXS_CHAT_SRV_E_OK;
+	}
+
 	rc = NXS_CHAT_SRV_E_OK;
+
+	if((nxs_chat_srv_cfg.init_mode & NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET_SSC) == NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET_SSC) {
+
+		set_certificate = NXS_YES;
+	}
+	else {
+
+		set_certificate = NXS_NO;
+	}
 
 	webhook_ctx = nxs_chat_srv_u_tlgrm_webhook_init();
 
 	nxs_string_init_empty(&description);
 
-	if(nxs_chat_srv_u_tlgrm_webhook_set(webhook_ctx, &status, &description) == NXS_CHAT_SRV_E_ERR) {
+	if(nxs_chat_srv_u_tlgrm_webhook_set(webhook_ctx, set_certificate, &status, &description) == NXS_CHAT_SRV_E_ERR) {
 
-		nxs_log_write_console(&process, "set telegram webhook error (see log file for details)");
+		nxs_log_write_console(&process, "telegram set webhook error (see log file for details)");
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
 
 	if(status == NXS_YES) {
 
-		nxs_log_write_console(&process, "set telegram webhook success: %r", &description);
+		nxs_log_write_console(&process, "telegram set webhook success: %r", &description);
 	}
 	else {
 
-		nxs_log_write_console(&process, "set telegram webhook fail: %r", &description);
+		nxs_log_write_console(&process, "telegram set webhook fail: %r", &description);
 
 		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 	}
@@ -109,6 +118,11 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_setup_create_mysql_tables(void)
 	nxs_chat_srv_u_db_mysql_setup_t *mysql_setup_ctx;
 	nxs_chat_srv_err_t               rc;
 	nxs_string_t                     err_str;
+
+	if((nxs_chat_srv_cfg.init_mode & NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES) == 0) {
+
+		return NXS_CHAT_SRV_E_OK;
+	}
 
 	mysql_setup_ctx = nxs_chat_srv_u_db_mysql_setup_init();
 

@@ -115,11 +115,14 @@ error:
 	return rc;
 }
 
-nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_webhook_set(nxs_chat_srv_u_tlgrm_webhook_t *u_ctx, nxs_bool_t *status, nxs_string_t *description)
+nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_webhook_set(nxs_chat_srv_u_tlgrm_webhook_t *u_ctx,
+                                                    nxs_bool_t                      set_certificate,
+                                                    nxs_bool_t *                    status,
+                                                    nxs_string_t *                  description)
 {
 	nxs_chat_srv_m_tlgrm_webhookset_t webhookset;
 	nxs_chat_srv_err_t                rc;
-	nxs_string_t                      message;
+	nxs_string_t                      url, *certificate_path;
 
 	if(u_ctx == NULL || status == NULL || description == NULL) {
 
@@ -128,14 +131,22 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_webhook_set(nxs_chat_srv_u_tlgrm_webhook
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	nxs_string_init_empty(&message);
+	nxs_string_init_empty(&url);
 
-	nxs_string_printf(
-	        &message, "{\"url\":\"%r/tlgrm?token=%r\"}", &nxs_chat_srv_cfg.tlgrm.webhook_host, &nxs_chat_srv_cfg.tlgrm.auth_token);
+	if(set_certificate == NXS_YES) {
+
+		certificate_path = &nxs_chat_srv_cfg.bind.ssl.crt;
+	}
+	else {
+
+		certificate_path = NULL;
+	}
+
+	nxs_string_printf(&url, "%r/tlgrm?token=%r", &nxs_chat_srv_cfg.tlgrm.webhook_host, &nxs_chat_srv_cfg.tlgrm.auth_token);
 
 	nxs_chat_srv_c_tlgrm_webhookset_init(&webhookset);
 
-	switch(nxs_chat_srv_d_tlgrm_request(NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SET_WEBHOOK, &message, NULL, &u_ctx->response_buf)) {
+	switch(nxs_chat_srv_d_tlgrm_setwebhook(&url, certificate_path, NULL, &u_ctx->response_buf)) {
 
 		case NXS_CHAT_SRV_E_OK:
 		case NXS_CHAT_SRV_E_WARN:
@@ -156,21 +167,25 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_webhook_set(nxs_chat_srv_u_tlgrm_webhook
 
 	if(webhookset.ok == NXS_YES) {
 
-		nxs_log_write_warn(&process,
-		                   "[%s]: set webhook to tlgrm: success (result: %s, error code: %zu, description: \"%s\")",
+		nxs_log_write_info(&process,
+		                   "[%s]: set webhook to tlgrm: success (result: %s, error code: %zu, description: \"%s\", using "
+		                   "silf-signed certificate: %s)",
 		                   nxs_proc_get_name(&process),
 		                   webhookset.result == NXS_YES ? "true" : "false",
 		                   webhookset.error_code,
-		                   nxs_string_str(&webhookset.description));
+		                   nxs_string_str(&webhookset.description),
+		                   set_certificate == NXS_YES ? "true" : "false");
 	}
 	else {
 
 		nxs_log_write_warn(&process,
-		                   "[%s]: set webhook to tlgrm: fail (result: %s, error code: %zu, description: \"%s\")",
+		                   "[%s]: set webhook to tlgrm: fail (result: %s, error code: %zu, description: \"%s\", using "
+		                   "silf-signed certificate: %s)",
 		                   nxs_proc_get_name(&process),
 		                   webhookset.result == NXS_YES ? "true" : "false",
 		                   webhookset.error_code,
-		                   nxs_string_str(&webhookset.description));
+		                   nxs_string_str(&webhookset.description),
+		                   set_certificate == NXS_YES ? "true" : "false");
 	}
 
 	*status = webhookset.ok;
@@ -179,7 +194,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_tlgrm_webhook_set(nxs_chat_srv_u_tlgrm_webhook
 
 error:
 
-	nxs_string_free(&message);
+	nxs_string_free(&url);
 
 	nxs_chat_srv_c_tlgrm_webhookset_free(&webhookset);
 

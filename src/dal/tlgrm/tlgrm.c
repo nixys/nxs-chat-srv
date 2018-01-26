@@ -57,6 +57,8 @@ static char			_s_form_voice[]			= "voice";
 static char			_s_form_video[]			= "video";
 static char			_s_form_chat_id[]		= "chat_id";
 static char			_s_form_caption[]		= "caption";
+static char			_s_form_url[]			= "url";
+static char			_s_form_certificate[]		= "certificate";
 
 nxs_chat_srv_d_tlgrm_method_t tlgrm_methods[] =
 {
@@ -232,6 +234,147 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_download(nxs_string_t *tlgrm_file_name, 
 error:
 
 	nxs_curl_free(&curl);
+
+	return rc;
+}
+
+nxs_chat_srv_err_t
+        nxs_chat_srv_d_tlgrm_setwebhook(nxs_string_t *url, nxs_string_t *ssl_srt_path, nxs_http_code_t *http_code, nxs_buf_t *out_buf)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_http_code_t    ret_code;
+	nxs_string_t       tlgrm_url, *setwebhook_method;
+	CURL *             c;
+	CURLcode           res;
+	long int           h_c = 0;
+
+	struct curl_httppost *formpost = NULL;
+	struct curl_httppost *lastptr  = NULL;
+
+	if(url == NULL || out_buf == NULL) {
+
+		return NXS_CHAT_SRV_E_PTR;
+	}
+
+	nxs_string_init(&tlgrm_url);
+
+	setwebhook_method = nxs_chat_srv_d_tlgrm_get_method(NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SET_WEBHOOK);
+
+	nxs_string_printf(
+	        &tlgrm_url, "%r/bot%r/%r", &nxs_chat_srv_cfg.tlgrm.bot_api_addr, &nxs_chat_srv_cfg.tlgrm.bot_api_key, setwebhook_method);
+
+	nxs_buf_clear(out_buf);
+
+	curl_global_init(CURL_GLOBAL_ALL);
+
+	if((c = curl_easy_init()) == NULL) {
+
+		nxs_log_write_warn(&process,
+		                   "[%s]: tlgrm set webhook error: curl init error (telegram url: %r, url: %r, certificate: %s, rc: %d)",
+		                   nxs_proc_get_name(&process),
+		                   &tlgrm_url,
+		                   url,
+		                   ssl_srt_path != NULL ? (char *)nxs_string_str(ssl_srt_path) : (char *)"false",
+		                   NXS_CURL_E_INIT);
+
+		return NXS_CHAT_SRV_E_ERR;
+	}
+
+	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, _s_form_url, CURLFORM_COPYCONTENTS, (char *)nxs_string_str(url), CURLFORM_END);
+
+	if(ssl_srt_path != NULL) {
+
+		curl_formadd(&formpost,
+		             &lastptr,
+		             CURLFORM_COPYNAME,
+		             _s_form_certificate,
+		             CURLFORM_FILE,
+		             (char *)nxs_string_str(ssl_srt_path),
+		             CURLFORM_END);
+	}
+
+	curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, nxs_chat_srv_d_tlgrm_upload_get_data);
+	curl_easy_setopt(c, CURLOPT_WRITEDATA, out_buf);
+	curl_easy_setopt(c, CURLOPT_URL, nxs_string_str(&tlgrm_url));
+	curl_easy_setopt(c, CURLOPT_HTTPPOST, formpost);
+
+	res = curl_easy_perform(c);
+
+	nxs_buf_add_char(out_buf, (u_char)'\0');
+
+	if(res != CURLE_OK) {
+
+		nxs_log_write_warn(
+		        &process,
+		        "[%s]: tlgrm set webhook error, failed to process curl query get: %s (telegram url: %r, url: %r, certificate: %s)",
+		        nxs_proc_get_name(&process),
+		        curl_easy_strerror(res),
+		        &tlgrm_url,
+		        url,
+		        ssl_srt_path != NULL ? (char *)nxs_string_str(ssl_srt_path) : (char *)"false");
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &h_c);
+
+	ret_code = (nxs_http_code_t)h_c;
+
+	if(http_code != NULL) {
+
+		*http_code = ret_code;
+	}
+
+	switch(ret_code) {
+
+		case NXS_HTTP_CODE_200_OK:
+
+			nxs_log_write_debug(&process,
+			                    "[%s]: tlgrm set webhook: success (telegram url: %r, url: %r, certificate: %s)",
+			                    nxs_proc_get_name(&process),
+			                    &tlgrm_url,
+			                    url,
+			                    ssl_srt_path != NULL ? (char *)nxs_string_str(ssl_srt_path) : (char *)"false");
+
+			rc = NXS_CHAT_SRV_E_OK;
+
+			break;
+
+		default:
+
+			if(nxs_buf_get_char(out_buf, 0) == (u_char)'\0') {
+
+				/* if empty response */
+
+				nxs_buf_clear(out_buf);
+			}
+
+			nxs_log_write_error(&process,
+			                    "[%s]: tlgrm set webhook error: wrong Telegram response code (telegram url: %r, url: %r, "
+			                    "certificate: %s, response code: "
+			                    "%d, response body: \"%R\")",
+			                    nxs_proc_get_name(&process),
+			                    &tlgrm_url,
+			                    url,
+			                    ssl_srt_path != NULL ? (char *)nxs_string_str(ssl_srt_path) : (char *)"false",
+			                    ret_code,
+			                    out_buf);
+
+			rc = NXS_CHAT_SRV_E_WARN;
+
+			break;
+	}
+
+error:
+
+	if(formpost != NULL) {
+
+		curl_formfree(formpost);
+	}
+
+	nxs_string_free(&tlgrm_url);
+
+	curl_easy_cleanup(c);
 
 	return rc;
 }

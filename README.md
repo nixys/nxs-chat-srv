@@ -45,36 +45,77 @@ Important: Bot will send notifications to Telegram account in the following case
 ### Debian
 
 * Add the Nixys repository key:
-
-```
-apt-key adv --fetch-keys http://packages.nixys.ru/packages.nixys.ru.gpg.key
-```
+  ```
+  apt-key adv --fetch-keys http://packages.nixys.ru/packages.nixys.ru.gpg.key
+  ```
 
 * Add the repository:
- * Debian Jessie:
-```
-echo "deb [arch=amd64] http://packages.nixys.ru/debian/ jessie main" > /etc/apt/sources.list.d/packages.nixys.ru.list
-```
- * Debian Stretch:
-```
-echo "deb [arch=amd64] http://packages.nixys.ru/debian/ stretch main" > /etc/apt/sources.list.d/packages.nixys.ru.list
-```
+  * Debian Jessie:
+  ```
+  echo "deb [arch=amd64] http://packages.nixys.ru/debian/ jessie main" > /etc/apt/sources.list.d/packages.nixys.ru.list
+  ```
+  * Debian Stretch:
+  ```
+  echo "deb [arch=amd64] http://packages.nixys.ru/debian/ stretch main" > /etc/apt/sources.list.d/packages.nixys.ru.list
+  ```
 
 * Make an update:
-
-```
-apt-get update
-```
+  ```
+  apt-get update
+  ```
 
 * Install nxs-chat-srv package:
-
-```
-apt-get install nxs-chat-srv
-```
+  ```
+  apt-get install nxs-chat-srv
+  ```
 
 ### CentOS
 
 Coming soon ...
+
+### Dockerfile
+
+* Download the tar with Dockerfile and entrypoint script:
+  ```
+  cd /tmp
+  wget -O /tmp/nxs-chat-srv_docker.tar.gz https://raw.githubusercontent.com/nixys/nxs-chat-srv/master/docs/nxs-chat-srv_docker.tar.gz
+  ```
+* Untar the archive and go into:
+  ```
+  tar zxfv nxs-chat-srv_docker.tar.gz
+  cd nxs-chat-srv_docker
+  ```
+* Build the Docker image:
+  ```
+  docker build -t nxs-chat-srv .
+  ```
+* Prepare the configuration environment for nxs-chat-srv container (you must make all follow steps in this environment):
+  ```
+  mkdir -p /var/lib/nxs-chat-srv-docker/etc/ssl
+  mkdir -p /var/lib/nxs-chat-srv-docker/log
+  mkdir -p /var/lib/nxs-chat-srv-docker/spool/{tlgrm,rdmn}
+  chmod 750 /var/lib/nxs-chat-srv-docker
+  ```
+* Download the nxs-chat-srv config file into /var/lib/nxs-chat-srv-docker/etc/:
+  ```
+  wget -O /var/lib/nxs-chat-srv-docker/etc/nxs-chat-srv.conf https://raw.githubusercontent.com/nixys/nxs-chat-srv/master/build-pkgs-conf/pkg/general/etc/nxs-chat-srv/nxs-chat-srv.conf
+  ```
+* Make sure option `proc.daemonize` in /var/lib/nxs-chat-srv-docker/etc/nxs-chat-srv.conf has value `false`
+* Configure your nxs-chat-srv server, Redmine and then run the Docker container:
+  ```
+  docker run -d --hostname nxs-chat-srv \
+    --name nxs-chat-srv \
+    --restart=always --publish 8443:8443 \
+    --env "NXS_CHAT_SRV_INITIALIZE=-i set_webhook -i create_tables" \
+    --volume "/var/lib/nxs-chat-srv-docker/etc:/etc/nxs-chat-srv" \
+    --volume "/var/lib/nxs-chat-srv-docker/log:/var/log/nxs-chat-srv/" \
+    --volume "/var/lib/nxs-chat-srv-docker/spool/tlgrm:/var/spool/nxs-chat-srv/tlgrm" \
+    --volume "/var/lib/nxs-chat-srv-docker/spool/rdmn:/var/spool/nxs-chat-srv/rdmn" \
+    nxs-chat-srv:latest
+  ```
+  If nxs-chat-srv already has been initialized you may remove the `--env "NXS_CHAT_SRV_INITIALIZE=-i set_webhook -i create_tables"` from docker run command.
+  
+_Note that all paths and hosts IPs specified in /var/lib/nxs-chat-srv-docker/etc/nxs-chat-srv.conf are relative for Docker container!_ 
 
 ### Redmine nxs-chat Redmine plugin
 
@@ -108,9 +149,9 @@ Bind settings block description.
 * `iface`: bind address.
 * `port`: bind port.
 * `ssl` (object):
- * `use_ssl`: whether or not to use SSL certificate to protect the incomming connections from Telegram and Redmine.
- * `crt`: SSL certificate file path.
- * `key`: SSL certificate private key file path.
+  * `use_ssl`: whether or not to use SSL certificate to protect the incomming connections from Telegram and Redmine.
+  * `crt`: SSL certificate file path.
+  * `key`: SSL certificate private key file path.
 
 ### `telegram`
 
@@ -138,14 +179,14 @@ Redis settings block description.
 * `keys_space`: prefix for all nxs-chat-srv instance keys stored in Redis.
 * `cluster`: wheter or not to use Redis Cluster (use false for Redis Standalone mode).
 * `nodes` (objects array) specify one node for Redis Standalone mode or array of nodes for Redis Cluster mode:
- * `host`: Redis instance host.
- * `port`: Redis instance port.
+  * `host`: Redis instance host.
+  * `port`: Redis instance port.
 
 ### `redmine`
 
 Redmine settings block description.
 
-* `host`: Redmine host URL (e.g. https://redmine.company.org:3000).
+* `host`: Redmine host URL (e.g. https://redmine.company.org:3000). This value will be used for create links to Redmine issues in Telegram messages.
 * `api_key`: Redmine Rest API key account (with _Administrator_ permissions). Used for Redmine interactions (e.g. get users list, projects list, etc).
 * `auth_token`: part of URL secret path to make sure requests come from Redmine.
 * `presale_project_name`: Redmine project name where messages from users without Telegram account specified will be delivered as separate issues.
@@ -196,7 +237,7 @@ Statistic settings block description.
 
 To set up nxs-chat-srv you need:
 * Domain (i.e., demo.nxs-chat.nixys.ru)
-* SSL certificate for this domain (you can use https://letsencrypt.org/)
+* SSL certificate for this domain (you can use either trusted certificate (e.g. https://letsencrypt.org/), or self-signed certificate (in this case read this before: https://core.telegram.org/bots/self-signed))
 * Telegram bot (see https://core.telegram.org/bots#3-how-do-i-create-a-bot)
 * Redmine (see http://www.redmine.org/projects/redmine/wiki/redmineinstall or https://hub.docker.com/_/redmine/ for installation via Docker)
 * Redis (Standalone or Cluster mode)
@@ -273,24 +314,24 @@ You need toone or more roles to make possible issue processing in Redmine.
 Go to https://demo.nxs-chat.nixys.ru/roles/new and create a new role with the following permissions:
 
 * `Project`:
- * `Create project`
- * `Edit project`
- * `Manage members`
- * `Create subprojects`
- * `Save queries`
- * `Manage public queries`
+  * `Create project`
+  * `Edit project`
+  * `Manage members`
+  * `Create subprojects`
+  * `Save queries`
+  * `Manage public queries`
 * `Issue tracking`:
- * `View Issues`
- * `Add issues`
- * `Edit issues`
- * `Set issues public or private`
- * `Set own issues public or private`
- * `Add notes`
- * `View private notes`
- * `Set notes as private`
- * `View watchers list`
- * `Add watchers`
- * `Delete watchers`
+  * `View Issues`
+  * `Add issues`
+  * `Edit issues`
+  * `Set issues public or private`
+  * `Set own issues public or private`
+  * `Add notes`
+  * `View private notes`
+  * `Set notes as private`
+  * `View watchers list`
+  * `Add watchers`
+  * `Delete watchers`
 
 **Create the role**
 
@@ -437,3 +478,21 @@ Specify connection options in corresponding block in /etc/nxs-chat-srv/nxs-chat-
 **Bclock `statistic`**
 
 * `statistic.auth_token`: generate and set the secret string. After that you may get nxs-chat-srv statistic by GET query https://demo.nxs-chat.nixys.ru/statistic?format=html&token=$_SECRETSTRING (e.g. https://demo.nxs-chat.nixys.ru/statistic?format=html&token=s14g3pzgkm70t0npw9c0hiqdn50jdl29ackgpwzcz5iujmle1x)
+
+**Telegram bot initializaton**
+
+Before the nxs-chat-srv has been starts you need to set Webhook in Telegram and populate the created MySQL DB.
+ 
+* To set Webhook run nxs-chat-srv with one of the follows options:
+  * In case the trusted SSL certificate is used:
+  ```
+  nxs-chat-srv -i set_webhook
+  ```
+  * In case the self-signed certificate is used (read this manual before: https://core.telegram.org/bots/self-signed):
+  ```
+  nxs-chat-srv -i set_webhook_self_signed_certificate
+  ```
+* To populate the created MySQL DB run nxs-chat-srv with follow option:
+  ```
+  nxs-chat-srv -i create_tables
+  ```

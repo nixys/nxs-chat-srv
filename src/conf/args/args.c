@@ -15,9 +15,9 @@
 #define NXS_CHAT_SRV_CONF_ARGS_HELP_MSG			"nxs-chat-srv short description \n" \
 										"Available options:\n" \
 										"\t-i: run in 'init' mode\n" \
-										"\t\tall           : set Telegram webhook and create MySQL tables\n" \
-										"\t\tset_webhook   : set Telegram webhook only\n" \
-										"\t\tcreate_tables : create MySQL tables only\n" \
+										"\t\tset_webhook                           : set Telegram webhook ('url' parameter only)\n" \
+										"\t\tset_webhook_self_signed_certificate   : set Telegram webhook ('url' and 'certificate' parameters at once), useful for self-signed certificate\n" \
+										"\t\tcreate_tables                         : create MySQL tables only\n" \
 										"\t-v: show program version\n" \
 										"\t-V: show bare program version\n" \
 										"\t-h: show help (this message)\n" \
@@ -63,9 +63,9 @@ nxs_args_shortopt_t shortopts[] =
 	NXS_ARGS_NULL
 };
 
-static nxs_string_t _s_val_all			= nxs_string("all");
-static nxs_string_t _s_val_set_webhook		= nxs_string("set_webhook");
-static nxs_string_t _s_val_create_tables	= nxs_string("create_tables");
+static nxs_string_t _s_val_set_webhook				= nxs_string("set_webhook");
+static nxs_string_t set_webhook_self_signed_certificate		= nxs_string("set_webhook_self_signed_certificate");
+static nxs_string_t _s_val_create_tables			= nxs_string("create_tables");
 
 /* Module global functions */
 
@@ -194,16 +194,38 @@ static int nxs_chat_srv_conf_args_conf(nxs_args_t args, u_char arg, u_char *opta
 static int nxs_chat_srv_conf_args_mode_init(nxs_args_t args, u_char arg, u_char *optarg)
 {
 
-	if(nxs_string_char_cmp(&_s_val_all, 0, optarg) == NXS_YES) {
+	if(nxs_string_char_cmp(&_s_val_set_webhook, 0, optarg) == NXS_YES) {
 
-		nxs_chat_srv_cfg.init_mode = NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET | NXS_CHAT_SRV_INIT_MODE_MYSQL_CREATE_TABLES;
+		if((nxs_chat_srv_cfg.init_mode & NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET_SSC) == NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET_SSC) {
+
+			nxs_log_write_error(&process,
+			                    "values '%r' and '%r' for key '-%c' can't be used together",
+			                    &_s_val_set_webhook,
+			                    &set_webhook_self_signed_certificate,
+			                    arg);
+
+			return NXS_ARGS_CONF_ERROR;
+		}
+
+		nxs_chat_srv_cfg.init_mode |= NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET;
 
 		return NXS_ARGS_CONF_OK;
 	}
 
-	if(nxs_string_char_cmp(&_s_val_set_webhook, 0, optarg) == NXS_YES) {
+	if(nxs_string_char_cmp(&set_webhook_self_signed_certificate, 0, optarg) == NXS_YES) {
 
-		nxs_chat_srv_cfg.init_mode |= NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET;
+		if((nxs_chat_srv_cfg.init_mode & NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET) == NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET) {
+
+			nxs_log_write_error(&process,
+			                    "values '%r' and '%r' for key '-%c' can't be used together",
+			                    &_s_val_set_webhook,
+			                    &set_webhook_self_signed_certificate,
+			                    arg);
+
+			return NXS_ARGS_CONF_ERROR;
+		}
+
+		nxs_chat_srv_cfg.init_mode |= NXS_CHAT_SRV_INIT_MODE_WEBHOOK_SET_SSC;
 
 		return NXS_ARGS_CONF_OK;
 	}
@@ -215,7 +237,7 @@ static int nxs_chat_srv_conf_args_mode_init(nxs_args_t args, u_char arg, u_char 
 		return NXS_ARGS_CONF_OK;
 	}
 
-	nxs_log_write_error(&process, "unknown value for option '%c'", arg);
+	nxs_log_write_error(&process, "unknown value for key '-%c'", arg);
 
 	return NXS_ARGS_CONF_ERROR;
 }
