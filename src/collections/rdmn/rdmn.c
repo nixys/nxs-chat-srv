@@ -853,7 +853,7 @@ static nxs_cfg_json_state_t
 
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_id,		&var->id,		NULL,						NULL,							NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_subject,	&var->subject,		NULL,						NULL,							NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,	&var->description,	NULL,						NULL,							NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_description,	&var->description,	NULL,						NULL,							NXS_CFG_JSON_TYPE_STRING,		0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_done_ratio,	&var->done_ratio,	NULL,						NULL,							NXS_CFG_JSON_TYPE_INT,			0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_is_private,	&var->is_private,	NULL,						NULL,							NXS_CFG_JSON_TYPE_BOOL,			0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_spent_hours,	&var->spent_hours,	NULL,						NULL,							NXS_CFG_JSON_TYPE_REAL,			0,	0,	NXS_NO,		NULL);
