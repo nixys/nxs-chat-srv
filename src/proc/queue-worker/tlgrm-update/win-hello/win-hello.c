@@ -42,10 +42,12 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 // clang-format on
 
-nxs_chat_srv_err_t
-        nxs_chat_srv_p_queue_worker_tlgrm_update_win_hello_runtime(size_t chat_id, nxs_string_t *userfname, nxs_buf_t *response_buf)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_hello_runtime(nxs_chat_srv_m_user_ctx_t *user_ctx,
+                                                                              size_t                     chat_id,
+                                                                              nxs_buf_t *                response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
+	nxs_chat_srv_u_labels_t *           labels_ctx;
 	nxs_buf_t *                         b;
 	nxs_string_t                        message;
 
@@ -56,8 +58,11 @@ nxs_chat_srv_err_t
 	nxs_string_init(&message);
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
+	labels_ctx            = nxs_chat_srv_u_labels_init();
 
-	nxs_string_printf(&message, NXS_CHAT_SRV_TLGRM_MESSAGE_HELLO, userfname);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "userfname", "%r", &user_ctx->r_userfname);
+
+	nxs_string_clone(&message, nxs_chat_srv_u_labels_compile_greeting(labels_ctx, &user_ctx->r_userlang));
 
 	nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE);
 
@@ -75,6 +80,7 @@ nxs_chat_srv_err_t
 error:
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
+	labels_ctx            = nxs_chat_srv_u_labels_free(labels_ctx);
 
 	nxs_string_free(&message);
 

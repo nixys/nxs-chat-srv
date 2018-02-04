@@ -2,7 +2,8 @@
 
 Nxs-chat-srv is a Telegram Bot that allows linking Redmine and Telegram.
 
-At the moment nxs-chat-bot supports only Russian language.
+At the moment nxs-chat-bot supports only English and Russian languages.
+You may create files in json format for your languages.
 
 ## Nixys Demo Chat
 
@@ -73,7 +74,9 @@ Important: Bot will send notifications to Telegram account in the following case
 
 Coming soon ...
 
-### Dockerfile
+### Other OS
+
+To install nxs-chat-srv for other operating systems you need to use Docker. The manual is described below.
 
 * Download the tar with Dockerfile and entrypoint script:
   ```
@@ -232,6 +235,27 @@ Attachments settings block description.
 Statistic settings block description.
 
 * `auth_token`: part of URL secret path to access the nxs-chat-bot statistics page.
+
+### `labels`
+
+Labels settings block description.
+
+This block is used to translate user Telegram bot interface to their language specified in Redmine.
+
+* `default_lang`: default language (default: en).
+* `labels_path`: path to the directory with language files (default: /usr/share/nxs-chat-srv/labels/).
+
+### `greetings`
+
+Description of the settings block for the greeting message.
+
+Bot replies with a greeting message in accordance with language specified in Redmine account settings after receiving '/start' command from user.
+
+This block is an objects array:
+* `lang`: greeting language
+* `text`:  greeting text
+
+If there are no greetings for user language the greeting for default language will be used.
 
 ## Configuration
 

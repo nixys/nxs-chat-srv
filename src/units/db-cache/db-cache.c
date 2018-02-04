@@ -52,6 +52,7 @@ typedef struct
 	nxs_string_t					r_userfname;
 	nxs_string_t					r_userlname;
 	nxs_string_t					r_tlgrm_username;
+	nxs_string_t					r_userlang;
 } nxs_chat_srv_u_db_cache_user_t;
 
 typedef struct
@@ -139,6 +140,7 @@ static nxs_string_t _s_par_id			= nxs_string("id");
 static nxs_string_t _s_par_login		= nxs_string("login");
 static nxs_string_t _s_par_firstname		= nxs_string("firstname");
 static nxs_string_t _s_par_lastname		= nxs_string("lastname");
+static nxs_string_t _s_par_language		= nxs_string("language");
 static nxs_string_t _s_par_custom_fields	= nxs_string("custom_fields");
 static nxs_string_t _s_par_value		= nxs_string("value");
 static nxs_string_t _s_par_total_count		= nxs_string("total_count");
@@ -150,6 +152,7 @@ static nxs_string_t _s_par_r_login		= nxs_string("r_login");
 static nxs_string_t _s_par_r_tlgrm_username	= nxs_string("r_tlgrm_username");
 static nxs_string_t _s_par_r_userfname		= nxs_string("r_userfname");
 static nxs_string_t _s_par_r_userlname		= nxs_string("r_userlname");
+static nxs_string_t _s_par_r_userlang		= nxs_string("r_userlang");
 static nxs_string_t _s_par_is_default		= nxs_string("is_default");
 
 /* Module global functions */
@@ -569,6 +572,7 @@ void nxs_chat_srv_u_db_cache_user_get_all(nxs_chat_srv_u_db_cache_t *u_ctx, nxs_
 		nxs_string_clone(&u_out->r_username, &u->r_login);
 		nxs_string_clone(&u_out->r_userfname, &u->r_userfname);
 		nxs_string_clone(&u_out->r_userlname, &u->r_userlname);
+		nxs_string_clone(&u_out->r_userlang, &u->r_userlang);
 	}
 }
 
@@ -607,6 +611,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_user_get(nxs_chat_srv_u_db_cache_t *u
 			nxs_string_clone(&user_ctx->r_username, &u->r_login);
 			nxs_string_clone(&user_ctx->r_userfname, &u->r_userfname);
 			nxs_string_clone(&user_ctx->r_userlname, &u->r_userlname);
+			nxs_string_clone(&user_ctx->r_userlang, &u->r_userlang);
 
 			return NXS_CHAT_SRV_E_OK;
 		}
@@ -641,6 +646,7 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_user_get_by_rdmn_id(nxs_chat_srv_u_db
 			nxs_string_clone(&user_ctx->r_username, &u->r_login);
 			nxs_string_clone(&user_ctx->r_userfname, &u->r_userfname);
 			nxs_string_clone(&user_ctx->r_userlname, &u->r_userlname);
+			nxs_string_clone(&user_ctx->r_userlang, &u->r_userlang);
 
 			return NXS_CHAT_SRV_E_OK;
 		}
@@ -996,10 +1002,11 @@ static void nxs_chat_srv_u_db_cache_users_el_init(nxs_chat_srv_u_db_cache_user_t
 
 	user->r_id = 0;
 
-	nxs_string_init(&user->r_login);
-	nxs_string_init(&user->r_userfname);
-	nxs_string_init(&user->r_userlname);
-	nxs_string_init(&user->r_tlgrm_username);
+	nxs_string_init_empty(&user->r_login);
+	nxs_string_init_empty(&user->r_userfname);
+	nxs_string_init_empty(&user->r_userlname);
+	nxs_string_init_empty(&user->r_tlgrm_username);
+	nxs_string_init_empty(&user->r_userlang);
 }
 
 static void nxs_chat_srv_u_db_cache_users_el_free(nxs_chat_srv_u_db_cache_user_t *user)
@@ -1016,6 +1023,7 @@ static void nxs_chat_srv_u_db_cache_users_el_free(nxs_chat_srv_u_db_cache_user_t
 	nxs_string_free(&user->r_userfname);
 	nxs_string_free(&user->r_userlname);
 	nxs_string_free(&user->r_tlgrm_username);
+	nxs_string_free(&user->r_userlang);
 }
 
 static void nxs_chat_srv_u_db_cache_users_clear(nxs_list_t *users)
@@ -1036,8 +1044,9 @@ static void nxs_chat_srv_u_db_cache_users_clear(nxs_list_t *users)
 static void nxs_chat_srv_u_db_cache_users_serialize(nxs_list_t *users, nxs_string_t *out_str)
 {
 	nxs_chat_srv_u_db_cache_user_t *u;
-	nxs_string_t str, serialized_r_login, serialized_r_tlgrm_username, serialized_r_userfname, serialized_r_userlname;
-	nxs_bool_t   f;
+	nxs_string_t str, serialized_r_login, serialized_r_tlgrm_username, serialized_r_userfname, serialized_r_userlname,
+	        serialized_r_userlang;
+	nxs_bool_t f;
 
 	if(users == NULL || out_str == NULL) {
 
@@ -1049,6 +1058,7 @@ static void nxs_chat_srv_u_db_cache_users_serialize(nxs_list_t *users, nxs_strin
 	nxs_string_init(&serialized_r_tlgrm_username);
 	nxs_string_init(&serialized_r_userfname);
 	nxs_string_init(&serialized_r_userlname);
+	nxs_string_init(&serialized_r_userlang);
 
 	for(f = NXS_NO, u = nxs_list_ptr_init(users, NXS_LIST_PTR_INIT_HEAD); u != NULL; u = nxs_list_ptr_next(users)) {
 
@@ -1065,9 +1075,10 @@ static void nxs_chat_srv_u_db_cache_users_serialize(nxs_list_t *users, nxs_strin
 		nxs_base64_encode_string(&serialized_r_tlgrm_username, &u->r_tlgrm_username);
 		nxs_base64_encode_string(&serialized_r_userfname, &u->r_userfname);
 		nxs_base64_encode_string(&serialized_r_userlname, &u->r_userlname);
+		nxs_base64_encode_string(&serialized_r_userlang, &u->r_userlang);
 
 		nxs_string_printf2_cat(&str,
-		                       "{\"%r\":%zu,\"%r\":\"%r\",\"%r\":\"%r\",\"%r\":\"%r\",\"%r\":\"%r\"}",
+		                       "{\"%r\":%zu,\"%r\":\"%r\",\"%r\":\"%r\",\"%r\":\"%r\",\"%r\":\"%r\",\"%r\":\"%r\"}",
 		                       &_s_par_id,
 		                       u->r_id,
 		                       &_s_par_r_login,
@@ -1077,7 +1088,9 @@ static void nxs_chat_srv_u_db_cache_users_serialize(nxs_list_t *users, nxs_strin
 		                       &_s_par_r_userfname,
 		                       &serialized_r_userfname,
 		                       &_s_par_r_userlname,
-		                       &serialized_r_userlname);
+		                       &serialized_r_userlname,
+		                       &_s_par_r_userlang,
+		                       &serialized_r_userlang);
 	}
 
 	nxs_string_printf(out_str, "{\"%r\":[%r]}", &_s_par_users, &str);
@@ -1087,6 +1100,7 @@ static void nxs_chat_srv_u_db_cache_users_serialize(nxs_list_t *users, nxs_strin
 	nxs_string_free(&serialized_r_tlgrm_username);
 	nxs_string_free(&serialized_r_userfname);
 	nxs_string_free(&serialized_r_userlname);
+	nxs_string_free(&serialized_r_userlang);
 }
 
 static nxs_chat_srv_err_t nxs_chat_srv_u_db_cache_users_deserialize(nxs_list_t *users, nxs_string_t *json_str)
@@ -1144,6 +1158,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_db_cache_users_deserialize_users(nxs_
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_r_tlgrm_username,	&u->r_tlgrm_username,	&nxs_chat_srv_u_db_cache_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_r_userfname,		&u->r_userfname,	&nxs_chat_srv_u_db_cache_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_r_userlname,		&u->r_userlname,	&nxs_chat_srv_u_db_cache_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_r_userlang,		&u->r_userlang,		&nxs_chat_srv_u_db_cache_deserialize_base64,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -1204,6 +1219,7 @@ static nxs_cfg_json_state_t nxs_chat_srv_u_db_cache_users_extract_users(nxs_proc
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_login,		&u->r_login,		NULL,	NULL,								NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_firstname,	&u->r_userfname,	NULL,	NULL,								NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_lastname,	&u->r_userlname,	NULL,	NULL,								NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_language,	&u->r_userlang,		NULL,	NULL,								NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(cfg_arr,	&_s_par_custom_fields,	&u->r_tlgrm_username,	NULL,	&nxs_chat_srv_u_db_cache_users_extract_users_custom_fields,	NXS_CFG_JSON_TYPE_ARRAY_OBJECT,	0,	0,	NXS_YES,	NULL);
 
 	// clang-format on

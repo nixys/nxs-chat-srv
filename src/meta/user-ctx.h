@@ -8,6 +8,7 @@ typedef struct
 	size_t			r_userid;
 	nxs_string_t		t_username;
 	nxs_string_t		t_userlang;
+	nxs_string_t		r_userlang;
 	nxs_string_t		r_username;
 	nxs_string_t		r_userfname;
 	nxs_string_t		r_userlname;

@@ -199,7 +199,7 @@ static nxs_chat_srv_err_t handler_update_issue_create(nxs_chat_srv_m_rdmn_update
 			nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, update->data.issue.id);
 
 			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_runtime(
-			           update, tlgrm_userid, rdmn_attachments_ctx, tlgrm_attachments_ctx) != NXS_CHAT_SRV_E_OK) {
+			           &user_ctx, update, tlgrm_userid, rdmn_attachments_ctx, tlgrm_attachments_ctx) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_log_write_error(&process,
 				                    "[%s]: error while sending tlgrm message to user (issue id: %d, "
@@ -343,7 +343,7 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 			nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, update->data.issue.id);
 
 			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(
-			           update, tlgrm_userid, journal, rdmn_attachments_ctx, tlgrm_attachments_ctx, NXS_NO) !=
+			           &user_ctx, update, tlgrm_userid, journal, rdmn_attachments_ctx, tlgrm_attachments_ctx, NXS_NO) !=
 			   NXS_CHAT_SRV_E_OK) {
 
 				nxs_log_write_error(&process,
@@ -363,9 +363,13 @@ static nxs_chat_srv_err_t handler_update_issue_edit(nxs_chat_srv_m_rdmn_update_t
 
 			/* sending only not private notes */
 
-			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(
-			           update, tlgrm_presale_userid, journal, rdmn_attachments_ctx, tlgrm_attachments_ctx, NXS_YES) !=
-			   NXS_CHAT_SRV_E_OK) {
+			if(nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(&user_ctx,
+			                                                                     update,
+			                                                                     tlgrm_presale_userid,
+			                                                                     journal,
+			                                                                     rdmn_attachments_ctx,
+			                                                                     tlgrm_attachments_ctx,
+			                                                                     NXS_YES) != NXS_CHAT_SRV_E_OK) {
 
 				nxs_log_write_error(&process,
 				                    "[%s]: error while sending presale tlgrm message to user (issue id: %d, "

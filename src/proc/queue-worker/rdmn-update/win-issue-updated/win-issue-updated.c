@@ -113,14 +113,15 @@ static mime_send_method_t mime_send_method[] =
 	{NXS_STRING_NULL_STR,			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT}
 };
 
-static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
+static char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
 
 /* Module global functions */
 
 // clang-format on
 
 nxs_chat_srv_err_t
-        nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(nxs_chat_srv_m_rdmn_update_t *      update,
+        nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_updated_runtime(nxs_chat_srv_m_user_ctx_t *         user_ctx,
+                                                                          nxs_chat_srv_m_rdmn_update_t *      update,
                                                                           size_t                              tlgrm_userid,
                                                                           nxs_chat_srv_m_rdmn_journal_t *     journal,
                                                                           nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx,
@@ -128,10 +129,11 @@ nxs_chat_srv_err_t
                                                                           nxs_bool_t                          is_presale_message)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
+	nxs_chat_srv_u_labels_t *           labels_ctx;
 	nxs_chat_srv_m_rdmn_detail_t *      d;
-	nxs_string_t message, properties, property_is_private, property_status, property_priority, property_assigned_to, notes_fmt,
-	        project_fmt, subject_fmt, user_fmt, status_fmt, priority_fmt, assigned_to_fmt, *s, file_name, file_path, description,
-	        content_type;
+	nxs_string_t message, properties, property_is_private, property_status, property_status_label, property_priority,
+	        property_priority_label, property_assigned_to, notes_fmt, project_fmt, subject_fmt, user_fmt, status_fmt, priority_fmt,
+	        assigned_to_fmt, *s, file_name, file_path, description, content_type;
 	nxs_buf_t *                    out_buf;
 	nxs_array_t                    m_chunks, attachments;
 	nxs_bool_t                     response_status;
@@ -153,7 +155,9 @@ nxs_chat_srv_err_t
 	nxs_string_init_empty(&properties);
 	nxs_string_init_empty(&property_is_private);
 	nxs_string_init_empty(&property_status);
+	nxs_string_init_empty(&property_status_label);
 	nxs_string_init_empty(&property_priority);
+	nxs_string_init_empty(&property_priority_label);
 	nxs_string_init_empty(&property_assigned_to);
 	nxs_string_init_empty(&notes_fmt);
 	nxs_string_init_empty(&project_fmt);
@@ -172,6 +176,7 @@ nxs_chat_srv_err_t
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_init();
+	labels_ctx            = nxs_chat_srv_u_labels_init();
 
 	nxs_chat_srv_c_tlgrm_message_init(&tlgrm_message);
 
@@ -199,15 +204,24 @@ nxs_chat_srv_err_t
 
 					use_property = NXS_YES;
 
+					nxs_chat_srv_u_labels_variable_clear(labels_ctx);
+
 					if(update->data.issue.is_private == NXS_YES) {
 
-						nxs_string_printf(&property_is_private,
-						                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_IS_PRIVATE_YES);
+						nxs_string_clone(
+						        &property_is_private,
+						        nxs_chat_srv_u_labels_compile_key(
+						                labels_ctx,
+						                &user_ctx->r_userlang,
+						                NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_IS_PRIVATE_YES));
 					}
 					else {
 
-						nxs_string_printf(&property_is_private,
-						                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_IS_PRIVATE_NO);
+						nxs_string_clone(&property_is_private,
+						                 nxs_chat_srv_u_labels_compile_key(
+						                         labels_ctx,
+						                         &user_ctx->r_userlang,
+						                         NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_IS_PRIVATE_NO));
 					}
 
 					break;
@@ -216,9 +230,22 @@ nxs_chat_srv_err_t
 
 					use_property = NXS_YES;
 
+					nxs_chat_srv_u_labels_variable_clear(labels_ctx);
+
 					nxs_chat_srv_c_tlgrm_format_escape_html(&status_fmt, &update->data.issue.status.name);
 
-					nxs_string_printf(&property_status, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_STATUS, &status_fmt);
+					/* trying to translate the status name */
+					nxs_string_clone(&property_status_label,
+					                 nxs_chat_srv_u_labels_compile_key(
+					                         labels_ctx, &user_ctx->r_userlang, (char *)nxs_string_str(&status_fmt)));
+
+					nxs_chat_srv_u_labels_variable_add(labels_ctx, "status", "%r", &property_status_label);
+
+					nxs_string_clone(&property_status,
+					                 nxs_chat_srv_u_labels_compile_key(
+					                         labels_ctx,
+					                         &user_ctx->r_userlang,
+					                         NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_STATUS));
 
 					break;
 
@@ -226,10 +253,22 @@ nxs_chat_srv_err_t
 
 					use_property = NXS_YES;
 
+					nxs_chat_srv_u_labels_variable_clear(labels_ctx);
+
 					nxs_chat_srv_c_tlgrm_format_escape_html(&priority_fmt, &update->data.issue.priority.name);
 
-					nxs_string_printf(
-					        &property_priority, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_PRIORITY, &priority_fmt);
+					/* trying to translate the priority name */
+					nxs_string_clone(&property_priority_label,
+					                 nxs_chat_srv_u_labels_compile_key(
+					                         labels_ctx, &user_ctx->r_userlang, (char *)nxs_string_str(&priority_fmt)));
+
+					nxs_chat_srv_u_labels_variable_add(labels_ctx, "priority", "%r", &property_priority_label);
+
+					nxs_string_clone(&property_priority,
+					                 nxs_chat_srv_u_labels_compile_key(
+					                         labels_ctx,
+					                         &user_ctx->r_userlang,
+					                         NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_PRIORITY));
 
 					break;
 
@@ -237,11 +276,17 @@ nxs_chat_srv_err_t
 
 					use_property = NXS_YES;
 
+					nxs_chat_srv_u_labels_variable_clear(labels_ctx);
+
 					nxs_chat_srv_c_tlgrm_format_escape_html(&assigned_to_fmt, &update->data.issue.assigned_to.name);
 
-					nxs_string_printf(&property_assigned_to,
-					                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_ASSIGNED_TO,
-					                  &assigned_to_fmt);
+					nxs_chat_srv_u_labels_variable_add(labels_ctx, "assigned_to", "%r", &assigned_to_fmt);
+
+					nxs_string_clone(&property_assigned_to,
+					                 nxs_chat_srv_u_labels_compile_key(
+					                         labels_ctx,
+					                         &user_ctx->r_userlang,
+					                         NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_ASSIGNED_TO));
 
 					break;
 
@@ -252,15 +297,28 @@ nxs_chat_srv_err_t
 		}
 	}
 
-	if(use_property == NXS_YES) {
-
-		nxs_string_printf(
-		        &properties, "%r%r%r%r\n", &property_is_private, &property_status, &property_priority, &property_assigned_to);
-	}
-
 	nxs_chat_srv_c_tlgrm_format_escape_html(&project_fmt, &update->data.issue.project.name);
 	nxs_chat_srv_c_tlgrm_format_escape_html(&subject_fmt, &update->data.issue.subject);
 	nxs_chat_srv_c_tlgrm_format_escape_html(&user_fmt, &journal->user.name);
+
+	nxs_chat_srv_u_labels_variable_clear(labels_ctx);
+
+	nxs_chat_srv_u_labels_variable_add(
+	        labels_ctx, "is_private_note", "%s", journal->private_notes == NXS_YES ? _s_private_message : "");
+	nxs_chat_srv_u_labels_variable_add(labels_ctx,
+	                                   "issue_link",
+	                                   NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_LINK_FMT,
+	                                   &nxs_chat_srv_cfg.rdmn.host,
+	                                   update->data.issue.id,
+	                                   &project_fmt,
+	                                   update->data.issue.id,
+	                                   &subject_fmt);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "is_private_issue", "%r", &property_is_private);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "status", "%r", &property_status);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "priority", "%r", &property_priority);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "assigned_to", "%r", &property_assigned_to);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "delimiter", "%s", use_property == NXS_YES ? "\n" : "");
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "responded_user", "%r", &user_fmt);
 
 	if(nxs_string_len(&journal->notes) > 0) {
 
@@ -270,25 +328,19 @@ nxs_chat_srv_err_t
 
 			/* for presale users */
 
-			nxs_string_printf(&message, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_PRESALE, &user_fmt);
+			nxs_string_clone(&message,
+			                 nxs_chat_srv_u_labels_compile_key(labels_ctx,
+			                                                   &nxs_chat_srv_cfg.labels.default_lang,
+			                                                   NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_PRESALE));
 		}
 		else {
 
 			/* for authorized users */
 
-			nxs_string_printf(&message,
-			                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED,
-			                  journal->private_notes == NXS_YES ? (char *)_s_private_message : "",
-			                  &nxs_chat_srv_cfg.rdmn.host,
-			                  update->data.issue.id,
-			                  &project_fmt,
-			                  update->data.issue.id,
-			                  &subject_fmt,
-			                  &properties,
-			                  &user_fmt);
+			nxs_string_clone(&message,
+			                 nxs_chat_srv_u_labels_compile_key(
+			                         labels_ctx, &user_ctx->r_userlang, NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE));
 		}
-
-		nxs_chat_srv_c_tlgrm_make_message_chunks(&message, &notes_fmt, &m_chunks);
 	}
 	else {
 
@@ -304,23 +356,33 @@ nxs_chat_srv_err_t
 
 		if(is_presale_message == NXS_YES) {
 
-			nxs_string_printf(&message, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_PRESALE, &user_fmt);
+			nxs_string_clone(&message,
+			                 nxs_chat_srv_u_labels_compile_key(labels_ctx,
+			                                                   &nxs_chat_srv_cfg.labels.default_lang,
+			                                                   NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_PRESALE));
 		}
 		else {
 
-			nxs_string_printf(&message,
-			                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE,
-			                  journal->private_notes == NXS_YES ? (char *)_s_private_message : "",
-			                  &nxs_chat_srv_cfg.rdmn.host,
-			                  update->data.issue.id,
-			                  &project_fmt,
-			                  update->data.issue.id,
-			                  &subject_fmt,
-			                  &properties,
-			                  &user_fmt);
+			nxs_string_clone(&message,
+			                 nxs_chat_srv_u_labels_compile_key(labels_ctx,
+			                                                   &user_ctx->r_userlang,
+			                                                   NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_NO_MESSAGE));
 		}
+	}
 
-		nxs_chat_srv_c_tlgrm_make_message_chunks(&message, NULL, &m_chunks);
+	if(nxs_chat_srv_c_tlgrm_make_message_chunks(&message, &notes_fmt, &m_chunks) == NXS_CHAT_SRV_E_WARN) {
+
+		nxs_chat_srv_u_labels_variable_clear(labels_ctx);
+
+		s = nxs_array_add(&m_chunks);
+
+		nxs_string_init(s);
+
+		nxs_string_printf(s,
+		                  "%r%r",
+		                  &message,
+		                  nxs_chat_srv_u_labels_compile_key(
+		                          labels_ctx, &nxs_chat_srv_cfg.labels.default_lang, NXS_CHAT_SRV_U_LABELS_KEY_MESSAGE_TOO_LARGE));
 	}
 
 	/* create new comment: send message chunks */
@@ -418,6 +480,7 @@ error:
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
+	labels_ctx            = nxs_chat_srv_u_labels_free(labels_ctx);
 
 	nxs_chat_srv_c_tlgrm_message_free(&tlgrm_message);
 
@@ -435,7 +498,9 @@ error:
 	nxs_string_free(&properties);
 	nxs_string_free(&property_is_private);
 	nxs_string_free(&property_status);
+	nxs_string_free(&property_status_label);
 	nxs_string_free(&property_priority);
+	nxs_string_free(&property_priority_label);
 	nxs_string_free(&property_assigned_to);
 	nxs_string_free(&notes_fmt);
 	nxs_string_free(&project_fmt);

@@ -281,20 +281,9 @@ nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_make_message_chunks(nxs_string_t *messag
 	size_t        i, o;
 	u_char        c;
 
-	if(message_header == NULL || chunks == NULL) {
+	if(message_header == NULL || message_src == NULL || chunks == NULL) {
 
 		return NXS_CHAT_SRV_E_PTR;
-	}
-
-	if(message_src == NULL) {
-
-		s = nxs_array_add(chunks);
-
-		nxs_string_init(s);
-
-		nxs_string_printf(s, "%r", message_header);
-
-		return NXS_CHAT_SRV_E_OK;
 	}
 
 	if(nxs_string_len(message_src) <= NXS_CHAT_SRV_TLGRM_MAX_MESSAGE_SIZE) {
@@ -356,12 +345,6 @@ nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_make_message_chunks(nxs_string_t *messag
 
 			nxs_array_clear(chunks);
 
-			s = nxs_array_add(chunks);
-
-			nxs_string_init(s);
-
-			nxs_string_printf(s, "%r%s", message_header, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_TOO_BIG);
-
 			return NXS_CHAT_SRV_E_WARN;
 		}
 
@@ -412,8 +395,6 @@ nxs_chat_srv_err_t nxs_chat_srv_c_tlgrm_make_message_preview(nxs_string_t *messa
 	if(f == NXS_NO) {
 
 		/* message too big */
-
-		nxs_string_char_cpy(message_dst, 0, (u_char *)NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_TOO_BIG_PREVIEW);
 
 		return NXS_CHAT_SRV_E_WARN;
 	}

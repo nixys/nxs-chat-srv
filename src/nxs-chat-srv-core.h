@@ -13,6 +13,11 @@
 
 #define	NXS_CHAT_SRV_CONF_PATH_DEFAULT					"/etc/nxs-chat-srv/nxs-chat-srv.conf"
 
+#define	NXS_CHAT_SRV_CONF_LABELS_DEFAULT_PATH				"/usr/share/nxs-chat-srv/labels/"
+#define	NXS_CHAT_SRV_CONF_LABELS_DEFAULT_LANG				"en"
+
+#define NXS_CHAT_SRV_GREETING_DEFAULT					"%{userfname}, welcome to our customer care system chat!\nWe are looking forward to your issues."
+
 #define NXS_CHAT_SRV_REST_API_MAX_HEADER_SIZE				1048576		/* 1 MB */
 
 #define NXS_CHAT_SRV_TLGRM_MAX_MESSAGE_SIZE				3584		/* 3.5 K */
@@ -24,102 +29,8 @@
 #define NXS_CHAT_SRV_TLGRM_ISSUES_LIMIT					5
 
 #define NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE				0xF0, 0x9F, 0x94, 0x95, 0x0
-#define NXS_CHAT_SRV_UTF8_ENTRY_SIGN					0xE2, 0x9C, 0x85, 0x0
-#define NXS_CHAT_SRV_UTF8_EXCLAMATION					0xE2, 0x9D, 0x97, 0x0
-
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_HELP			"справка по использованию бота"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_DIALOGDESTROY		"завершить текущий диалог"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_CMD_DESC_ISSUECREATE			"создать новую задачу"
 
 #define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_LINK_FMT			"<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_LAST_ISSUE_EMPTY			"<i>отсутствует</i>"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_HELP					"...Справка по использованию бота...\n\nОписание команд:\n\n%r\n"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_DUMMY				"На текущий момент данная команда не реализована"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_HELLO				"%r, добро пожаловать в чат поддержки Nixys!\nС нетерпением ждём Ваших задач :)"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_UNKNOWN_USER				"Здравствуйте! К сожалению, пока Вас не удалось авторизовать, но мы работаем над этим и в ближайшее время отпишемся о результатах :)"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_PRESALE				"К сожалению, Вас так и не удалось авторизовать. Если Вы хотите стать клиентом Nixys - просто напишите нам что-нибудь и мы ответим Вам в самое ближайшее время."
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_PRESALE_ISSUE_SUBJECT		"Клиентский запрос: %zu"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_EMPTY			"К сожалению, невозможно создать задачу, т.к. Вы пока не подключены ни к одному проекту"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_FULL			"<b>Создание новой задачи</b>\n\n" \
-									"<b>Проект:</b> %r\n" \
-									"<b>Приоритет:</b> %r\n" \
-									"<b>Тема:</b> %r\n" \
-									"%r" \
-									"<b>Описание:</b> %r\n" \
-									"<b>Вложенных файлов:</b> %zu\n---------\n" \
-									"<i>Ниже Вы можете изменить параметры новой задачи</i>"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_NEW_ISSUE_SHORT			"<b>Создание новой задачи</b>\n\n" \
-									"<b>Проект:</b> %r\n" \
-									"<b>Приоритет:</b> %r\n" \
-									"<b>Тема:</b> %r\n" \
-									"%r" \
-									"<b>Описание:</b> %r\n" \
-									"<b>Вложенных файлов:</b> %zu\n"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_BEGIN				"Как поступить с Вашим комментарием? " \
-									"Добавить в последнюю задачу, выбрать задачу из списка " \
-									"или создать новую?%r\n" \
-									"<b>Вложенных файлов:</b> %zu\n---------\n" \
-									"Последняя задача: %r"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_SUBJECT			"Напишите название задачи?"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_EMPTY_SUBJECT			"<i>Будет задана при создании задачи</i>"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR				"%s Произошла внутрення ошибка сервера, мы уже получили уведомление об этом и работаем над решением проблемы. Пожалуйста, <a href=\"%r\">воспользуйтесь web-версией системы задач</a> или повторите свой запрос позже."
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_ACTION				"К сожалению, Ваше последнее сообщение невозможно обработать в рамках текущего диалога с ботом, поэтому оно будет проигнорировано"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_WRONG_REPLY				"К сожалению, не удалось определить номер задачи в которую необходимо отправить Ваше сообщение"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_SESSION_DESTROYED			"Предыдущий диалог завершён"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_DESCRIPTION_CHANGED			"Описание изменено"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_SPECIFY_DESCRIPTION			"Напишите новое описание задачи? Все новые файлы будут добавлены к уже существующим"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED			"Задача <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a> создана, в ближайшее время наши сотрудники займутся ей. Благодарим за обращение!"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ADDED_TO_ISSUE			"Ваш комментарий отправлен в задачу <a href=\"%r/issues/%zu\">#%zu</a>"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE				"Пожалуйста, выберите задачу в которую необходимо отправить Ваш комментарий"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_SELECT_ISSUE_EMPTY			"К сожалению, в Вашем проекте ещё не создано ни одной задачи или Вы не подключены ни к одному проекту."
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_PRIVACY			"<b>Приватная задача %s</b>\n"
-#define NXS_CHAT_SRV_TLGRM_MESSAGE_ADD_NOTE_EXT				"Для добавления комментария необходимо выбрать одно из следующих действий"
-
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED				"Создана новая задача <a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>Автор:</b> %r\n<b>Статус:</b> %r\n<b>Приоритет:</b> %r\n<b>Назначена:</b> %r\n\n<b>Описание</b>:\n---\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED				"%s<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>%r писал(а):</b>\n---\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_PRESALE				"<b>%r писал(а):</b>\n---\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_NO_MESSAGE		"%s<a href=\"%r/issues/%zu\">[%r - #%zu] %r</a>\n\n%r<b>%r</b>"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_TOO_BIG				"<i>Сообщение слишком велико, пожалуйста, ознакомтесь с ним в web-интерфейсе системы задач</i>"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_TOO_BIG_PREVIEW			"<i>Сообщение слишком велико для отображения</i>"
-
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED_IS_PRIVATE		"<b>Частная:</b> да %s\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_IS_PRIVATE_YES		"<b>Частная:</b> да\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_IS_PRIVATE_NO		"<b>Частная:</b> нет\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_STATUS			"<b>Статус:</b> %r\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_PRIORITY		"<b>Приоритет:</b> %r\n"
-#define NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_UPDATED_ASSIGNED_TO		"<b>Назначена:</b> %r\n"
-
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_ADD_LAST_ACTIVE		(u_char *)"Добавить в последнюю задачу"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_NEW_ISSUE			(u_char *)"Создать новую задачу"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_SELECT_ISSUE			(u_char *)"Выбрать задачу"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_ADD_ADD_TO_ISSUE		(u_char *)"Добавить в #%zu - %s"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_PROJECT			(u_char *)"Проект"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_PRIORITY			(u_char *)"Приоритет"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESCRIPTION			(u_char *)"Описание"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_CREATE_ISSUE			(u_char *)"Создать задачу %s"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_BACK				(u_char *)"<< Назад"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_FORWARD			(u_char *)"Вперёд >>"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_DESTROY_SESSION		(u_char *)"Завершить текущий диалог"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_CANCEL			(u_char *)"Отмена"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TO_STATUS_IN_PROGRESS		(u_char *)"Перевести в статус \"В работе\""
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TO_STATUS_NEED_FEEDBACK	(u_char *)"Перевести в статус \"Ожидание клиента\""
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TO_STATUS_RESOLVED		(u_char *)"Перевести в статус \"Решена\""
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TO_PRIVATE_NOTE		(u_char *)"Сделать комментарий приватным"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_IGNORE_STATUS			(u_char *)"Игнорировать ошибки статуса"
-#define NXS_CHAT_SRV_TLGRM_BUTTON_CAPTION_TAKE_ISSUE			(u_char *)"Взять задачу в работу"
-
-#define NXS_CHAT_SRV_STATISTIC_TOTAL					"Полная статистика"
-#define NXS_CHAT_SRV_STATISTIC_BY_USER					"Статистика по пользователям"
-#define NXS_CHAT_SRV_STATISTIC_COUNT_RDMN_ISSUE_CREATE			"Количество задач, созданных в системе задач"
-#define NXS_CHAT_SRV_STATISTIC_COUNT_RDMN_ISSUE_UPDATE			"Количество задач, обновлённых в системе задач"
-#define NXS_CHAT_SRV_STATISTIC_RDMN_USER_NAME				"Имя пользователя"
-#define NXS_CHAT_SRV_STATISTIC_COUNT_TLGRM_SESSION_DESTROY		"Количество принудительно завершённых сессий через бота"
-#define NXS_CHAT_SRV_STATISTIC_COUNT_TLGRM_CREATE_ISSUE			"Количество задач, созданных через бота"
-#define NXS_CHAT_SRV_STATISTIC_COUNT_TLGRM_REPLY_COMMENT		"Количество комментариев, добавленных через бота как ответ на предыдущее сообщение"
-#define NXS_CHAT_SRV_STATISTIC_COUNT_TLGRM_REPLY_EMPTY			"Количество комментариев, добавленных через бота, для которых задача была выбрана позже"
-#define NXS_CHAT_SRV_STATISTIC_COUNT_TLGRM_REPLY_EXT			"Количество расширенных комментариев, добавленных через бота"
-#define NXS_CHAT_SRV_STATISTIC_LAST_ACTION				"Дата и время последего события"
-
 
 /* Project global typedefs */
 
@@ -276,6 +187,32 @@ typedef struct
 
 typedef struct
 {
+	nxs_string_t				key;
+	nxs_string_t				text;
+} nxs_chat_srv_cfg_label_t;
+
+typedef struct
+{
+	nxs_string_t				lang;
+	nxs_array_t				labels;				/* type: nxs_chat_srv_cfg_label_t */
+} nxs_chat_srv_cfg_labels_set_t;
+
+typedef struct
+{
+	nxs_string_t				default_lang;
+	nxs_chat_srv_cfg_labels_set_t		*default_labels_set;
+	nxs_string_t				labels_path;
+	nxs_array_t				labels_sets;			/* type: nxs_chat_srv_cfg_labels_set_t */
+} nxs_chat_srv_cfg_labels_t;
+
+typedef struct
+{
+	nxs_string_t				lang;
+	nxs_string_t				text;
+} nxs_chat_srv_cfg_greeting_t;
+
+typedef struct
+{
 	nxs_chat_srv_init_mode_t		init_mode;
 	nxs_chat_srv_cfg_proc_t			proc;
 	nxs_chat_srv_cfg_log_t			log;
@@ -289,6 +226,8 @@ typedef struct
 	nxs_array_t				dev_accounts;			/* type: nxs_string_t */
 	nxs_chat_srv_cfg_attachments_t		attachments;
 	nxs_chat_srv_cfg_statistic_t		statistic;
+	nxs_chat_srv_cfg_labels_t		labels;
+	nxs_array_t				greetings;			/* type: nxs_chat_srv_cfg_greeting_t */
 } nxs_chat_srv_cfg_t;
 
 /* Project includes */

@@ -36,17 +36,19 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module initializations */
 
-static nxs_string_t	_s_msg_session_destroyed	= nxs_string(NXS_CHAT_SRV_TLGRM_MESSAGE_SESSION_DESTROYED);
+
 
 /* Module global functions */
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_session_destroyed(nxs_chat_srv_u_db_sess_t *sess_ctx,
-                                                                                  size_t                    chat_id,
-                                                                                  nxs_buf_t *               response_buf)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_session_destroyed(nxs_chat_srv_u_db_sess_t * sess_ctx,
+                                                                                  nxs_chat_srv_m_user_ctx_t *user_ctx,
+                                                                                  size_t                     chat_id,
+                                                                                  nxs_buf_t *                response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
+	nxs_chat_srv_u_labels_t *           labels_ctx;
 	nxs_buf_t *                         b;
 
 	nxs_chat_srv_err_t rc;
@@ -54,9 +56,13 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_session_destroye
 	rc = NXS_CHAT_SRV_E_OK;
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
+	labels_ctx            = nxs_chat_srv_u_labels_init();
 
 	nxs_chat_srv_u_tlgrm_sendmessage_add(
-	        tlgrm_sendmessage_ctx, chat_id, &_s_msg_session_destroyed, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE);
+	        tlgrm_sendmessage_ctx,
+	        chat_id,
+	        nxs_chat_srv_u_labels_compile_key(labels_ctx, &user_ctx->r_userlang, NXS_CHAT_SRV_U_LABELS_KEY_DIALOG_CLOSED),
+	        NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE);
 
 	if(nxs_chat_srv_u_tlgrm_sendmessage_push(tlgrm_sendmessage_ctx) != NXS_CHAT_SRV_E_OK) {
 
@@ -72,6 +78,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_session_destroye
 error:
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
+	labels_ctx            = nxs_chat_srv_u_labels_free(labels_ctx);
 
 	return rc;
 }

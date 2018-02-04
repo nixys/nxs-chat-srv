@@ -42,14 +42,16 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 // clang-format on
 
-nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nxs_chat_srv_u_db_sess_t *sess_ctx,
-                                                                              size_t                    chat_id,
-                                                                              size_t                    message_id,
-                                                                              size_t                    new_issue_id,
-                                                                              nxs_buf_t *               response_buf)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nxs_chat_srv_u_db_sess_t * sess_ctx,
+                                                                              nxs_chat_srv_m_user_ctx_t *user_ctx,
+                                                                              size_t                     chat_id,
+                                                                              size_t                     message_id,
+                                                                              size_t                     new_issue_id,
+                                                                              nxs_buf_t *                response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *    tlgrm_sendmessage_ctx;
 	nxs_chat_srv_u_tlgrm_editmessagetext_t *tlgrm_editmessagetext_ctx;
+	nxs_chat_srv_u_labels_t *               labels_ctx;
 	nxs_buf_t *                             b;
 	nxs_string_t                            subject, message, project;
 	nxs_chat_srv_err_t                      rc;
@@ -58,6 +60,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nx
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_init();
+	labels_ctx                = nxs_chat_srv_u_labels_init();
 
 	nxs_string_init(&subject);
 	nxs_string_init(&message);
@@ -72,13 +75,17 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nx
 	nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &project);
 	nxs_chat_srv_c_tlgrm_format_escape_html(NULL, &subject);
 
-	nxs_string_printf(&message,
-	                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_CREATED,
-	                  &nxs_chat_srv_cfg.rdmn.host,
-	                  new_issue_id,
-	                  &project,
-	                  new_issue_id,
-	                  &subject);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx,
+	                                   "issue_link",
+	                                   NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_LINK_FMT,
+	                                   &nxs_chat_srv_cfg.rdmn.host,
+	                                   new_issue_id,
+	                                   &project,
+	                                   new_issue_id,
+	                                   &subject);
+
+	nxs_string_clone(&message,
+	                 nxs_chat_srv_u_labels_compile_key(labels_ctx, &user_ctx->r_userlang, NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_CREATED));
 
 	if(message_id == 0) {
 
@@ -126,6 +133,7 @@ error:
 
 	tlgrm_sendmessage_ctx     = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
 	tlgrm_editmessagetext_ctx = nxs_chat_srv_u_tlgrm_editmessagetext_free(tlgrm_editmessagetext_ctx);
+	labels_ctx                = nxs_chat_srv_u_labels_free(labels_ctx);
 
 	nxs_string_free(&subject);
 	nxs_string_free(&message);

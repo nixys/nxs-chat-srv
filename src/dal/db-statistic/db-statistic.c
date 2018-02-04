@@ -160,8 +160,6 @@ nxs_chat_srv_err_t nxs_chat_srv_d_db_statistic_get(nxs_chat_srv_d_db_statistic_t
 
 				s = nxs_array_add(actions);
 
-				nxs_string_init(s);
-
 				nxs_string_char_ncpy(s, 0, (u_char *)redis_reply->element[i]->str, (size_t)redis_reply->element[i]->len);
 			}
 

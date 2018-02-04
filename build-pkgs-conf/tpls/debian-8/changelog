@@ -1,4 +1,4 @@
-#PACKAGE# (#VERSION#-deb8u1) jessie; urgency=low
+#PACKAGE# (#VERSION#-$$BUILD_VERSION$$) jessie; urgency=low
 
   * New version nxs-chat-srv
 

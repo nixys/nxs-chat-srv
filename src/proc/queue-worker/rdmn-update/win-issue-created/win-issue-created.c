@@ -86,21 +86,21 @@ static mime_send_method_t mime_send_method[] =
 	{NXS_STRING_NULL_STR,			NXS_CHAT_SRV_TLGRM_REQUEST_TYPE_SEND_DOCUMENT}
 };
 
-static u_char		_s_private_message[]	= {NXS_CHAT_SRV_UTF8_PRIVATE_MESSAGE};
-
 /* Module global functions */
 
 // clang-format on
 
 nxs_chat_srv_err_t
-        nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_runtime(nxs_chat_srv_m_rdmn_update_t *      update,
+        nxs_chat_srv_p_queue_worker_rdmn_update_win_issue_created_runtime(nxs_chat_srv_m_user_ctx_t *         user_ctx,
+                                                                          nxs_chat_srv_m_rdmn_update_t *      update,
                                                                           size_t                              tlgrm_userid,
                                                                           nxs_chat_srv_u_rdmn_attachments_t * rdmn_attachments_ctx,
                                                                           nxs_chat_srv_u_tlgrm_attachments_t *tlgrm_attachments_ctx)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
-	nxs_string_t *s, message, private_issue, description_fmt, project_fmt, subject_fmt, author_fmt, status_fmt, priority_fmt,
-	        assigned_to_fmt, file_name, file_path, description, content_type;
+	nxs_chat_srv_u_labels_t *           labels_ctx;
+	nxs_string_t *s, message, private_issue, description_fmt, project_fmt, subject_fmt, author_fmt, status_fmt, status_label,
+	        priority_fmt, priority_label, assigned_to_fmt, file_name, file_path, description, content_type;
 	nxs_buf_t *                       out_buf;
 	nxs_array_t                       d_chunks;
 	nxs_bool_t                        response_status;
@@ -120,7 +120,9 @@ nxs_chat_srv_err_t
 	nxs_string_init_empty(&subject_fmt);
 	nxs_string_init_empty(&author_fmt);
 	nxs_string_init_empty(&status_fmt);
+	nxs_string_init_empty(&status_label);
 	nxs_string_init_empty(&priority_fmt);
+	nxs_string_init_empty(&priority_label);
 	nxs_string_init_empty(&assigned_to_fmt);
 	nxs_string_init_empty(&file_name);
 	nxs_string_init_empty(&file_path);
@@ -131,12 +133,16 @@ nxs_chat_srv_err_t
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_init();
+	labels_ctx            = nxs_chat_srv_u_labels_init();
 
 	nxs_chat_srv_c_tlgrm_message_init(&tlgrm_message);
 
 	if(update->data.issue.is_private == NXS_YES) {
 
-		nxs_string_printf(&private_issue, NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED_IS_PRIVATE, _s_private_message);
+		nxs_string_clone(&private_issue,
+		                 nxs_chat_srv_u_labels_compile_key(labels_ctx,
+		                                                   &user_ctx->r_userlang,
+		                                                   NXS_CHAT_SRV_U_LABELS_KEY_CREATED_NEW_ISSUE_IN_REDMINE_IS_PRIVATE));
 	}
 
 	nxs_chat_srv_c_tlgrm_format_escape_html(&description_fmt, &update->data.issue.description);
@@ -147,20 +153,46 @@ nxs_chat_srv_err_t
 	nxs_chat_srv_c_tlgrm_format_escape_html(&priority_fmt, &update->data.issue.priority.name);
 	nxs_chat_srv_c_tlgrm_format_escape_html(&assigned_to_fmt, &update->data.issue.assigned_to.name);
 
-	nxs_string_printf(&message,
-	                  NXS_CHAT_SRV_RDMN_MESSAGE_ISSUE_CREATED,
-	                  &nxs_chat_srv_cfg.rdmn.host,
-	                  update->data.issue.id,
-	                  &project_fmt,
-	                  update->data.issue.id,
-	                  &subject_fmt,
-	                  &private_issue,
-	                  &author_fmt,
-	                  &status_fmt,
-	                  &priority_fmt,
-	                  &assigned_to_fmt);
+	/* trying to translate the priority name */
+	nxs_string_clone(&priority_label,
+	                 nxs_chat_srv_u_labels_compile_key(labels_ctx, &user_ctx->r_userlang, (char *)nxs_string_str(&priority_fmt)));
 
-	nxs_chat_srv_c_tlgrm_make_message_chunks(&message, &description_fmt, &d_chunks);
+	/* trying to translate the status name */
+	nxs_string_clone(&status_label,
+	                 nxs_chat_srv_u_labels_compile_key(labels_ctx, &user_ctx->r_userlang, (char *)nxs_string_str(&status_fmt)));
+
+	nxs_chat_srv_u_labels_variable_add(labels_ctx,
+	                                   "issue_link",
+	                                   NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_LINK_FMT,
+	                                   &nxs_chat_srv_cfg.rdmn.host,
+	                                   update->data.issue.id,
+	                                   &project_fmt,
+	                                   update->data.issue.id,
+	                                   &subject_fmt);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "is_private", "%r", &private_issue);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "author", "%r", &author_fmt);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "status", "%r", &status_label);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "priority", "%r", &priority_label);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "assigned_to", "%r", &assigned_to_fmt);
+
+	nxs_string_clone(&message,
+	                 nxs_chat_srv_u_labels_compile_key(
+	                         labels_ctx, &user_ctx->r_userlang, NXS_CHAT_SRV_U_LABELS_KEY_NEW_ISSUE_CREATED_IN_REDMINE));
+
+	if(nxs_chat_srv_c_tlgrm_make_message_chunks(&message, &description_fmt, &d_chunks) == NXS_CHAT_SRV_E_WARN) {
+
+		nxs_chat_srv_u_labels_variable_clear(labels_ctx);
+
+		s = nxs_array_add(&d_chunks);
+
+		nxs_string_init(s);
+
+		nxs_string_printf(s,
+		                  "%r%r",
+		                  &message,
+		                  nxs_chat_srv_u_labels_compile_key(
+		                          labels_ctx, &nxs_chat_srv_cfg.labels.default_lang, NXS_CHAT_SRV_U_LABELS_KEY_MESSAGE_TOO_LARGE));
+	}
 
 	/* create new comment: send description chunks */
 	for(i = 0; i < nxs_array_count(&d_chunks); i++) {
@@ -258,6 +290,7 @@ error:
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
 	db_issue_ctx          = nxs_chat_srv_u_db_issues_free(db_issue_ctx);
+	labels_ctx            = nxs_chat_srv_u_labels_free(labels_ctx);
 
 	nxs_chat_srv_c_tlgrm_message_free(&tlgrm_message);
 
@@ -277,7 +310,9 @@ error:
 	nxs_string_free(&subject_fmt);
 	nxs_string_free(&author_fmt);
 	nxs_string_free(&status_fmt);
+	nxs_string_free(&status_label);
 	nxs_string_free(&priority_fmt);
+	nxs_string_free(&priority_label);
 	nxs_string_free(&assigned_to_fmt);
 	nxs_string_free(&file_name);
 	nxs_string_free(&file_path);

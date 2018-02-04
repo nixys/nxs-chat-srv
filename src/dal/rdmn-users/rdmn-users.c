@@ -83,7 +83,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_users_get(size_t           user_id,
 		if((ec = nxs_curl_query(&process,
 		                        &curl,
 		                        NXS_REST_API_COMMON_CMD_GET,
-		                        (u_char *)"%r/users.json?limit=%zu&offset=%zu",
+		                        (u_char *)"%r/users_languages.json?limit=%zu&offset=%zu",
 		                        &nxs_chat_srv_cfg.rdmn.host,
 		                        limit,
 		                        offset)) != NXS_CURL_E_OK) {

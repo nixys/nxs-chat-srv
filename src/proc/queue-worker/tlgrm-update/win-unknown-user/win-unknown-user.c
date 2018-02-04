@@ -45,6 +45,7 @@ extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_unknown_user(size_t chat_id, nxs_buf_t *response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
+	nxs_chat_srv_u_labels_t *           labels_ctx;
 	nxs_buf_t *                         b;
 	nxs_string_t                        message;
 
@@ -55,8 +56,11 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_unknown_user(siz
 	nxs_string_init(&message);
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
+	labels_ctx            = nxs_chat_srv_u_labels_init();
 
-	nxs_string_printf(&message, NXS_CHAT_SRV_TLGRM_MESSAGE_UNKNOWN_USER);
+	nxs_string_clone(&message,
+	                 nxs_chat_srv_u_labels_compile_key(
+	                         labels_ctx, &nxs_chat_srv_cfg.labels.default_lang, NXS_CHAT_SRV_U_LABELS_KEY_UNKNOWN_USER));
 
 	nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &message, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_NONE);
 
@@ -74,6 +78,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_unknown_user(siz
 error:
 
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
+	labels_ctx            = nxs_chat_srv_u_labels_free(labels_ctx);
 
 	nxs_string_free(&message);
 

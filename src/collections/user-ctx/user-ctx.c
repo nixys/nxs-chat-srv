@@ -17,8 +17,8 @@
 
 
 /* Project globals */
-extern		nxs_process_t				process;
-extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
+extern		nxs_process_t		process;
+extern		nxs_chat_srv_cfg_t	nxs_chat_srv_cfg;
 
 /* Module typedefs */
 
@@ -52,11 +52,12 @@ void nxs_chat_srv_c_user_ctx_init(nxs_chat_srv_m_user_ctx_t *user_ctx)
 
 	user_ctx->r_userid = 0;
 
-	nxs_string_init(&user_ctx->t_username);
-	nxs_string_init(&user_ctx->t_userlang);
-	nxs_string_init(&user_ctx->r_username);
-	nxs_string_init(&user_ctx->r_userfname);
-	nxs_string_init(&user_ctx->r_userlname);
+	nxs_string_init_empty(&user_ctx->t_username);
+	nxs_string_init_empty(&user_ctx->t_userlang);
+	nxs_string_init_empty(&user_ctx->r_userlang);
+	nxs_string_init_empty(&user_ctx->r_username);
+	nxs_string_init_empty(&user_ctx->r_userfname);
+	nxs_string_init_empty(&user_ctx->r_userlname);
 }
 
 void nxs_chat_srv_c_user_ctx_free(nxs_chat_srv_m_user_ctx_t *user_ctx)
@@ -71,6 +72,7 @@ void nxs_chat_srv_c_user_ctx_free(nxs_chat_srv_m_user_ctx_t *user_ctx)
 
 	nxs_string_free(&user_ctx->t_username);
 	nxs_string_free(&user_ctx->t_userlang);
+	nxs_string_free(&user_ctx->r_userlang);
 	nxs_string_free(&user_ctx->r_username);
 	nxs_string_free(&user_ctx->r_userfname);
 	nxs_string_free(&user_ctx->r_userlname);

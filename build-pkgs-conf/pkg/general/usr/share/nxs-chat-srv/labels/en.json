@@ -1,0 +1,265 @@
+{
+	"lang": "en",
+	"labels": [
+		{
+			"key": "What should we do with your comment?",
+			"text": "What should be done with your comment? Add to the last active issue, select an issue from the list or create a new one?%{is_private_message}\n<b>Number of attached files:</b> %{number_of_attached_files}\n---------\nLast active issue: %{last_issue}"
+		},
+		{
+			"key": "absent",
+			"text": "<i>absent</i>"
+		},
+		{
+			"key": "Add to last active issue",
+			"text": "Add to the last active issue"
+		},
+		{
+			"key": "Select issue from list",
+			"text": "Select an issue from the list"
+		},
+		{
+			"key": "Create new issue",
+			"text": "Create a new issue"
+		},
+		{
+			"key": "Close dialog",
+			"text": "Close the current dialog"
+		},
+		{
+			"key": "Dialog closed",
+			"text": "The previous dialog is closed"
+		},
+		{
+			"key": "Select issue for your comment",
+			"text": "Select an issue for your comment"
+		},
+		{
+			"key": "Project has no issues",
+			"text": "Unfortunately, there are no issues in your project or you are not a member of any project"
+		},
+		{
+			"key": "<< Back",
+			"text": "<< Back"
+		},
+		{
+			"key": "Forward >>",
+			"text": "Forward >>"
+		},
+		{
+			"key": "Cancel",
+			"text": "Cancel"
+		},
+		{
+			"key": "New issue full",
+			"text": "<b>Create a new issue</b>\n\n<b>Project:</b> %{project_name}\n<b>Priority:</b> %{priority_name}\n<b>Subject:</b> %{issue_subject}\n%{private_issue}<b>Description:</b> %{issue_description}\n<b>Number of attached files:</b> %{number_of_attached_files}\n---------\n<i>You can modify other issue attributes below</i>"
+		},
+		{
+			"key": "New issue short",
+			"text": "<b>Create a new issue</b>\n\n<b>Project:</b> %{project_name}\n<b>Priority:</b> %{priority_name}\n<b>Subject:</b> %{issue_subject}\n%{private_issue}<b>Description:</b> %{issue_description}\n<b>Number of attached files:</b> %{number_of_attached_files}\n"
+		},
+		{
+			"key": "Private issue",
+			"text": "<b>Private issue 🔕</b>\n"
+		},
+		{
+			"key": "Will set when issue created",
+			"text": "<i>Will be set when the issue is created</i>"
+		},
+		{
+			"key": "Message too large for preview",
+			"text": "<i>The message is too long for a preview</i>"
+		},
+		{
+			"key": "Message too large",
+			"text": "<i>The message is too long. Please, read it via task system web interface</i>"
+		},
+		{
+			"key": "Create issue",
+			"text": "Create issue ✅"
+		},
+		{
+			"key": "Project",
+			"text": "Project"
+		},
+		{
+			"key": "Priority",
+			"text": "Priority"
+		},
+		{
+			"key": "Can't create an issue, user not a member for any project",
+			"text": "Unfortunately, you can't create an issue because you are not a member of any project"
+		},
+		{
+			"key": "Help description",
+			"text": "...Bot usage help...\n\nCommands description:\n\n%{bot_commands_desc}\n"
+		},
+		{
+			"key": "Help description command help",
+			"text": "Bot usage help"
+		},
+		{
+			"key": "Help description command dialog destroy",
+			"text": "Close the current dialog"
+		},
+		{
+			"key": "Command has not been developed yet",
+			"text": "Such command has not been developed yet"
+		},
+		{
+			"key": "Message for unknown user",
+			"text": "Hi! Unfortunately, we could not authorize you. However, we are working on it right now and will get back to you with the results within next minute."
+		},
+		{
+			"key": "Presale message for unknown user",
+			"text": "Unfortunately, we still cannot find you in our database. If you would like to become our customer, just write us something here and we will reply to you as soon as we can. Thank you."
+		},
+		{
+			"key": "Presale issue subject",
+			"text": "Customer request: %{telegram_id}"
+		},
+		{
+			"key": "Enter issue subject",
+			"text": "Enter the name of the issue"
+		},
+		{
+			"key": "Internal server error",
+			"text": "❗️ Internal server error. We have already received notification about the problem and are working on it right now. Please, use the <a href=\"%{redmine_url}\">web version of our task system</a> or try again later."
+		},
+		{
+			"key": "Wrong action",
+			"text": "Unfortunately, your last message can't be processed in current dialog session and will be ignored."
+		},
+		{
+			"key": "Wrong reply",
+			"text": "Unfortunately, issue number for reply can't be defined."
+		},
+		{
+			"key": "Issue created",
+			"text": "Issue %{issue_link} was created and will be processed as fast as we can. Thank you for contacting us!"
+		},
+		{
+			"key": "Message added to issue",
+			"text": "Your message was sent to issue %{issue_link}"
+		},
+		{
+			"key": "Add extended note",
+			"text": "Please, select one of follows actions for add message to issue"
+		},
+		{
+			"key": "Change status to in progress",
+			"text": "Change issue status to \"In progress\""
+		},
+		{
+			"key": "Change status to need feedback",
+			"text": "Change issue status to \"Need feedback\""
+		},
+		{
+			"key": "Change status to resolved",
+			"text": "Change issue status to \"Resolved\""
+		},
+		{
+			"key": "Make note private",
+			"text": "Make note private"
+		},
+		{
+			"key": "Ignoring errors of statuses",
+			"text": "Ignoring errors of statuses"
+		},
+		{
+			"key": "Take issue",
+			"text": "Take issue"
+		},
+		{
+			"key": "New issue created in Redmine",
+			"text": "Created new issue %{issue_link}\n\n%{is_private}<b>Author:</b> %{author}\n<b>Status:</b> %{status}\n<b>Priority:</b> %{priority}\n<b>Assigned to:</b> %{assigned_to}\n\n<b>Description</b>:\n---\n"
+		},
+		{
+			"key": "Issue updated in Redmine",
+			"text": "%{is_private_note}%{issue_link}\n\n%{is_private_issue}%{status}%{priority}%{assigned_to}%{delimiter}<b>%{responded_user} wrote:</b>\n---\n"
+		},
+		{
+			"key": "Issue updated in Redmine no message",
+			"text": "%{is_private_note}%{issue_link}\n\n%{is_private_issue}%{status}%{priority}%{assigned_to}%{delimiter}<b>%{responded_user}</b>"
+		},
+		{
+			"key": "Issue updated in Redmine presale",
+			"text": "<b>%{responded_user} wrote:</b>\n---\n"
+		},
+		{
+			"key": "Created new issue in Redmine is private",
+			"text": "<b>Is private:</b> yes 🔕\n"
+		},
+		{
+			"key": "Issue updated in Redmine is private yes",
+			"text": "<b>Is private:</b> yes\n"
+		},
+		{
+			"key": "Issue updated in Redmine is private no",
+			"text": "<b>Is private:</b> no\n"
+		},
+		{
+			"key": "Issue updated in Redmine status",
+			"text": "<b>Status:</b> %{status}\n"
+		},
+		{
+			"key": "Issue updated in Redmine priority",
+			"text": "<b>Priority:</b> %{priority}\n"
+		},
+		{
+			"key": "Issue updated in Redmine assigned to",
+			"text": "<b>Assigned to:</b> %{assigned_to}\n"
+		},
+		{
+			"key": "Statistic summary",
+			"text": "Statistic summary"
+		},
+		{
+			"key": "Statistic by user",
+			"text": "Statistic by user"
+		},
+		{
+			"key": "Last action date",
+			"text": "Last action date"
+		},
+		{
+			"key": "Statistic field created issues via Redmine",
+			"text": "Created issues via Redmine"
+		},
+		{
+			"key": "Statistic field updated issues via Redmine",
+			"text": "Updated issues via Redmine"
+		},
+		{
+			"key": "Statistic field destroyed sessions in Telegram",
+			"text": "Destroyed sessions in Telegram"
+		},
+		{
+			"key": "Statistic field created issues via Telegram",
+			"text": "Created issues via Telegram"
+		},
+		{
+			"key": "Statistic field created messages via Telegram",
+			"text": "Created messages via Telegram"
+		},
+		{
+			"key": "Statistic field replied messages via Telegram",
+			"text": "Replied messages via Telegram"
+		},
+		{
+			"key": "Statistic field extended messages via Telegram",
+			"text": "Extended messages via Telegram"
+		},
+		{
+			"key": "Statistic field username",
+			"text": "Username"
+		},
+		{
+			"key": "Statistic field Telegram issues replied percent",
+			"text": "Percent of total replied issues via Telegram"
+		},
+		{
+			"key": "Statistic field Telegram issues created percent",
+			"text": "Percent of total created issues via Telegram"
+		}
+	]
+}

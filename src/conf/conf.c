@@ -123,9 +123,13 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init_empty(&nxs_chat_srv_cfg.attachments.tlgrm_download_tmp_dir);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.attachments.rdmn_download_tmp_dir);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.statistic.auth_token);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.labels.default_lang);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.labels.labels_path);
 
 	nxs_array_init2(&nxs_chat_srv_cfg.dev_accounts, nxs_string_t);
 	nxs_array_init2(&nxs_chat_srv_cfg.redis.nodes, nxs_chat_srv_cfg_redis_node_t);
+	nxs_array_init2(&nxs_chat_srv_cfg.labels.labels_sets, nxs_chat_srv_cfg_labels_set_t);
+	nxs_array_init2(&nxs_chat_srv_cfg.greetings, nxs_chat_srv_cfg_greeting_t);
 
 	nxs_chat_srv_cfg.init_mode                      = NXS_CHAT_SRV_INIT_MODE_NONE;
 	nxs_chat_srv_cfg.proc.queue_worker_term_timeout = 10;
@@ -149,6 +153,7 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_chat_srv_cfg.rdmn.status_in_progress        = 0;
 	nxs_chat_srv_cfg.rdmn.status_resolved           = 0;
 	nxs_chat_srv_cfg.rdmn.status_need_feedback      = 0;
+	nxs_chat_srv_cfg.labels.default_labels_set      = NULL;
 
 	/* Init cfg context values */
 

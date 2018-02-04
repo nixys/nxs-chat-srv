@@ -36,30 +36,35 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 
 /* Module initializations */
 
-static u_char		_s_exclamation[]	= {NXS_CHAT_SRV_UTF8_EXCLAMATION};
+
 
 /* Module global functions */
 
 // clang-format on
 
-nxs_chat_srv_err_t
-        nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(nxs_chat_srv_u_db_sess_t *sess_ctx, size_t chat_id, nxs_buf_t *response_buf)
+nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_error(nxs_chat_srv_u_db_sess_t * sess_ctx,
+                                                                      nxs_chat_srv_m_user_ctx_t *user_ctx,
+                                                                      size_t                     chat_id,
+                                                                      nxs_buf_t *                response_buf)
 {
 	nxs_chat_srv_u_tlgrm_sendmessage_t *tlgrm_sendmessage_ctx;
+	nxs_chat_srv_u_labels_t *           labels_ctx;
 	nxs_buf_t *                         b;
-	nxs_string_t                        s;
 
 	nxs_chat_srv_err_t rc;
 
 	rc = NXS_CHAT_SRV_E_OK;
 
-	nxs_string_init(&s);
-
-	nxs_string_printf(&s, NXS_CHAT_SRV_TLGRM_MESSAGE_ERROR, _s_exclamation, &nxs_chat_srv_cfg.rdmn.host);
-
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_init();
+	labels_ctx            = nxs_chat_srv_u_labels_init();
 
-	nxs_chat_srv_u_tlgrm_sendmessage_add(tlgrm_sendmessage_ctx, chat_id, &s, NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
+	nxs_chat_srv_u_labels_variable_add(labels_ctx, "redmine_url", "%r", &nxs_chat_srv_cfg.rdmn.host);
+
+	nxs_chat_srv_u_tlgrm_sendmessage_add(
+	        tlgrm_sendmessage_ctx,
+	        chat_id,
+	        nxs_chat_srv_u_labels_compile_key(labels_ctx, &user_ctx->r_userlang, NXS_CHAT_SRV_U_LABELS_KEY_INTERNAL_SERVER_ERROR),
+	        NXS_CHAT_SRV_M_TLGRM_PARSE_MODE_TYPE_HTML);
 
 	nxs_chat_srv_u_tlgrm_sendmessage_disable_web_page_preview(tlgrm_sendmessage_ctx);
 
@@ -76,9 +81,8 @@ nxs_chat_srv_err_t
 	}
 error:
 
-	nxs_string_free(&s);
-
 	tlgrm_sendmessage_ctx = nxs_chat_srv_u_tlgrm_sendmessage_free(tlgrm_sendmessage_ctx);
+	labels_ctx            = nxs_chat_srv_u_labels_free(labels_ctx);
 
 	return rc;
 }
