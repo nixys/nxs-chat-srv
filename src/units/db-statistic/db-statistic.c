@@ -195,15 +195,17 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_statistic_get_general(nxs_chat_srv_u_db_sta
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	stat_general->rdmn_userid                 = 0;
-	stat_general->count_rdmn_issue_create     = 0;
-	stat_general->count_rdmn_issue_update     = 0;
-	stat_general->count_tlgrm_session_destroy = 0;
-	stat_general->count_tlgrm_create_issue    = 0;
-	stat_general->count_tlgrm_reply_comment   = 0;
-	stat_general->count_tlgrm_reply_empty     = 0;
-	stat_general->count_tlgrm_reply_ext       = 0;
-	stat_general->last_action                 = 0;
+	stat_general->rdmn_userid                    = 0;
+	stat_general->count_rdmn_issues_created      = 0;
+	stat_general->count_rdmn_issues_updated      = 0;
+	stat_general->count_tlgrm_sessions_destroyed = 0;
+	stat_general->count_tlgrm_issues_created     = 0;
+	stat_general->count_tlgrm_messages_created   = 0;
+	stat_general->count_tlgrm_messages_replied   = 0;
+	stat_general->count_tlgrm_messages_extended  = 0;
+	stat_general->tlgrm_issues_replied_ratio     = 0.0;
+	stat_general->tlgrm_issues_created_ratio     = 0.0;
+	stat_general->last_action_timestamp          = 0;
 
 	if((user = nxs_array_get(&u_ctx->stat_users, i)) == NULL) {
 
@@ -216,56 +218,75 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_statistic_get_general(nxs_chat_srv_u_db_sta
 
 		el = nxs_array_get(&user->els, j);
 
-		if(el->date > stat_general->last_action) {
+		if(el->date > stat_general->last_action_timestamp) {
 
-			stat_general->last_action = el->date;
+			stat_general->last_action_timestamp = el->date;
 		}
 
 		switch(el->action_type) {
 
 			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_RDMN_ISSUE_CREATE:
 
-				stat_general->count_rdmn_issue_create++;
+				stat_general->count_rdmn_issues_created++;
 
 				break;
 
 			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_RDMN_ISSUE_UPDATE:
 
-				stat_general->count_rdmn_issue_update++;
+				stat_general->count_rdmn_issues_updated++;
 
 				break;
 
 			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_SESSION_DESTROY:
 
-				stat_general->count_tlgrm_session_destroy++;
+				stat_general->count_tlgrm_sessions_destroyed++;
 
 				break;
 
-			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_CREATE_ISSUE:
+			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_ISSUE_CREATE:
 
-				stat_general->count_tlgrm_create_issue++;
-
-				break;
-
-			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_COMMENT:
-
-				stat_general->count_tlgrm_reply_comment++;
+				stat_general->count_tlgrm_issues_created++;
 
 				break;
 
-			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EMPTY:
+			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_REPLIED:
 
-				stat_general->count_tlgrm_reply_empty++;
+				stat_general->count_tlgrm_messages_replied++;
 
 				break;
 
-			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT:
+			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_CREATED:
 
-				stat_general->count_tlgrm_reply_ext++;
+				stat_general->count_tlgrm_messages_created++;
+
+				break;
+
+			case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_EXTENDED:
+
+				stat_general->count_tlgrm_messages_extended++;
 
 				break;
 		}
 	}
+
+	if(stat_general->count_rdmn_issues_created > 0) {
+
+		stat_general->tlgrm_issues_created_ratio =
+		        (double)stat_general->count_tlgrm_issues_created / (double)stat_general->count_rdmn_issues_created;
+	}
+
+	if(stat_general->count_rdmn_issues_updated > 0) {
+
+		stat_general->tlgrm_issues_replied_ratio =
+		        (double)(stat_general->count_tlgrm_messages_replied + stat_general->count_tlgrm_messages_created +
+		                 stat_general->count_tlgrm_messages_extended) /
+		        (double)stat_general->count_rdmn_issues_updated;
+	}
+
+	stat_general->count_rdmn_issues_created -= stat_general->count_tlgrm_issues_created;
+	stat_general->count_rdmn_issues_updated -=
+	        (stat_general->count_tlgrm_messages_replied + stat_general->count_tlgrm_messages_created +
+	         stat_general->count_tlgrm_messages_extended);
 
 	return NXS_CHAT_SRV_E_OK;
 }
@@ -282,14 +303,16 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_statistic_get_total(nxs_chat_srv_u_db_stati
 		return NXS_CHAT_SRV_E_PTR;
 	}
 
-	stat_total->count_tlgrm_session_destroy = 0;
-	stat_total->count_rdmn_issue_create     = 0;
-	stat_total->count_rdmn_issue_update     = 0;
-	stat_total->count_tlgrm_create_issue    = 0;
-	stat_total->count_tlgrm_reply_comment   = 0;
-	stat_total->count_tlgrm_reply_empty     = 0;
-	stat_total->count_tlgrm_reply_ext       = 0;
-	stat_total->last_action                 = 0;
+	stat_total->count_rdmn_issues_created      = 0;
+	stat_total->count_rdmn_issues_updated      = 0;
+	stat_total->count_tlgrm_sessions_destroyed = 0;
+	stat_total->count_tlgrm_issues_created     = 0;
+	stat_total->count_tlgrm_messages_replied   = 0;
+	stat_total->count_tlgrm_messages_created   = 0;
+	stat_total->count_tlgrm_messages_extended  = 0;
+	stat_total->tlgrm_issues_replied_ratio     = 0.0;
+	stat_total->tlgrm_issues_created_ratio     = 0.0;
+	stat_total->last_action_timestamp          = 0;
 
 	for(i = 0; i < nxs_array_count(&u_ctx->stat_users); i++) {
 
@@ -299,57 +322,75 @@ nxs_chat_srv_err_t nxs_chat_srv_u_db_statistic_get_total(nxs_chat_srv_u_db_stati
 
 			el = nxs_array_get(&user->els, j);
 
-			if(el->date > stat_total->last_action) {
+			if(el->date > stat_total->last_action_timestamp) {
 
-				stat_total->last_action = el->date;
+				stat_total->last_action_timestamp = el->date;
 			}
 
 			switch(el->action_type) {
 
 				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_RDMN_ISSUE_CREATE:
 
-					stat_total->count_rdmn_issue_create++;
+					stat_total->count_rdmn_issues_created++;
 
 					break;
 
 				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_RDMN_ISSUE_UPDATE:
 
-					stat_total->count_rdmn_issue_update++;
+					stat_total->count_rdmn_issues_updated++;
 
 					break;
 
 				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_SESSION_DESTROY:
 
-					stat_total->count_tlgrm_session_destroy++;
+					stat_total->count_tlgrm_sessions_destroyed++;
 
 					break;
 
-				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_CREATE_ISSUE:
+				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_ISSUE_CREATE:
 
-					stat_total->count_tlgrm_create_issue++;
-
-					break;
-
-				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_COMMENT:
-
-					stat_total->count_tlgrm_reply_comment++;
+					stat_total->count_tlgrm_issues_created++;
 
 					break;
 
-				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EMPTY:
+				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_REPLIED:
 
-					stat_total->count_tlgrm_reply_empty++;
+					stat_total->count_tlgrm_messages_replied++;
 
 					break;
 
-				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT:
+				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_CREATED:
 
-					stat_total->count_tlgrm_reply_ext++;
+					stat_total->count_tlgrm_messages_created++;
+
+					break;
+
+				case NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_EXTENDED:
+
+					stat_total->count_tlgrm_messages_extended++;
 
 					break;
 			}
 		}
 	}
+
+	if(stat_total->count_rdmn_issues_created > 0) {
+
+		stat_total->tlgrm_issues_created_ratio =
+		        (double)stat_total->count_tlgrm_issues_created / (double)stat_total->count_rdmn_issues_created;
+	}
+
+	if(stat_total->count_rdmn_issues_updated > 0) {
+
+		stat_total->tlgrm_issues_replied_ratio =
+		        (double)(stat_total->count_tlgrm_messages_replied + stat_total->count_tlgrm_messages_created +
+		                 stat_total->count_tlgrm_messages_extended) /
+		        (double)stat_total->count_rdmn_issues_updated;
+	}
+
+	stat_total->count_rdmn_issues_created -= stat_total->count_tlgrm_issues_created;
+	stat_total->count_rdmn_issues_updated -= (stat_total->count_tlgrm_messages_replied + stat_total->count_tlgrm_messages_created +
+	                                          stat_total->count_tlgrm_messages_extended);
 
 	return NXS_CHAT_SRV_E_OK;
 }

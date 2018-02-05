@@ -201,7 +201,7 @@ static void nxs_chat_srv_p_rest_api_statistic_make_html(nxs_string_t *          
 
 	nxs_chat_srv_u_db_statistic_get_total(statistic_ctx, &stat_total);
 
-	str_time(&time_str, stat_total.last_action);
+	str_time(&time_str, stat_total.last_action_timestamp);
 
 	/*
 	 * Prepare summary statistic table body
@@ -210,6 +210,8 @@ static void nxs_chat_srv_p_rest_api_statistic_make_html(nxs_string_t *          
 	nxs_string_printf(&stat_total_tbody_str,
 	                  "				<tr>\n"
 	                  "					<th width=\"7%\"></th>\n"
+	                  "					<th>%r</th>\n"
+	                  "					<th>%r</th>\n"
 	                  "					<th>%r</th>\n"
 	                  "					<th>%r</th>\n"
 	                  "					<th>%r</th>\n"
@@ -228,23 +230,29 @@ static void nxs_chat_srv_p_rest_api_statistic_make_html(nxs_string_t *          
 	                  "					<td>%zu</td>\n"
 	                  "					<td>%zu</td>\n"
 	                  "					<td>%zu</td>\n"
+	                  "					<td>%.2f%%</td>\n"
+	                  "					<td>%.2f%%</td>\n"
 	                  "					<td>%r</td>\n"
 	                  "				</tr>\n",
-	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUE_CREATED),
-	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUE_UPDATED),
+	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUES_CREATED),
+	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUES_UPDATED),
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_SESSIONS_DESTROYED),
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_ISSUES_CREATED),
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_MESSAGES_REPLIED),
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_MESSAGES_CREATED),
-	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_EXT_MESSAGES),
+	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_MESSAGES_EXTENDED),
+	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_ISSUES_REPLIED_PERCENT),
+	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_ISSUES_CREATED_PERCENT),
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_LAST_ACTION_DATE),
-	                  stat_total.count_rdmn_issue_create,
-	                  stat_total.count_rdmn_issue_update,
-	                  stat_total.count_tlgrm_session_destroy,
-	                  stat_total.count_tlgrm_create_issue,
-	                  stat_total.count_tlgrm_reply_comment,
-	                  stat_total.count_tlgrm_reply_empty,
-	                  stat_total.count_tlgrm_reply_ext,
+	                  stat_total.count_rdmn_issues_created,
+	                  stat_total.count_rdmn_issues_updated,
+	                  stat_total.count_tlgrm_sessions_destroyed,
+	                  stat_total.count_tlgrm_issues_created,
+	                  stat_total.count_tlgrm_messages_replied,
+	                  stat_total.count_tlgrm_messages_created,
+	                  stat_total.count_tlgrm_messages_extended,
+	                  stat_total.tlgrm_issues_replied_ratio * 100.0,
+	                  stat_total.tlgrm_issues_created_ratio * 100.0,
 	                  &time_str);
 
 	/*
@@ -262,15 +270,19 @@ static void nxs_chat_srv_p_rest_api_statistic_make_html(nxs_string_t *          
 	                  "					<th>%r</th>\n"
 	                  "					<th>%r</th>\n"
 	                  "					<th>%r</th>\n"
+	                  "					<th>%r</th>\n"
+	                  "					<th>%r</th>\n"
 	                  "				</tr>\n",
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_USERNAME),
-	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUE_CREATED),
-	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUE_UPDATED),
+	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUES_CREATED),
+	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUES_UPDATED),
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_SESSIONS_DESTROYED),
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_ISSUES_CREATED),
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_MESSAGES_REPLIED),
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_MESSAGES_CREATED),
-	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_EXT_MESSAGES),
+	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_MESSAGES_EXTENDED),
+	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_ISSUES_REPLIED_PERCENT),
+	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_ISSUES_CREATED_PERCENT),
 	                  _nxs_label(NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_LAST_ACTION_DATE));
 
 	for(i = 0; nxs_chat_srv_u_db_statistic_get_general(statistic_ctx, &stat_general, i) == NXS_CHAT_SRV_E_OK; i++) {
@@ -284,7 +296,7 @@ static void nxs_chat_srv_p_rest_api_statistic_make_html(nxs_string_t *          
 			nxs_string_printf(&username, "Unknown user name");
 		}
 
-		str_time(&time_str, stat_general.last_action);
+		str_time(&time_str, stat_general.last_action_timestamp);
 
 		nxs_string_printf2_cat(&stat_users_tbody_str,
 		                       "				<tr>\n"
@@ -296,18 +308,22 @@ static void nxs_chat_srv_p_rest_api_statistic_make_html(nxs_string_t *          
 		                       "					<td>%zu</td>\n"
 		                       "					<td>%zu</td>\n"
 		                       "					<td>%zu</td>\n"
+		                       "					<td>%.2f%%</td>\n"
+		                       "					<td>%.2f%%</td>\n"
 		                       "					<td>%r</td>\n"
 		                       "				</tr>\n",
 		                       &nxs_chat_srv_cfg.rdmn.host,
 		                       stat_general.rdmn_userid,
 		                       &username,
-		                       stat_general.count_rdmn_issue_create,
-		                       stat_general.count_rdmn_issue_update,
-		                       stat_general.count_tlgrm_session_destroy,
-		                       stat_general.count_tlgrm_create_issue,
-		                       stat_general.count_tlgrm_reply_comment,
-		                       stat_general.count_tlgrm_reply_empty,
-		                       stat_general.count_tlgrm_reply_ext,
+		                       stat_general.count_rdmn_issues_created,
+		                       stat_general.count_rdmn_issues_updated,
+		                       stat_general.count_tlgrm_sessions_destroyed,
+		                       stat_general.count_tlgrm_issues_created,
+		                       stat_general.count_tlgrm_messages_replied,
+		                       stat_general.count_tlgrm_messages_created,
+		                       stat_general.count_tlgrm_messages_extended,
+		                       stat_general.tlgrm_issues_replied_ratio * 100.0,
+		                       stat_general.tlgrm_issues_created_ratio * 100.0,
 		                       &time_str);
 	}
 
@@ -429,23 +445,27 @@ static void nxs_chat_srv_p_rest_api_statistic_make_json(nxs_string_t *          
 
 	nxs_string_printf(&stat_total_str,
 	                  "{"
-	                  "\"count_rdmn_issue_create\":%zu,"
-	                  "\"count_rdmn_issue_update\":%zu,"
-	                  "\"count_tlgrm_session_destroy\":%zu,"
-	                  "\"count_tlgrm_create_issue\":%zu,"
-	                  "\"count_tlgrm_reply_comment\":%zu,"
-	                  "\"count_tlgrm_reply_empty\":%zu,"
-	                  "\"count_tlgrm_reply_ext\":%zu,"
+	                  "\"count_rdmn_issues_created\":%zu,"
+	                  "\"count_rdmn_issues_updated\":%zu,"
+	                  "\"count_tlgrm_sessions_destroyed\":%zu,"
+	                  "\"count_tlgrm_issues_created\":%zu,"
+	                  "\"count_tlgrm_messages_replied\":%zu,"
+	                  "\"count_tlgrm_messages_created\":%zu,"
+	                  "\"count_tlgrm_messages_extended\":%zu,"
+	                  "\"tlgrm_issues_replied_ratio\":%.6f,"
+	                  "\"tlgrm_issues_created_ratio\":%.6f,"
 	                  "\"last_action\":%zu"
 	                  "}",
-	                  stat_total.count_rdmn_issue_create,
-	                  stat_total.count_rdmn_issue_update,
-	                  stat_total.count_tlgrm_session_destroy,
-	                  stat_total.count_tlgrm_create_issue,
-	                  stat_total.count_tlgrm_reply_comment,
-	                  stat_total.count_tlgrm_reply_empty,
-	                  stat_total.count_tlgrm_reply_ext,
-	                  stat_total.last_action);
+	                  stat_total.count_rdmn_issues_created,
+	                  stat_total.count_rdmn_issues_updated,
+	                  stat_total.count_tlgrm_sessions_destroyed,
+	                  stat_total.count_tlgrm_issues_created,
+	                  stat_total.count_tlgrm_messages_replied,
+	                  stat_total.count_tlgrm_messages_created,
+	                  stat_total.count_tlgrm_messages_extended,
+	                  stat_total.tlgrm_issues_replied_ratio,
+	                  stat_total.tlgrm_issues_created_ratio,
+	                  stat_total.last_action_timestamp);
 
 	/*
 	 * Prepare statistic by users
@@ -471,25 +491,29 @@ static void nxs_chat_srv_p_rest_api_statistic_make_json(nxs_string_t *          
 		                       "{"
 		                       "\"rdmn_userid\":%zu,"
 		                       "\"rdmn_user_name\":\"%r\","
-		                       "\"count_rdmn_issue_create\":%zu,"
-		                       "\"count_rdmn_issue_update\":%zu,"
-		                       "\"count_tlgrm_session_destroy\":%zu,"
-		                       "\"count_tlgrm_create_issue\":%zu,"
-		                       "\"count_tlgrm_reply_comment\":%zu,"
-		                       "\"count_tlgrm_reply_empty\":%zu,"
-		                       "\"count_tlgrm_reply_ext\":%zu,"
+		                       "\"count_rdmn_issues_created\":%zu,"
+		                       "\"count_rdmn_issues_updated\":%zu,"
+		                       "\"count_tlgrm_sessions_destroyed\":%zu,"
+		                       "\"count_tlgrm_issues_created\":%zu,"
+		                       "\"count_tlgrm_messages_replied\":%zu,"
+		                       "\"count_tlgrm_messages_created\":%zu,"
+		                       "\"count_tlgrm_messages_extended\":%zu,"
+		                       "\"tlgrm_issues_replied_ratio\":%.6f,"
+		                       "\"tlgrm_issues_created_ratio\":%.6f,"
 		                       "\"last_action\":%zu"
 		                       "}",
 		                       stat_general.rdmn_userid,
 		                       &username,
-		                       stat_general.count_rdmn_issue_create,
-		                       stat_general.count_rdmn_issue_update,
-		                       stat_general.count_tlgrm_session_destroy,
-		                       stat_general.count_tlgrm_create_issue,
-		                       stat_general.count_tlgrm_reply_comment,
-		                       stat_general.count_tlgrm_reply_empty,
-		                       stat_general.count_tlgrm_reply_ext,
-		                       stat_general.last_action);
+		                       stat_general.count_rdmn_issues_created,
+		                       stat_general.count_rdmn_issues_updated,
+		                       stat_general.count_tlgrm_sessions_destroyed,
+		                       stat_general.count_tlgrm_issues_created,
+		                       stat_general.count_tlgrm_messages_replied,
+		                       stat_general.count_tlgrm_messages_created,
+		                       stat_general.count_tlgrm_messages_extended,
+		                       stat_general.tlgrm_issues_replied_ratio,
+		                       stat_general.tlgrm_issues_created_ratio,
+		                       stat_general.last_action_timestamp);
 	}
 
 	/*

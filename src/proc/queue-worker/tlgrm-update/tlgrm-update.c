@@ -952,7 +952,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_IN_PROGRESS:
 
-					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_EXTENDED;
 
 					status_id = nxs_chat_srv_cfg.rdmn.status_in_progress;
 
@@ -960,7 +960,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_NEED_FEEDBACK:
 
-					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_EXTENDED;
 
 					status_id = nxs_chat_srv_cfg.rdmn.status_need_feedback;
 
@@ -968,7 +968,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_S_RESOLVED:
 
-					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_EXTENDED;
 
 					status_id = nxs_chat_srv_cfg.rdmn.status_resolved;
 
@@ -976,7 +976,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_PRIVATE:
 
-					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_EXTENDED;
 
 					private_notes = NXS_YES;
 
@@ -984,7 +984,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_WF_IGNORE:
 
-					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_EXTENDED;
 
 					nxs_chat_srv_u_rdmn_issues_cf_add(
 					        rdmn_issues_ctx, nxs_chat_srv_cfg.rdmn.cf_ignore_status, &_s_cf_ignore_value);
@@ -993,7 +993,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				case NXS_CHAT_SRV_M_TLGRM_BTTN_CALLBACK_TYPE_TO_ISSUE_EXT_TAKE_ISSUE:
 
-					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EXT;
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_EXTENDED;
 
 					status_id      = nxs_chat_srv_cfg.rdmn.status_in_progress;
 					assigned_to_id = user_ctx->r_userid;
@@ -1002,7 +1002,7 @@ static nxs_chat_srv_err_t handler_callback_sess_type_message(nxs_chat_srv_m_tlgr
 
 				default:
 
-					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_EMPTY;
+					statistic_action_type = NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_CREATED;
 
 					if(nxs_chat_srv_u_db_sess_t_get_message_is_ext(sess_ctx) == NXS_YES) {
 
@@ -1795,7 +1795,7 @@ static nxs_chat_srv_err_t handler_message_sess_type_new_issue(nxs_chat_srv_u_db_
 				nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
 			}
 
-			statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_CREATE_ISSUE, user_ctx->r_userid);
+			statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_ISSUE_CREATE, user_ctx->r_userid);
 
 			/* set issue 'new_issue_id' as last for telegram user 'chat_id' */
 			nxs_chat_srv_u_last_issues_set(last_issue_ctx, chat_id, new_issue_id);
@@ -2134,7 +2134,7 @@ static nxs_chat_srv_err_t handler_message_reply(nxs_chat_srv_u_db_queue_t *queue
 
 			case NXS_CHAT_SRV_E_OK:
 
-				statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_REPLY_COMMENT, user_ctx->r_userid);
+				statistic_add(NXS_CHAT_SRV_U_DB_STATISTIC_ACTION_TYPE_TLGRM_MESSAGE_REPLIED, user_ctx->r_userid);
 
 				/* set issue 'issue_id' as last for telegram user 'tlgrm_userid' */
 				nxs_chat_srv_u_last_issues_set(last_issue_ctx, tlgrm_userid, issue_id);

@@ -55,17 +55,18 @@
 #define NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_STATUS		"Issue updated in Redmine status"
 #define NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_PRIORITY		"Issue updated in Redmine priority"
 #define NXS_CHAT_SRV_U_LABELS_KEY_ISSUE_UPDATED_IN_REDMINE_ASSIGNED_TO		"Issue updated in Redmine assigned to"
-
 #define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_SUMMARY				"Statistic summary"
 #define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_BY_USER				"Statistic by user"
 #define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_LAST_ACTION_DATE		"Last action date"
-#define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUE_CREATED	"Statistic field created issues via Redmine"
-#define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUE_UPDATED	"Statistic field updated issues via Redmine"
+#define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUES_CREATED	"Statistic field created issues via Redmine"
+#define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_RDMN_COUNT_ISSUES_UPDATED	"Statistic field updated issues via Redmine"
 #define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_SESSIONS_DESTROYED	"Statistic field destroyed sessions in Telegram"
 #define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_ISSUES_CREATED	"Statistic field created issues via Telegram"
 #define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_MESSAGES_REPLIED	"Statistic field replied messages via Telegram"
 #define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_MESSAGES_CREATED	"Statistic field created messages via Telegram"
-#define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_EXT_MESSAGES	"Statistic field extended messages via Telegram"
+#define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_COUNT_MESSAGES_EXTENDED	"Statistic field extended messages via Telegram"
+#define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_ISSUES_REPLIED_PERCENT	"Statistic field Telegram issues replied percent"
+#define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_TLGRM_ISSUES_CREATED_PERCENT	"Statistic field Telegram issues created percent"
 #define NXS_CHAT_SRV_U_LABELS_KEY_STATISTIC_FIELD_USERNAME			"Statistic field username"
 
 
