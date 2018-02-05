@@ -144,6 +144,8 @@ static nxs_string_t _s_par_lang				= nxs_string("lang");
 static nxs_string_t _s_par_text				= nxs_string("text");
 static nxs_string_t _s_par_greetings			= nxs_string("greetings");
 
+static nxs_string_t _s_bot				= nxs_string("bot");
+
 /* Module global functions */
 
 // clang-format on
@@ -234,6 +236,14 @@ static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_post(nxs_cfg_json_t cfg)
 
 	/* labels load */
 	if(nxs_chat_srv_conf_file_json_load_labels() != NXS_CFG_JSON_CONF_OK) {
+
+		return NXS_CFG_JSON_CONF_ERROR;
+	}
+
+	/* check telegram.bot_api_key value */
+	if(nxs_string_ncmp(&nxs_chat_srv_cfg.tlgrm.bot_api_key, 0, &_s_bot, 0, nxs_string_len(&_s_bot)) == NXS_YES) {
+
+		nxs_log_write_raw(&process, "config read error: value for telegram.bot_api_key can't be start with 'bot' prefix");
 
 		return NXS_CFG_JSON_CONF_ERROR;
 	}
@@ -842,6 +852,8 @@ static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_load_labels()
 	if(nxs_string_get_char(&nxs_chat_srv_cfg.labels.labels_path, rl - 1) != (u_char)'/') {
 
 		nxs_string_char_add_char(&nxs_chat_srv_cfg.labels.labels_path, (u_char)'/');
+
+		rl++;
 	}
 
 	nxs_fs_dirent_init(&dir_entry);
