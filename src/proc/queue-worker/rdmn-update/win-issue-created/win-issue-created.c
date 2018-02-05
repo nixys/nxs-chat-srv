@@ -164,7 +164,7 @@ nxs_chat_srv_err_t
 	nxs_chat_srv_u_labels_variable_add(labels_ctx,
 	                                   "issue_link",
 	                                   NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_LINK_FMT,
-	                                   &nxs_chat_srv_cfg.rdmn.host,
+	                                   &nxs_chat_srv_cfg.rdmn.url,
 	                                   update->data.issue.id,
 	                                   &project_fmt,
 	                                   update->data.issue.id,

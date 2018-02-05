@@ -312,7 +312,7 @@ static void nxs_chat_srv_p_rest_api_statistic_make_html(nxs_string_t *          
 		                       "					<td>%.2f%%</td>\n"
 		                       "					<td>%r</td>\n"
 		                       "				</tr>\n",
-		                       &nxs_chat_srv_cfg.rdmn.host,
+		                       &nxs_chat_srv_cfg.rdmn.url,
 		                       stat_general.rdmn_userid,
 		                       &username,
 		                       stat_general.count_rdmn_issues_created,

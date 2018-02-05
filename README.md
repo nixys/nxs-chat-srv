@@ -189,7 +189,9 @@ Redis settings block description.
 
 Redmine settings block description.
 
-* `host`: Redmine host URL (e.g. https://redmine.company.org:3000). This value will be used for create links to Redmine issues in Telegram messages.
+* `url`: This option is used to create links to Redmine issues in Telegram messages. It's useful to make for users a valid links in case if Redmine has host address in internal network (e.g. in Docker installations).
+If not specified, `redmine.host` option value will be used.
+* `host`: Redmine host URL (e.g. https://redmine.company.org:3000). This value is used to connections with Redmine API.
 * `api_key`: Redmine Rest API key account (with _Administrator_ permissions). Used for Redmine interactions (e.g. get users list, projects list, etc).
 * `auth_token`: part of URL secret path to make sure requests come from Redmine.
 * `presale_project_name`: Redmine project name where messages from users without Telegram account specified will be delivered as separate issues.

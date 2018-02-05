@@ -91,7 +91,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_begin(nxs_chat_s
 
 		nxs_string_printf(&last_issue_str,
 		                  NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_LINK_FMT,
-		                  &nxs_chat_srv_cfg.rdmn.host,
+		                  &nxs_chat_srv_cfg.rdmn.url,
 		                  issue_id,
 		                  &issue_project_name,
 		                  issue_id,

@@ -7,7 +7,7 @@
 #include <hiredis/hircluster.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.1.14"
+#define NXS_CHAT_SRV_VERSION						"0.2.0"
 
 /* Project basic global definitions */
 
@@ -145,6 +145,7 @@ typedef struct
 
 typedef struct
 {
+	nxs_string_t				url;
 	nxs_string_t				host;
 	nxs_string_t				api_key;
 	nxs_string_t				auth_token;

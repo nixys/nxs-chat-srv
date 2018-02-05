@@ -114,6 +114,7 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.pass);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.host);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.redis.keys_space);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.url);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.host);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.api_key);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.rdmn.auth_token);

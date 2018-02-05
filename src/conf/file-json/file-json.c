@@ -104,6 +104,7 @@ static nxs_string_t _s_par_redis			= nxs_string("redis");
 static nxs_string_t _s_par_name				= nxs_string("name");
 static nxs_string_t _s_par_user				= nxs_string("user");
 static nxs_string_t _s_par_pass				= nxs_string("pass");
+static nxs_string_t _s_par_url				= nxs_string("url");
 static nxs_string_t _s_par_host				= nxs_string("host");
 static nxs_string_t _s_par_redmine			= nxs_string("redmine");
 static nxs_string_t _s_par_api_key			= nxs_string("api_key");
@@ -219,6 +220,11 @@ static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_post(nxs_cfg_json_t cfg)
 {
 
 	/* check all defined config values and prepare program runtime (on error - NXS_CFG_CONF_ERROR value must be returned)*/
+
+	if(nxs_string_len(&nxs_chat_srv_cfg.rdmn.url) == 0) {
+
+		nxs_string_clone(&nxs_chat_srv_cfg.rdmn.url, &nxs_chat_srv_cfg.rdmn.host);
+	}
 
 	if(nxs_array_count(&nxs_chat_srv_cfg.redis.nodes) == 0) {
 
@@ -564,6 +570,7 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_url,			&var->url,			NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_NO,		NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_host,			&var->host,			NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_api_key,		&var->api_key,			NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
 	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_auth_token,		&var->auth_token,		NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);

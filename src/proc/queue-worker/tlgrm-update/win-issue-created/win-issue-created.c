@@ -78,7 +78,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_issue_created(nx
 	nxs_chat_srv_u_labels_variable_add(labels_ctx,
 	                                   "issue_link",
 	                                   NXS_CHAT_SRV_TLGRM_MESSAGE_ISSUE_LINK_FMT,
-	                                   &nxs_chat_srv_cfg.rdmn.host,
+	                                   &nxs_chat_srv_cfg.rdmn.url,
 	                                   new_issue_id,
 	                                   &project,
 	                                   new_issue_id,

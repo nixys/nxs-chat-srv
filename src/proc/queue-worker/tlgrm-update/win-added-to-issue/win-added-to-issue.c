@@ -65,7 +65,7 @@ nxs_chat_srv_err_t nxs_chat_srv_p_queue_worker_tlgrm_update_win_added_to_issue(n
 	labels_ctx                = nxs_chat_srv_u_labels_init();
 
 	nxs_chat_srv_u_labels_variable_add(
-	        labels_ctx, "issue_link", "<a href=\"%r/issues/%zu\">#%zu</a>", &nxs_chat_srv_cfg.rdmn.host, issue_id, issue_id);
+	        labels_ctx, "issue_link", "<a href=\"%r/issues/%zu\">#%zu</a>", &nxs_chat_srv_cfg.rdmn.url, issue_id, issue_id);
 
 	nxs_string_clone(
 	        &message,
