@@ -55,17 +55,12 @@ nxs_chat_srv_err_t nxs_chat_srv_c_mysql_connect(nxs_mysql_t *mysql)
 
 		nxs_log_write_error(&process, "[%s]: MySQL init error: \"%s\"", nxs_proc_get_name(&process), (char *)mysql->err_str);
 
-		nxs_mysql_free(mysql);
-
 		return NXS_CHAT_SRV_E_ERR;
 	}
 
 	if(nxs_mysql_connect(mysql) != NXS_MYSQL_E_OK) {
 
 		nxs_log_write_error(&process, "[%s]: MySQL connect error: \"%s\"", nxs_proc_get_name(&process), mysql->err_str);
-
-		nxs_mysql_disconnect(mysql);
-		nxs_mysql_free(mysql);
 
 		return NXS_CHAT_SRV_E_ERR;
 	}

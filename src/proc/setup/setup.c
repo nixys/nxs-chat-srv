@@ -134,7 +134,14 @@ static nxs_chat_srv_err_t nxs_chat_srv_p_setup_create_mysql_tables(void)
 	}
 	else {
 
-		nxs_log_write_console(&process, "create MySQL tables fail: %r", &err_str);
+		if(nxs_string_len(&err_str) == 0) {
+
+			nxs_log_write_console(&process, "create MySQL tables fail (see logs for more details)");
+		}
+		else {
+
+			nxs_log_write_console(&process, "create MySQL tables fail: %r", &err_str);
+		}
 	}
 
 	nxs_string_free(&err_str);

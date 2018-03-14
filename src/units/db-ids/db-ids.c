@@ -206,7 +206,7 @@ error:
 			        tlgrm_username,
 			        rdmn_userid);
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			rc = NXS_CHAT_SRV_E_ERR;
 		}
 	}
 	else {
@@ -222,7 +222,7 @@ error:
 			        tlgrm_username,
 			        rdmn_userid);
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			rc = NXS_CHAT_SRV_E_ERR;
 		}
 	}
 
@@ -296,7 +296,7 @@ error:
 			                    tlgrm_username,
 			                    rdmn_userid);
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			rc = NXS_CHAT_SRV_E_ERR;
 		}
 	}
 	else {
@@ -310,7 +310,7 @@ error:
 			                    tlgrm_username,
 			                    rdmn_userid);
 
-			nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+			rc = NXS_CHAT_SRV_E_ERR;
 		}
 	}
 
