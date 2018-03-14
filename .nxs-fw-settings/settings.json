@@ -1,6 +1,6 @@
 {
 	"project_name": "nxs-chat-srv",
-	"nxs_fw_version": "1.12",
+	"nxs_fw_version": "1.13",
 	"project_modules": [
 		"nxs-cfg-json",
 		"nxs-curl",

@@ -72,7 +72,27 @@ Important: Bot will send notifications to Telegram account in the following case
 
 ### CentOS
 
-Coming soon ...
+* Add Nixys repository key:
+  ```
+  rpm --import http://packages.nixys.ru/packages.nixys.ru.gpg.key
+  ```
+
+* Add the repository. Currently CentOS 7 is available:
+  ```
+  cat <<EOF > /etc/yum.repos.d/packages.nixys.ru.repo
+  [packages.nixys.ru]
+  name=Nixys Packages for CentOS \$releasever - \$basearch
+  baseurl=http://packages.nixys.ru/centos/\$releasever/\$basearch
+  enabled=1
+  gpgcheck=1
+  gpgkey=http://packages.nixys.ru/packages.nixys.ru.gpg.key
+  EOF
+  ```
+
+* Install nxs-chat-srv package:
+  ```
+  yum install nxs-chat-srv
+  ```
 
 ### Other OS
 

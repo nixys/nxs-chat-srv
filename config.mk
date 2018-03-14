@@ -9,10 +9,10 @@ ifeq ($(shell getconf LONG_BIT),32)
 CFLAGS32					=	-D_FILE_OFFSET_BITS=64
 endif
 
-OS_DISTRIB					=	$(shell lsb_release -d | awk '{print $$2}')
+OS_DISTRIB					=	$(shell lsb_release -d | awk '{print $$2}' | tr '[:lower:]' '[:upper:]')
 OS_RELEASE					=	$(shell lsb_release -r | awk '{print $$2}' | cut -d '.' -f 1)
 
-NXS_FW_VERSION					=	1.12
+NXS_FW_VERSION					=	1.13
 
 NXS_FW_CORE_INCLUDES_PATH			=	/usr/include/nxs-fw-libs
 NXS_FW_CORE_LIBS_PATH				=	/usr/lib/nxs-fw-libs
@@ -27,7 +27,7 @@ NXS_CORE_HEADERS				=	$(shell find $(NXS_FW_CORE_INCLUDES_PATH)/$(NXS_FW_VERSION
 NXS_CORE_LINKS					=	-L$(NXS_FW_CORE_LIBS_PATH)/$(NXS_FW_VERSION) -lnxs-general -lnxs-cfg-json -lnxs-json -lnxs-curl -lnxs-mysql -lnxs-rest-api 
 
 NXS_INCLUDES					=	-I/usr/include/libevent-nxs  $(NXS_DISTRIB_INCLUDES_$(OS_DISTRIB)_$(OS_RELEASE))
-NXS_LINKS					=	-ljansson -lcurl -L/usr/lib/x86_64-linux-gnu/libevent-nxs -levent -lssl -lcrypto -levent_openssl  $(NXS_DISTRIB_LINKS_$(OS_DISTRIB)_$(OS_RELEASE))
+NXS_LINKS					=	-ljansson -lcurl  $(NXS_DISTRIB_LINKS_$(OS_DISTRIB)_$(OS_RELEASE))
 
 NXS_USER_INCLUDES				=	
 NXS_USER_LINKS					=	-l:libhiredis_vip.a
