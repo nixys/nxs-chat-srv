@@ -47,7 +47,7 @@ Important: Bot will send notifications to Telegram account in the following case
 
 * Add the Nixys repository key:
   ```
-  apt-key adv --fetch-keys http://packages.nixys.ru/packages.nixys.ru.gpg.key
+  apt-key adv --fetch-keys http://packages.nixys.ru/debian/repository.gpg.key
   ```
 
 * Add the repository:
@@ -74,7 +74,7 @@ Important: Bot will send notifications to Telegram account in the following case
 
 * Add Nixys repository key:
   ```
-  rpm --import http://packages.nixys.ru/packages.nixys.ru.gpg.key
+  rpm --import http://packages.nixys.ru/centos/repository.gpg.key
   ```
 
 * Add the repository. Currently CentOS 7 is available:
@@ -85,7 +85,7 @@ Important: Bot will send notifications to Telegram account in the following case
   baseurl=http://packages.nixys.ru/centos/\$releasever/\$basearch
   enabled=1
   gpgcheck=1
-  gpgkey=http://packages.nixys.ru/packages.nixys.ru.gpg.key
+  gpgkey=http://packages.nixys.ru/centos/repository.gpg.key
   EOF
   ```
 
