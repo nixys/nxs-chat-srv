@@ -115,10 +115,26 @@ typedef struct
 
 typedef struct
 {
+	nxs_curl_proxy_auth_type_t		type;
+	nxs_string_t				username;
+	nxs_string_t				password;
+} nxs_chat_srv_cfg_proxy_auth_t;
+
+typedef struct
+{
+	nxs_curl_proxy_type_t			type;
+	nxs_string_t				host;
+	uint16_t				port;
+	nxs_chat_srv_cfg_proxy_auth_t		auth;
+} nxs_chat_srv_cfg_proxy_t;
+
+typedef struct
+{
 	nxs_string_t				bot_api_addr;
 	nxs_string_t				bot_api_key;
 	nxs_string_t				auth_token;
 	nxs_string_t				webhook_host;
+	nxs_chat_srv_cfg_proxy_t		proxy;
 } nxs_chat_srv_cfg_tlgrm_t;
 
 typedef struct

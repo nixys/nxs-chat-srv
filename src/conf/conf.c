@@ -109,6 +109,9 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.bot_api_key);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.auth_token);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.webhook_host);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.proxy.host);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.proxy.auth.username);
+	nxs_string_init_empty(&nxs_chat_srv_cfg.tlgrm.proxy.auth.password);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.name);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.user);
 	nxs_string_init_empty(&nxs_chat_srv_cfg.mysql.pass);
@@ -154,6 +157,9 @@ static void nxs_nxs_chat_srv_conf_cfg_ctx_init(nxs_chat_srv_cfg_ctx_t *cfg_ctx)
 	nxs_chat_srv_cfg.rdmn.status_in_progress        = 0;
 	nxs_chat_srv_cfg.rdmn.status_resolved           = 0;
 	nxs_chat_srv_cfg.rdmn.status_need_feedback      = 0;
+	nxs_chat_srv_cfg.tlgrm.proxy.type               = NXS_CURL_PROXY_TYPE_NONE;
+	nxs_chat_srv_cfg.tlgrm.proxy.auth.type          = NXS_CURL_PROXY_AUTH_TYPE_NONE;
+	nxs_chat_srv_cfg.tlgrm.proxy.port               = 0;
 	nxs_chat_srv_cfg.labels.default_labels_set      = NULL;
 
 	/* Init cfg context values */

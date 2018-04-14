@@ -43,6 +43,7 @@ typedef struct
 
 static nxs_string_t *nxs_chat_srv_d_tlgrm_get_method(nxs_chat_srv_tlgrm_request_type_t type);
 static size_t nxs_chat_srv_d_tlgrm_upload_get_data(void *buffer, size_t size, size_t nmemb, void *r);
+static nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_proxy_set_raw(CURL *c);
 
 // clang-format off
 
@@ -113,6 +114,20 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_request(nxs_chat_srv_tlgrm_request_type_
 	nxs_curl_add_header(&curl, &_s_content_type_json);
 
 	nxs_curl_set_post(&curl, (nxs_buf_t *)body);
+
+	if((ec = nxs_curl_set_proxy(&process,
+	                            &curl,
+	                            nxs_chat_srv_cfg.tlgrm.proxy.type,
+	                            nxs_chat_srv_cfg.tlgrm.proxy.auth.type,
+	                            &nxs_chat_srv_cfg.tlgrm.proxy.host,
+	                            nxs_chat_srv_cfg.tlgrm.proxy.port,
+	                            &nxs_chat_srv_cfg.tlgrm.proxy.auth.username,
+	                            &nxs_chat_srv_cfg.tlgrm.proxy.auth.password)) != NXS_CURL_E_OK) {
+
+		nxs_log_write_error(&process, "[%s]: tlgrm request error: curl proxy set error (rc: %d)", nxs_proc_get_name(&process), ec);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
 
 	if((ec = nxs_curl_query(&process,
 	                        &curl,
@@ -187,6 +202,20 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_download(nxs_string_t *tlgrm_file_name, 
 
 	nxs_curl_init(&curl);
 
+	if((ec = nxs_curl_set_proxy(&process,
+	                            &curl,
+	                            nxs_chat_srv_cfg.tlgrm.proxy.type,
+	                            nxs_chat_srv_cfg.tlgrm.proxy.auth.type,
+	                            &nxs_chat_srv_cfg.tlgrm.proxy.host,
+	                            nxs_chat_srv_cfg.tlgrm.proxy.port,
+	                            &nxs_chat_srv_cfg.tlgrm.proxy.auth.username,
+	                            &nxs_chat_srv_cfg.tlgrm.proxy.auth.password)) != NXS_CURL_E_OK) {
+
+		nxs_log_write_error(&process, "[%s]: tlgrm request error: curl proxy set error (rc: %d)", nxs_proc_get_name(&process), ec);
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
 	if((ec = nxs_curl_download(&process,
 	                           &curl,
 	                           NXS_REST_API_COMMON_CMD_GET,
@@ -238,8 +267,10 @@ error:
 	return rc;
 }
 
-nxs_chat_srv_err_t
-        nxs_chat_srv_d_tlgrm_setwebhook(nxs_string_t *url, nxs_string_t *ssl_srt_path, nxs_http_code_t *http_code, nxs_buf_t *out_buf)
+nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_setwebhook(nxs_string_t *   url,
+                                                   nxs_string_t *   ssl_srt_path,
+                                                   nxs_http_code_t *http_code,
+                                                   nxs_buf_t *      out_buf)
 {
 	nxs_chat_srv_err_t rc;
 	nxs_http_code_t    ret_code;
@@ -297,6 +328,13 @@ nxs_chat_srv_err_t
 	curl_easy_setopt(c, CURLOPT_WRITEDATA, out_buf);
 	curl_easy_setopt(c, CURLOPT_URL, nxs_string_str(&tlgrm_url));
 	curl_easy_setopt(c, CURLOPT_HTTPPOST, formpost);
+
+	if(nxs_chat_srv_d_tlgrm_proxy_set_raw(c) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_warn(&process, "[%s]: tlgrm set webhook error: curl proxy set error", nxs_proc_get_name(&process));
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
 
 	res = curl_easy_perform(c);
 
@@ -520,6 +558,13 @@ nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_upload(nxs_chat_srv_tlgrm_request_type_t
 	curl_easy_setopt(c, CURLOPT_URL, nxs_string_str(&tmp_str));
 	curl_easy_setopt(c, CURLOPT_HTTPPOST, formpost);
 
+	if(nxs_chat_srv_d_tlgrm_proxy_set_raw(c) != NXS_CHAT_SRV_E_OK) {
+
+		nxs_log_write_warn(&process, "[%s]: tlgrm file upload error: curl proxy set error", nxs_proc_get_name(&process));
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
 	res = curl_easy_perform(c);
 
 	nxs_buf_add_char(out_buf, (u_char)'\0');
@@ -613,4 +658,34 @@ static size_t nxs_chat_srv_d_tlgrm_upload_get_data(void *buffer, size_t size, si
 	nxs_buf_cpy(response, nxs_buf_get_len(response), buffer, chunk_size);
 
 	return chunk_size;
+}
+
+static nxs_chat_srv_err_t nxs_chat_srv_d_tlgrm_proxy_set_raw(CURL *c)
+{
+	nxs_chat_srv_err_t rc;
+	nxs_curl_t         curl;
+
+	rc = NXS_CHAT_SRV_E_OK;
+
+	nxs_curl_init(&curl);
+
+	if(nxs_curl_set_proxy(&process,
+	                      &curl,
+	                      nxs_chat_srv_cfg.tlgrm.proxy.type,
+	                      nxs_chat_srv_cfg.tlgrm.proxy.auth.type,
+	                      &nxs_chat_srv_cfg.tlgrm.proxy.host,
+	                      nxs_chat_srv_cfg.tlgrm.proxy.port,
+	                      &nxs_chat_srv_cfg.tlgrm.proxy.auth.username,
+	                      &nxs_chat_srv_cfg.tlgrm.proxy.auth.password) != NXS_CURL_E_OK) {
+
+		nxs_error(rc, NXS_CHAT_SRV_E_ERR, error);
+	}
+
+	nxs_curl_opt_set_proxy(&curl, c);
+
+error:
+
+	nxs_curl_free(&curl);
+
+	return rc;
 }
