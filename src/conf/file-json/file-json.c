@@ -35,41 +35,65 @@ extern		nxs_chat_srv_cfg_t		nxs_chat_srv_cfg;
 static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_prep(nxs_cfg_json_t cfg);
 static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_post(nxs_cfg_json_t cfg);
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_proc(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_log(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_bind(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_bind_ssl(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_tlgrm(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_mysql(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_redis(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_proc(nxs_process_t *     proc,
+                                                                  nxs_json_t *        json,
+                                                                  nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_log(nxs_process_t *     proc,
+                                                                 nxs_json_t *        json,
+                                                                 nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_bind(nxs_process_t *     proc,
+                                                                  nxs_json_t *        json,
+                                                                  nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_bind_ssl(nxs_process_t *     proc,
+                                                                      nxs_json_t *        json,
+                                                                      nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_tlgrm(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_mysql(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_redis(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_redis_nodes(nxs_process_t *     proc,
                                                                          nxs_json_t *        json,
                                                                          nxs_cfg_json_par_t *cfg_json_par_el,
                                                                          nxs_array_t *       cfg_arr);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_rdmn(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_ra_queue(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_cache(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_attachments(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_statistic(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_labels(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_rdmn(nxs_process_t *     proc,
+                                                                  nxs_json_t *        json,
+                                                                  nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_ra_queue(nxs_process_t *     proc,
+                                                                      nxs_json_t *        json,
+                                                                      nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_cache(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_attachments(nxs_process_t *     proc,
+                                                                         nxs_json_t *        json,
+                                                                         nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_statistic(nxs_process_t *     proc,
+                                                                       nxs_json_t *        json,
+                                                                       nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_labels(nxs_process_t *     proc,
+                                                                    nxs_json_t *        json,
+                                                                    nxs_cfg_json_par_t *cfg_json_par_el);
 static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_greetings(nxs_process_t *     proc,
                                                                        nxs_json_t *        json,
                                                                        nxs_cfg_json_par_t *cfg_json_par_el,
                                                                        nxs_array_t *       cfg_arr);
-
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_tlgrm_proxy(nxs_process_t *     proc,
+                                                                         nxs_json_t *        json,
+                                                                         nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_tlgrm_proxy_auth(nxs_process_t *     proc,
+                                                                              nxs_json_t *        json,
+                                                                              nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_tlgrm_proxy_type(nxs_process_t *     proc,
+                                                                              nxs_json_t *        json,
+                                                                              nxs_cfg_json_par_t *cfg_json_par_el);
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_tlgrm_proxy_auth_type(nxs_process_t *     proc,
+                                                                                   nxs_json_t *        json,
+                                                                                   nxs_cfg_json_par_t *cfg_json_par_el);
 static void nxs_chat_srv_conf_file_json_trim_url(nxs_string_t *str);
 
 static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_load_labels();
@@ -144,8 +168,17 @@ static nxs_string_t _s_par_default_lang			= nxs_string("default_lang");
 static nxs_string_t _s_par_lang				= nxs_string("lang");
 static nxs_string_t _s_par_text				= nxs_string("text");
 static nxs_string_t _s_par_greetings			= nxs_string("greetings");
+static nxs_string_t _s_par_type				= nxs_string("type");
+static nxs_string_t _s_par_proxy			= nxs_string("proxy");
+static nxs_string_t _s_par_auth				= nxs_string("auth");
 
 static nxs_string_t _s_bot				= nxs_string("bot");
+static nxs_string_t _s_none				= nxs_string("none");
+static nxs_string_t _s_http				= nxs_string("http");
+static nxs_string_t _s_socks5				= nxs_string("socks5");
+static nxs_string_t _s_socks5_hostname			= nxs_string("socks5_hostname");
+static nxs_string_t _s_basic				= nxs_string("basic");
+static nxs_string_t _s_ntlm				= nxs_string("ntlm");
 
 /* Module global functions */
 
@@ -259,8 +292,9 @@ static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_post(nxs_cfg_json_t cfg)
 
 /* Project config file auxiliaries functions */
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_proc(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_proc(nxs_process_t *     proc,
+                                                                  nxs_json_t *        json,
+                                                                  nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_proc_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t           cfg_json;
@@ -337,8 +371,9 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_bind(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_bind(nxs_process_t *     proc,
+                                                                  nxs_json_t *        json,
+                                                                  nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_bind_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t           cfg_json;
@@ -375,8 +410,9 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_bind_ssl(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_bind_ssl(nxs_process_t *     proc,
+                                                                      nxs_json_t *        json,
+                                                                      nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_bind_ssl_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t               cfg_json;
@@ -413,8 +449,9 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_tlgrm(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_tlgrm(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_tlgrm_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t            cfg_json;
@@ -427,10 +464,11 @@ static nxs_cfg_json_state_t
 
 	// clang-format off
 
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bot_api_addr,	&var->bot_api_addr,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bot_api_key,	&var->bot_api_key,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_auth_token,	&var->auth_token,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
-	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_webhook_host,	&var->webhook_host,	NULL,	NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bot_api_addr,	&var->bot_api_addr,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_bot_api_key,	&var->bot_api_key,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_auth_token,	&var->auth_token,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_webhook_host,	&var->webhook_host,	NULL,						NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+	nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_proxy,		&var->proxy,		&nxs_chat_srv_conf_file_json_read_tlgrm_proxy,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_NO,		NULL);
 
 	// clang-format on
 
@@ -452,8 +490,9 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_mysql(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_mysql(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_mysql_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t            cfg_json;
@@ -492,8 +531,9 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_redis(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_redis(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_redis_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t            cfg_json;
@@ -556,8 +596,9 @@ static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_redis_nodes(nxs_pro
 	return NXS_CFG_JSON_CONF_OK;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_rdmn(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_rdmn(nxs_process_t *     proc,
+                                                                  nxs_json_t *        json,
+                                                                  nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_rdmn_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t           cfg_json;
@@ -605,8 +646,9 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_ra_queue(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_ra_queue(nxs_process_t *     proc,
+                                                                      nxs_json_t *        json,
+                                                                      nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_ra_queue_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t               cfg_json;
@@ -642,8 +684,9 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_cache(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_cache(nxs_process_t *     proc,
+                                                                   nxs_json_t *        json,
+                                                                   nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_cache_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t            cfg_json;
@@ -681,8 +724,9 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_attachments(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_attachments(nxs_process_t *     proc,
+                                                                         nxs_json_t *        json,
+                                                                         nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_attachments_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t                  cfg_json;
@@ -718,8 +762,9 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_statistic(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_statistic(nxs_process_t *     proc,
+                                                                       nxs_json_t *        json,
+                                                                       nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_statistic_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t                cfg_json;
@@ -754,8 +799,9 @@ error:
 	return rc;
 }
 
-static nxs_cfg_json_state_t
-        nxs_chat_srv_conf_file_json_read_labels(nxs_process_t *proc, nxs_json_t *json, nxs_cfg_json_par_t *cfg_json_par_el)
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_labels(nxs_process_t *     proc,
+                                                                    nxs_json_t *        json,
+                                                                    nxs_cfg_json_par_t *cfg_json_par_el)
 {
 	nxs_chat_srv_cfg_labels_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
 	nxs_cfg_json_t             cfg_json;
@@ -814,6 +860,182 @@ static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_greetings(nxs_proce
 	// clang-format on
 
 	return NXS_CFG_JSON_CONF_OK;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_tlgrm_proxy(nxs_process_t *     proc,
+                                                                         nxs_json_t *        json,
+                                                                         nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_cfg_proxy_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t            cfg_json;
+	nxs_array_t               cfg_arr;
+	nxs_cfg_json_state_t      rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	// clang-format off
+
+        nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_type,			&var->type,	&nxs_chat_srv_conf_file_json_read_tlgrm_proxy_type,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+        nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_host,			&var->host,	NULL,							NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+        nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_port,			&var->port,	NULL,							NULL,	NXS_CFG_JSON_TYPE_INT_16,	0,	0,	NXS_YES,	NULL);
+        nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_auth,			&var->auth,	&nxs_chat_srv_conf_file_json_read_tlgrm_proxy_auth,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_NO,		NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "config read error: 'telegram.proxy' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_tlgrm_proxy_auth(nxs_process_t *     proc,
+                                                                              nxs_json_t *        json,
+                                                                              nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_chat_srv_cfg_proxy_auth_t *var = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_cfg_json_t                 cfg_json;
+	nxs_array_t                    cfg_arr;
+	nxs_cfg_json_state_t           rc;
+
+	rc = NXS_CFG_JSON_CONF_OK;
+
+	nxs_cfg_json_conf_array_init(&cfg_arr);
+
+	// clang-format off
+
+        nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_type,			&var->type,	&nxs_chat_srv_conf_file_json_read_tlgrm_proxy_auth_type,	NULL,	NXS_CFG_JSON_TYPE_VOID,		0,	0,	NXS_YES,	NULL);
+        nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_user,			&var->username,	NULL,								NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+        nxs_cfg_json_conf_array_add(&cfg_arr,	&_s_par_pass,			&var->password,	NULL,								NULL,	NXS_CFG_JSON_TYPE_STRING,	0,	0,	NXS_YES,	NULL);
+
+	// clang-format on
+
+	nxs_cfg_json_init(&process, &cfg_json, NULL, NULL, NULL, &cfg_arr);
+
+	if(nxs_cfg_json_read_json(&process, cfg_json, json) != NXS_CFG_JSON_CONF_OK) {
+
+		nxs_log_write_raw(&process, "config read error: 'telegram.proxy.auth' block");
+
+		nxs_error(rc, NXS_CFG_JSON_CONF_ERROR, error);
+	}
+
+error:
+
+	nxs_cfg_json_free(&cfg_json);
+
+	nxs_cfg_json_conf_array_free(&cfg_arr);
+
+	return rc;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_tlgrm_proxy_type(nxs_process_t *     proc,
+                                                                              nxs_json_t *        json,
+                                                                              nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_curl_proxy_type_t *type = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_string_t *         t;
+
+	if(nxs_json_type_get(json) != NXS_JSON_TYPE_STRING) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: config read error: expected type string for \"telegram.proxy.type\" option",
+		                    nxs_proc_get_name(&process));
+
+		return NXS_CFG_JSON_CONF_ERROR;
+	}
+
+	t = nxs_json_string_val(json);
+
+	if(nxs_string_cmp(t, 0, &_s_none, 0) == NXS_YES) {
+
+		*type = NXS_CURL_PROXY_TYPE_NONE;
+
+		return NXS_CFG_JSON_CONF_OK;
+	}
+
+	if(nxs_string_cmp(t, 0, &_s_socks5, 0) == NXS_YES) {
+
+		*type = NXS_CURL_PROXY_TYPE_SOCKS5;
+
+		return NXS_CFG_JSON_CONF_OK;
+	}
+
+	if(nxs_string_cmp(t, 0, &_s_socks5_hostname, 0) == NXS_YES) {
+
+		*type = NXS_CURL_PROXY_TYPE_SOCKS5_HOSTNAME;
+
+		return NXS_CFG_JSON_CONF_OK;
+	}
+
+	if(nxs_string_cmp(t, 0, &_s_http, 0) == NXS_YES) {
+
+		*type = NXS_CURL_PROXY_TYPE_HTTP;
+
+		return NXS_CFG_JSON_CONF_OK;
+	}
+
+	nxs_log_write_error(
+	        &process, "[%s]: config read error: wrong value for \"telegram.proxy.type\" option", nxs_proc_get_name(&process));
+
+	return NXS_CFG_JSON_CONF_ERROR;
+}
+
+static nxs_cfg_json_state_t nxs_chat_srv_conf_file_json_read_tlgrm_proxy_auth_type(nxs_process_t *     proc,
+                                                                                   nxs_json_t *        json,
+                                                                                   nxs_cfg_json_par_t *cfg_json_par_el)
+{
+	nxs_curl_proxy_auth_type_t *type = nxs_cfg_json_get_val(cfg_json_par_el);
+	nxs_string_t *              t;
+
+	if(nxs_json_type_get(json) != NXS_JSON_TYPE_STRING) {
+
+		nxs_log_write_error(&process,
+		                    "[%s]: config read error: expected type string for \"telegram.proxy.auth.type\" option",
+		                    nxs_proc_get_name(&process));
+
+		return NXS_CFG_JSON_CONF_ERROR;
+	}
+
+	t = nxs_json_string_val(json);
+
+	if(nxs_string_cmp(t, 0, &_s_none, 0) == NXS_YES) {
+
+		*type = NXS_CURL_PROXY_AUTH_TYPE_NONE;
+
+		return NXS_CFG_JSON_CONF_OK;
+	}
+
+	if(nxs_string_cmp(t, 0, &_s_basic, 0) == NXS_YES) {
+
+		*type = NXS_CURL_PROXY_AUTH_TYPE_BASIC;
+
+		return NXS_CFG_JSON_CONF_OK;
+	}
+
+	if(nxs_string_cmp(t, 0, &_s_ntlm, 0) == NXS_YES) {
+
+		*type = NXS_CURL_PROXY_AUTH_TYPE_NTLM;
+
+		return NXS_CFG_JSON_CONF_OK;
+	}
+
+	nxs_log_write_error(
+	        &process, "[%s]: config read error: wrong value for \"telegram.proxy.auth.type\" option", nxs_proc_get_name(&process));
+
+	return NXS_CFG_JSON_CONF_ERROR;
 }
 
 static void nxs_chat_srv_conf_file_json_trim_url(nxs_string_t *str)

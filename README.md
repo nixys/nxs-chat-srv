@@ -184,6 +184,14 @@ Telegram settings block description.
 * `bot_api_key`: Telegram Bot API key.
 * `auth_token`: part of URL secret path to make sure requests come from Telegram (for details see: https://core.telegram.org/bots/api#setwebhook).
 * `webhook_host`: URL (including protocol and port) to take Telegram updates.
+* `proxy` (object, not required):
+  * `type`: type of proxy. Available values:  `none` (don't use proxy), `http`, `socks5`, `socks5_hostname` (let the proxy resolve the host name).
+  * `host`: proxy host.
+  * `port`: proxy port.
+  * `auth` (object, not required):
+    * `type`: auth method. Available values: `none` (don't use authorization), `basic`, `ntlm`.
+    * `user`: proxy auth username
+    * `pass`: proxy auth password
 
 ### `mysql`
 
@@ -521,7 +529,7 @@ Specify connection options in corresponding block in /etc/nxs-chat-srv/nxs-chat-
 * `telegram.auth_token`: generate and set the secret string. This string is a part of URL path to make sure requests come from Telegram.
 * `telegram.webhook_host`: specify the nxs-chat-srv host URL (including protocol and port, e.g. https://demo.nxs-chat.nixys.ru:8443)
 
-**Bclock `statistic`**
+**Block `statistic`**
 
 * `statistic.auth_token`: generate and set the secret string. After that you may get nxs-chat-srv statistic by GET query https://demo.nxs-chat.nixys.ru/statistic?format=html&token=$_SECRETSTRING (e.g. https://demo.nxs-chat.nixys.ru/statistic?format=html&token=s14g3pzgkm70t0npw9c0hiqdn50jdl29ackgpwzcz5iujmle1x)
 
