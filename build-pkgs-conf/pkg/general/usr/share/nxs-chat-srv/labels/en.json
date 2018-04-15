@@ -127,7 +127,7 @@
 		},
 		{
 			"key": "Wrong action",
-			"text": "Unfortunately, your last message can't be processed in current dialog session and will be ignored."
+			"text": "Unfortunately, your last message can't be processed in current dialog session and will be ignored. Highly likely it happened because another session has been already started but not finished. Please, try to close the current dialog."
 		},
 		{
 			"key": "Wrong reply",
