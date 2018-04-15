@@ -8,7 +8,7 @@ License:        GPL3
 URL:            https://nixys.ru
 Source0:        %{name}-%{version}.tar.gz
 
-BuildRequires:  nxs-fw-libs-1.13 libhiredis-vip libhiredis-vip-devel redhat-lsb
+BuildRequires:  nxs-fw-libs-1.14 libhiredis-vip libhiredis-vip-devel redhat-lsb
 Requires:       libevent-nxs openssl-libs jansson libcurl mariadb-libs
 
 
@@ -45,10 +45,10 @@ mkdir -p $RPM_BUILD_ROOT/var/log/nxs-chat-srv
 mkdir -p $RPM_BUILD_ROOT/var/spool/nxs-chat-srv/tlgrm
 mkdir -p $RPM_BUILD_ROOT/var/spool/nxs-chat-srv/rdmn
 cp ./objs/nxs-chat-srv $RPM_BUILD_ROOT/usr/sbin
-cp -r ./pkg/etc/nxs-chat-srv $RPM_BUILD_ROOT/etc
-cp ./pkg/etc/logrotate.d/nxs-chat-srv $RPM_BUILD_ROOT/etc/logrotate.d
-cp ./pkg/lib/systemd/system/nxs-chat-srv.service $RPM_BUILD_ROOT/lib/systemd/system
-cp -r ./pkg/usr/share/nxs-chat-srv $RPM_BUILD_ROOT/usr/share
+cp -r ./pkg/general/etc/nxs-chat-srv $RPM_BUILD_ROOT/etc
+cp ./pkg/general/etc/logrotate.d/nxs-chat-srv $RPM_BUILD_ROOT/etc/logrotate.d
+cp ./pkg/general/lib/systemd/system/nxs-chat-srv.service $RPM_BUILD_ROOT/lib/systemd/system
+cp -r ./pkg/general/usr/share/nxs-chat-srv $RPM_BUILD_ROOT/usr/share
 
 
 %clean

@@ -12,7 +12,7 @@ endif
 OS_DISTRIB					=	$(shell lsb_release -d | awk '{print $$2}' | tr '[:lower:]' '[:upper:]')
 OS_RELEASE					=	$(shell lsb_release -r | awk '{print $$2}' | cut -d '.' -f 1)
 
-NXS_FW_VERSION					=	dev
+NXS_FW_VERSION					=	1.14
 
 NXS_FW_CORE_INCLUDES_PATH			=	/usr/include/nxs-fw-libs
 NXS_FW_CORE_LIBS_PATH				=	/usr/lib/nxs-fw-libs

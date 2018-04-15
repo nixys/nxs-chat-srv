@@ -1,17 +1,26 @@
 #!/bin/bash
 
-BUILD_DIR="/tmp/nxs-build"
-
 P_NAME="nxs-chat-srv"
 
-VER="0.2.1"
+VER="0.3.0"
 BUILD_VERSION="1"
+
+GENERIC_DOCKER_IMG_DEBIAN_general=""
+GENERIC_DOCKER_IMG_CENTOS_general=""
+
+GENERIC_DOCKER_IMG_DEBIAN_7=""
+GENERIC_DOCKER_IMG_DEBIAN_8=""
+GENERIC_DOCKER_IMG_DEBIAN_9=""
+GENERIC_DOCKER_IMG_CENTOS_6=""
+GENERIC_DOCKER_IMG_CENTOS_7=""
 
 RELEASE=""
 command='build'
 BUILD_TYPE="docker"
 USE_CHOWN="false"
 DEB_TAR_ORIG=""
+BUILD_DIR=""
+USE_OWN_IMAGE="false"
 
 USER=`whoami`
 
@@ -19,37 +28,37 @@ HELP_MSG="Simple script to make packages for different OS releases.\n\
 \n\
 Options:\n\
         -r RELEASE     : make build for specified OS release (e.g. debian:9, centos:7, etc). You may use 'all' to make builds for all releases.\n\
-        -c COMMAND     : at this moment only 'build' command is available.\n\
+        -c COMMAND     : 'build' and 'make-orig' commands are available.\n\
         -t BUILD_TYPE  : specify how to make your build ('docker' or 'local'). 'local' build would be useful for CI/CD process.\n\
+        -b BUILD_DIR   : specify directory for build project. Useful for CI/CD process.\n\
         -C             : if specified, chown command with sudo for output files will be used after build process is finished\n\
         -d DEB_TAR_ORIG: use debian tar orig file to make package. It is useful if you make packages for debian:8 and debian:9 together.\n\
+        -I             : use project own docker image
         -h             : show help message (this message).\n\
 "
 
-while getopts c:r:t:Cd:h option
+while getopts c:r:t:b:Cd:Ih option
 do
 	case "${option}" in
 		r) RELEASE=${OPTARG};;
 		c) command=${OPTARG};;
 		t) BUILD_TYPE=${OPTARG};;
+		b) BUILD_DIR=${OPTARG};;
 		C) USE_CHOWN="true";;
 		d) DEB_TAR_ORIG=${OPTARG};;
+		I) USE_OWN_IMAGE="true";;
 		h) echo -e ${HELP_MSG}; exit 0;;
 	esac
 done
 
-if [ "$RELEASE" == "" ];
+if [ -z "${BUILD_DIR}" ];
 then
 
-	echo -n "Input OS (e.g. debian:9): "
-	read RELEASE
-fi
+	BUILD_DIR="/tmp/nxs-build/${P_NAME}"
+else
 
-if [ ! "${BUILD_TYPE}" == "docker" ] && [ ! "${BUILD_TYPE}" == "local" ];
-then
-
-	echo "Wrong build type. Only 'docker' or 'local' types are available."
-	exit 1
+	# Get absolute path for BUILD_DIR
+	BUILD_DIR=$(mkdir -p ${BUILD_DIR} && cd ${BUILD_DIR} && pwd)
 fi
 
 function copy_source()
@@ -58,6 +67,7 @@ function copy_source()
 	
 	# Coping source code into build environment
 	rsync -qr \
+		build-pkgs-conf/pkg \
 		.nxs-fw-settings \
 		docs \
 		src \
@@ -78,32 +88,71 @@ function build_package_deb_local()
 		cd ${build_path}/${P_NAME}
 
 		dh_make -p ${P_NAME}_${VER} --copyright lgpl3 --single --templates ${tpl_path} --yes --createorig
-	
+
 		dpkg-buildpackage
 	)
+}
+
+function make_orig()
+{
+
+	local dst_root_dir="${BUILD_DIR}/orig"
+	local dst_package_dir="${dst_root_dir}/${P_NAME}"
+
+	# Preparing build environment
+	rm -rf ${dst_root_dir} || exit 1
+	mkdir -p ${dst_package_dir} || exit 1
+
+	mkdir -p ${dst_package_dir}/objs || exit 1
+	mkdir -p ${dst_package_dir}/pkg || exit 1
+
+	copy_source ${dst_package_dir}
+
+	tar zcf ${dst_root_dir}/${P_NAME}_${VER}.orig.tar.gz -C ${dst_package_dir} .
+	tar Jcf ${dst_root_dir}/${P_NAME}_${VER}.orig.tar.xz -C ${dst_package_dir} .
+
+	rm -rf ${dst_package_dir}
 }
 
 function build_package_deb()
 {
 
+	local gen_img_name
+	local dc_name
+
 	r=$1
 
-	bv="deb${r}u${BUILD_VERSION}"
-	
+	if [ "${r}" == "general" ];
+	then
+
+		bv="${BUILD_VERSION}"
+	else
+
+		bv="deb${r}u${BUILD_VERSION}"
+	fi
+
 	local deb_tar_orig_path="$2"
 
-	local dst_root_dir="${BUILD_DIR}/${P_NAME}/debian-${r}"
+	local dst_root_dir="${BUILD_DIR}/debian-${r}"
 	local dst_package_dir="${dst_root_dir}/${P_NAME}"
 	local dst_install_file="${dst_root_dir}/deb-tpl/${P_NAME}.install"
-	local dc_name="nxs-build_${P_NAME}_debian:${r}"
 
 	# Preparing docker image
 	if [ "${BUILD_TYPE}" == "docker" ];
 	then
-	
-		docker build -t ${dc_name} build-pkgs-conf/docker/debian-${r} || exit 1
-	fi
 
+		if [ "${USE_OWN_IMAGE}" == "true" ];
+		then
+		
+			dc_name="nxs-build_${P_NAME}_debian:${r}"
+			docker build -t ${dc_name} build-pkgs-conf/docker/debian-${r} || exit 1
+		else
+		
+			gen_img_name="GENERIC_DOCKER_IMG_DEBIAN_${r}"
+			dc_name="${!gen_img_name:-}"
+		fi
+	fi
+	
 	# Preparing build environment
 	rm -rf ${dst_root_dir} || exit 1
 	mkdir -p ${dst_package_dir} || exit 1
@@ -118,7 +167,19 @@ function build_package_deb()
 	else
 	
 		cp ${deb_tar_orig_path} ${dst_root_dir}
-		tar -xpJf ${deb_tar_orig_path} -C ${dst_package_dir}
+
+		case ${r} in
+			7)
+				tar -zxf ${deb_tar_orig_path} -C ${dst_package_dir} || exit 1
+				;;
+			8|9|general)
+				tar -pJxf ${deb_tar_orig_path} -C ${dst_package_dir} || exit 1
+				;;
+			*)
+				echo "unknown Debian releasse number"
+				exit 1
+				;;
+		esac
 	fi
 
 	# Docker build script
@@ -128,10 +189,6 @@ function build_package_deb()
 	rsync -r build-pkgs-conf/tpls/debian-${r}/ ${dst_root_dir}/deb-tpl || exit 1
 	sed -i 's/\$\$BUILD_VERSION\$\$/'${bv}'/g' ${dst_root_dir}/deb-tpl/changelog || exit 1
 
-	# Debian package content
-	rsync -r build-pkgs-conf/pkg/general/ ${dst_package_dir}/pkg
-	rsync -r build-pkgs-conf/pkg/os/debian-${r}/ ${dst_package_dir}/pkg
-	
 	if [ "${BUILD_TYPE}" == "docker" ];
 	then
 	
@@ -139,7 +196,7 @@ function build_package_deb()
 		docker run -it --rm -v "${dst_root_dir}:/tmp/build" -e "DEBEMAIL=$DEBEMAIL" -e "DEBFULLNAME=$DEBFULLNAME" ${dc_name} /tmp/build/deb-build.sh ${P_NAME} ${VER} || exit 1
 	else
 	
-		build_package_deb_local "${dst_root_dir}"
+		build_package_deb_local "${dst_root_dir}" || exit 1
 	fi
 	
 	# Change owner from root to current user
@@ -179,15 +236,18 @@ function build_package_centos_local()
 function build_package_centos()
 {
 
+	local gen_img_name
+	local dc_name
+
 	r=$1
-	
+
 	local headers=""
 	local headers_dir=""
 	local static_libs=""
 	local desc=""
 	local files=""
 	
-	local dst_root_dir="${BUILD_DIR}/${P_NAME}/centos-${r}"
+	local dst_root_dir="${BUILD_DIR}/centos-${r}"
 	local dst_package_dir="${dst_root_dir}/${P_NAME}-${VER}"
 	local dst_spec_file="${dst_root_dir}/${P_NAME}.spec"
 	local dc_name="nxs-build_${P_NAME}_centos:${r}"
@@ -195,10 +255,19 @@ function build_package_centos()
 	# Preparing docker image
 	if [ "${BUILD_TYPE}" == "docker" ];
 	then
-	
-		docker build -t ${dc_name} build-pkgs-conf/docker/centos-${r} || exit 1
-	fi
 
+		if [ "${USE_OWN_IMAGE}" == "true" ];
+		then
+		
+			dc_name="nxs-build_${P_NAME}_centos:${r}"
+			docker build -t ${dc_name} build-pkgs-conf/docker/centos-${r} || exit 1
+		else
+		
+			gen_img_name="GENERIC_DOCKER_IMG_CENTOS_${r}"
+			dc_name="${!gen_img_name:-}"
+		fi
+	fi
+	
 	# Preparing build environment
 	rm -rf "${dst_root_dir}" || exit 1
 	mkdir -p "${dst_package_dir}" || exit 1
@@ -215,10 +284,6 @@ function build_package_centos()
 	sed -i 's/\$\$BUILD_VERSION\$\$/'${BUILD_VERSION}'/g' ${dst_spec_file} || exit 1
 	sed -i 's/\$\$VERSION\$\$/'${VER}'/g' ${dst_spec_file} || exit 1
 	
-	# Centos package content
-	rsync -r build-pkgs-conf/pkg/general/ ${dst_package_dir}/pkg
-	rsync -r build-pkgs-conf/pkg/os/centos-${r}/ ${dst_package_dir}/pkg
-	
 	if [ "${BUILD_TYPE}" == "docker" ];
 	then
 	
@@ -226,7 +291,7 @@ function build_package_centos()
 		docker run -it --rm -v "${dst_root_dir}:/tmp/build" ${dc_name} /tmp/build/rpm-build.sh ${P_NAME} ${VER} || exit 1
 	else
 	
-		build_package_centos_local "${dst_root_dir}"
+		build_package_centos_local "${dst_root_dir}" || exit 1
 	fi
 	
 	# Change owner from root to current user
@@ -247,6 +312,18 @@ function build_package_centos()
 function build_package()
 {
 	case ${RELEASE} in
+		"debian:general" )
+			build_package_deb general "${DEB_TAR_ORIG}"
+			;;
+
+		"centos:general" )
+			build_package_centos general
+			;;
+
+		"debian:7" )
+			build_package_deb 7 "${DEB_TAR_ORIG}"
+			;;
+
 		"debian:8" )
 			build_package_deb 8 "${DEB_TAR_ORIG}"
 			;;
@@ -255,25 +332,64 @@ function build_package()
 			build_package_deb 9 "${DEB_TAR_ORIG}"
 			;;
 			
+		"centos:6" )
+			build_package_centos 6
+			;;
+
 		"centos:7" )
 			build_package_centos 7
 			;;
 
 		"all" )
-			build_package_deb 8
+			make_orig
+			if [ $? -ne 0 ];
+			then
+				echo "can't make orig archives"
+				exit 1
+			fi
+
+#			build_package_deb general "${BUILD_DIR}/orig/${P_NAME}_${VER}.orig.tar.xz"
+#			if [ $? -ne 0 ];
+#			then
+#				echo "can't build package: debian:general"
+#				exit 1
+#			fi
+#
+#			build_package_centos general
+#			if [ $? -ne 0 ];
+#			then
+#				echo "can't build package: centos:general"
+#				exit 1
+#			fi
+#
+#			build_package_deb 7 "${BUILD_DIR}/orig/${P_NAME}_${VER}.orig.tar.gz"
+#			if [ $? -ne 0 ];
+#			then
+#				echo "can't build package: debian:7"
+#				exit 1
+#			fi
+
+			build_package_deb 8 "${BUILD_DIR}/orig/${P_NAME}_${VER}.orig.tar.xz"
 			if [ $? -ne 0 ];
 			then
 				echo "can't build package: debian:8"
 				exit 1
 			fi
 
-			build_package_deb 9 "${BUILD_DIR}/${P_NAME}/debian-8/${P_NAME}_${VER}.orig.tar.xz"
+			build_package_deb 9 "${BUILD_DIR}/orig/${P_NAME}_${VER}.orig.tar.xz"
 			if [ $? -ne 0 ];
 			then
 				echo "can't build package: debian:9"
 				exit 1
 			fi
 
+#			build_package_centos 6
+#			if [ $? -ne 0 ];
+#			then
+#				echo "can't build package: centos:6"
+#				exit 1
+#			fi
+			
 			build_package_centos 7
 			if [ $? -ne 0 ];
 			then
@@ -292,7 +408,26 @@ case $command in
 
 	build)
 
+		if [ -z "${RELEASE}" ];
+		then
+
+			echo -n "Input OS (e.g. debian:9): "
+			read RELEASE
+		fi
+
+		if [ ! "${BUILD_TYPE}" == "docker" ] && [ ! "${BUILD_TYPE}" == "local" ];
+		then
+
+			echo "Wrong build type. Only 'docker' or 'local' types are available."
+			exit 1
+		fi
+
 		build_package
+		;;
+
+	make-orig)
+
+		make_orig
 		;;
 
 	*)

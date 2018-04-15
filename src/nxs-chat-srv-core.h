@@ -7,7 +7,7 @@
 #include <hiredis/hircluster.h>
 
 /* Project version */
-#define NXS_CHAT_SRV_VERSION						"0.2.1"
+#define NXS_CHAT_SRV_VERSION						"0.3.0"
 
 /* Project basic global definitions */
 
