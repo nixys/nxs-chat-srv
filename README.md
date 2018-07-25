@@ -94,51 +94,15 @@ Important: Bot will send notifications to Telegram account in the following case
   yum install nxs-chat-srv
   ```
 
-### Other OS
+### Docker Compose
 
-To install nxs-chat-srv for other operating systems you need to use Docker. The manual is described below.
+To install nxs-chat-srv with Docker see [docs](docs/docker-compose) directory. It is a complete example to deploy your own Telegram Bot for Redmine including retrieve SSL certificates.
 
-* Download the tar with Dockerfile and entrypoint script:
-  ```
-  cd /tmp
-  wget -O /tmp/nxs-chat-srv_docker.tar.gz https://raw.githubusercontent.com/nixys/nxs-chat-srv/master/docs/nxs-chat-srv_docker.tar.gz
-  ```
-* Untar the archive and go into:
-  ```
-  tar zxfv nxs-chat-srv_docker.tar.gz
-  cd nxs-chat-srv_docker
-  ```
-* Build the Docker image:
-  ```
-  docker build -t nxs-chat-srv .
-  ```
-* Prepare the configuration environment for nxs-chat-srv container (you must make all follow steps in this environment):
-  ```
-  mkdir -p /var/lib/nxs-chat-srv-docker/etc/ssl
-  mkdir -p /var/lib/nxs-chat-srv-docker/log
-  mkdir -p /var/lib/nxs-chat-srv-docker/spool/{tlgrm,rdmn}
-  chmod 750 /var/lib/nxs-chat-srv-docker
-  ```
-* Download the nxs-chat-srv config file into /var/lib/nxs-chat-srv-docker/etc/:
-  ```
-  wget -O /var/lib/nxs-chat-srv-docker/etc/nxs-chat-srv.conf https://raw.githubusercontent.com/nixys/nxs-chat-srv/master/build-pkgs-conf/pkg/general/etc/nxs-chat-srv/nxs-chat-srv.conf
-  ```
-* Make sure option `proc.daemonize` in /var/lib/nxs-chat-srv-docker/etc/nxs-chat-srv.conf has value `false`
-* Configure your nxs-chat-srv server, Redmine and then run the Docker container:
-  ```
-  docker run -d --hostname nxs-chat-srv \
-    --name nxs-chat-srv \
-    --restart=always --publish 8443:8443 \
-    --env "NXS_CHAT_SRV_INITIALIZE=-i set_webhook -i create_tables" \
-    --volume "/var/lib/nxs-chat-srv-docker/etc:/etc/nxs-chat-srv" \
-    --volume "/var/lib/nxs-chat-srv-docker/log:/var/log/nxs-chat-srv/" \
-    --volume "/var/lib/nxs-chat-srv-docker/spool/tlgrm:/var/spool/nxs-chat-srv/tlgrm" \
-    --volume "/var/lib/nxs-chat-srv-docker/spool/rdmn:/var/spool/nxs-chat-srv/rdmn" \
-    nxs-chat-srv:latest
-  ```
-  If nxs-chat-srv already has been initialized you may remove the `--env "NXS_CHAT_SRV_INITIALIZE=-i set_webhook -i create_tables"` from docker run command.
-  
-_Note that all paths and hosts IPs specified in /var/lib/nxs-chat-srv-docker/etc/nxs-chat-srv.conf are relative for Docker container!_ 
+### Kubernetes
+
+To deploy Telegram Bot for Redmine in Kubernetes see [docs](docs/kubernetes) directory that contains an examples of manifests.
+
+Note: before you begin make sure you have deployed MySQL server (or Percona XtraDB Cluster) and [cert-manager](https://github.com/jetstack/cert-manager).
 
 ### Redmine nxs-chat Redmine plugin
 
@@ -363,7 +327,7 @@ Go to https://demo.nxs-chat.nixys.ru/trackers/new and create a new tracker:
 
 #### Roles
 
-You need toone or more roles to make possible issue processing in Redmine.
+You need to one or more roles to make possible issue processing in Redmine.
 
 Go to https://demo.nxs-chat.nixys.ru/roles/new and create a new role with the following permissions:
 
