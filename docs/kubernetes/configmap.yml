@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redmine
+  namespace: demo-nxs-chat-srv
+data:
+  configuration.yml: |
+    default:
+      delivery_method: :smtp
+      smtp_settings:
+        enable_starttls_auto: true
+        address: 'mail.example.com'
+        ssl: true
+        port: 465
+        domain: 'example.com'
+        authentication: :plain
+        user_name: ''
+        password: ''
+      attachments_storage_path:
+      autologin_cookie_name:
+      autologin_cookie_path:
+      autologin_cookie_secure:
+      scm_subversion_command:
+      scm_mercurial_command:
+      scm_git_command:
+      scm_cvs_command:
+      scm_bazaar_command:
+      scm_darcs_command:
+      scm_subversion_path_regexp:
+      scm_mercurial_path_regexp:
+      scm_git_path_regexp:
+      scm_cvs_path_regexp:
+      scm_bazaar_path_regexp:
+      scm_darcs_path_regexp:
+      scm_filesystem_path_regexp:
+      scm_stderr_log_file:
+      database_cipher_key:
+      rmagick_font_path:
+    production:
+    development:
+  additional_environment.rb: |
+    config.logger = Logger.new(STDOUT)
+    config.logger.level = Logger::WARN
