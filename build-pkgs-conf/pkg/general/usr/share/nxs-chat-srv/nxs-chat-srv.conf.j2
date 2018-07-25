@@ -1,0 +1,115 @@
+{
+	"proc": {
+		"pid_file": "/tmp/nxs-chat-srv.pid",
+		"queue_worker_term_timeout": {{ proc_queue_worker_term_timeout | default(10) }},
+		"rest_api_term_timeout": {{ proc_rest_api_term_timeout | default(10) }},
+		"daemonize": false
+	},
+	"logging": {
+		"level": {{ logging_level | default(31) }},
+		"path": "/dev/stdout"
+	},
+	"bind": {
+		"iface": "0.0.0.0",
+		"port": {{ bind_port | default(8443) }},
+		"ssl": {
+			"use_ssl": {{ bind_ssl_use_ssl | default('true') }},
+			"crt": "{{ bind_ssl_crt | default('/etc/nxs-chat-srv/ssl/crt.pem') }}",
+			"key": "{{ bind_ssl_key | default('/etc/nxs-chat-srv/ssl/key.pem') }}"
+		}
+	},
+	"telegram": {
+		"bot_api_addr": "https://api.telegram.org",
+		"bot_api_key": "{{ telegram_bot_api_key }}",
+		"auth_token": "{{ telegram_auth_token }}",
+		"webhook_host": "{{ telegram_webhook_host }}"{%- if telegram_proxy_type is defined %},
+		"proxy": {
+			"type": "{{ telegram_proxy_type }}",
+			"host": "{{ telegram_proxy_host | default('127.0.0.1') }}",
+			"port": {{ telegram_proxy_port | default(1080) }},
+			"auth": {
+				"type": "{{ telegram_proxy_auth_type }}",
+				"user": "{{ telegram_proxy_auth_user }}",
+				"pass": "{{ telegram_proxy_auth_pass }}"
+			}
+		}{%- endif %}
+	},
+	"mysql": {
+		"name": "{{ mysql_name }}",
+		"user": "{{ mysql_user }}",
+		"pass": "{{ mysql_pass }}",
+		"host": "{{ mysql_host }}",
+		"port": {{ mysql_port | default(3306) }}
+	},
+	"redis": {
+		"keys_space": "{{ redis_keys_space | default('dev') }}",
+		"cluster": {{ redis_cluster | default('false') }},
+		"nodes": [
+			{%- for node in redis_nodes %}
+			{
+				"host": "{{ node.host }}",
+				"port": {{ node.port }}
+			}{% if not loop.last %},{% endif %}
+			{%- endfor %}
+		]
+	},
+	"redmine": {
+		{%- if redmine_url is defined %}
+		"url": "{{ redmine_url }}",
+		{%- endif %}
+		"host": "{{ redmine_host }}",
+		"api_key": "{{ redmine_api_key }}",
+		"auth_token": "{{ redmine_auth_token }}",
+		"presale_api_key": "{{ redmine_presale_api_key }}",
+		"presale_project_name": "{{ redmine_presale_project_name }}",
+		"issue_list_query_id": {{ redmine_issue_list_query_id }},
+		"ssl_verifyhost": {{ redmine_ssl_verifyhost | default('true') }},
+		"cf_telegram": {{ redmine_cf_telegram }},
+		{%- if redmine_cf_watchers is defined %}
+		"cf_watchers": {{ redmine_cf_watchers }},
+		{%- endif %}
+		{%- if redmine_cf_ignore_status is defined %}
+		"cf_ignore_status": {{ redmine_cf_ignore_status }},
+		{%- endif %}
+		"status_in_progress": {{ redmine_status_in_progress }},
+		"status_resolved": {{ redmine_status_resolved }},
+		"status_need_feedback": {{ redmine_status_need_feedback }}
+	},
+	"ra_queue": {
+		"pop_timeout_ms":{{ ra_queue_pop_timeout_ms | default(500) }},
+		"queue_workers": {{ ra_queue_queue_workers | default(5) }}
+	},
+	"cache": {
+		"projects_ttl": {{ cache_projects_ttl | default(300) }},
+		"users_ttl": {{ cache_users_ttl | default(60) }},
+		"issue_priorities_ttl": {{ cache_issue_priorities_ttl | default(300) }},
+		"lock_file": "/tmp/nxs-chat-srv_cache.lock"
+	},
+	"dev_accounts": [
+		{%- for node in dev_accounts %}
+		"{{ account }}"{% if not loop.last %},{% endif %}
+		{%- endfor %}
+	],
+	"attachments": {
+		"tlgrm_download_tmp_dir": "{{ attachments_tlgrm_download_tmp_dir | default('/var/spool/nxs-chat-srv/tlgrm') }}",
+		"rdmn_download_tmp_dir": "{{ attachments_rdmn_download_tmp_dir | default('/var/spool/nxs-chat-srv/rdmn') }}"
+	},
+	"statistic": {
+		"auth_token": "{{ statistic_auth_token }}"
+	},
+	"labels": {
+		"default_lang": "{{ labels_default_lang | default('en') }}",
+		"labels_path": "{{ labels_labels_path | default('/usr/share/nxs-chat-srv/labels/') }}"
+	},
+	"greetings": [
+		{
+			"lang": "{{ greetings_lang_1 | default('en') }}",
+			"text": "{{ greetings_text_1 | default('%{userfname}, welcome to our customer care system chat!\\nWe are looking forward to your issues.') }}"
+		}{% if greetings_lang_2 is defined %},
+		{
+			"lang": "{{ greetings_lang_2 }}",
+			"text": "{{ greetings_text_2 | default('%{userfname}, welcome to our customer care system chat!\\nWe are looking forward to your issues.') }}"
+		}
+		{%- endif %}
+	]
+}
