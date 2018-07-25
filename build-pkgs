@@ -2,7 +2,7 @@
 
 P_NAME="nxs-chat-srv"
 
-VER="0.3.0"
+VER="0.3.1"
 BUILD_VERSION="1"
 
 GENERIC_DOCKER_IMG_DEBIAN_general=""
