@@ -5,6 +5,8 @@ Nxs-chat-srv is a Telegram Bot that allows linking Redmine and Telegram.
 At the moment nxs-chat-bot supports only English and Russian languages.
 You may create files in json format for your languages.
 
+Compatible with Redmine 4.2+
+
 ## Installation
 
 ### Docker
