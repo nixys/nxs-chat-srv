@@ -1,6 +1,0 @@
-[packages.nixys.ru]
-name=Nixys Packages for CentOS $releasever - $basearch
-baseurl=http://packages.nixys.ru/centos/$releasever/$basearch
-enabled=1
-gpgcheck=1
-gpgkey=http://packages.nixys.ru/centos/repository.gpg.key

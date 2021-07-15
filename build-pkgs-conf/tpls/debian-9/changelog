@@ -1,5 +1,0 @@
-#PACKAGE# (#VERSION#-$$BUILD_VERSION$$) stretch; urgency=low
-
-  * New version nxs-chat-srv
-
- -- #USERNAME# <#EMAIL#>  #DATE#

@@ -3,8 +3,8 @@
 set -e
 
 INPUT_DATA_FILE="/tmp/nxs-chat-srv_input-data.yml"
-CONF_FILE="/etc/nxs-chat-srv/nxs-chat-srv.conf"
-TPL_CONF_FILE="/usr/share/nxs-chat-srv/nxs-chat-srv.conf.j2"
+CONF_FILE="/nxs-chat-srv.conf"
+TPL_CONF_FILE="/nxs-chat-srv.conf.j2"
 
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'XYZ_DB_PASSWORD' 'example'
@@ -126,7 +126,10 @@ then
 	done
 fi
 
-jinja2 ${TPL_CONF_FILE} ${INPUT_DATA_FILE} > ${CONF_FILE}
+if [ ! -f "${CONF_FILE}" ];
+then
+	jinja2 ${TPL_CONF_FILE} ${INPUT_DATA_FILE} > ${CONF_FILE}
+fi
 
 if [ "$NXS_CHAT_SRV_INITIALIZE" ];
 then

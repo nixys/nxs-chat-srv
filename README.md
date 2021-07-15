@@ -5,112 +5,17 @@ Nxs-chat-srv is a Telegram Bot that allows linking Redmine and Telegram.
 At the moment nxs-chat-bot supports only English and Russian languages.
 You may create files in json format for your languages.
 
-## Nixys Demo Chat
-
-You can try the Nxs-chat-srv demo: https://demo.nxs-chat.nixys.ru
-
-To do that you need to make several simple steps describes below.
-
-**Create 2 accounts in Redmine**
-
-Go to: https://demo.nxs-chat.nixys.ru/account/register and register two accounts (to make possible sending and receiving notifications in Telegram).
-Filling out the `Telegram` field for at least one of the accounts is required.
-
-**Activate the created accounts**
-
-You will receive a confirmation email for each of the created accounts. Please follow the activation link to confirm email address.
-
-**Find the Nixys Demo Chat Bot**
-
-Now find the [@nixys_demo_chat_bot](https://t.me/nixys_demo_chat_bot) for each account that you created with `Telegram` field specified.
-
-Make sure you have the same usernames in your Telegram accounts settings.
-
-Once you find the bot in Telegram click **Start** button.
-
-**Create a project in Redmine**
-
-You need to [create the project in Redmine](https://demo.nxs-chat.nixys.ru/projects/new) and add your created accounts as its members (as `Project member`).
-
-**Create an issue and start messaging**
-
-The last step is to create an issue in your project and start messaging in it with created accounts.
-
-Important: Bot will send notifications to Telegram account in the following cases:
-* If that account is author of issue
-* If issue is assigned to that account
-* If account in on the watch list of the issue
-
 ## Installation
 
-### Debian
+### Docker
 
-* Add the Nixys repository key:
-  ```
-  apt-key adv --fetch-keys http://packages.nixys.ru/debian/repository.gpg.key
-  ```
-
-* Add the repository:
-  * Debian Jessie:
-  ```
-  echo "deb [arch=amd64] http://packages.nixys.ru/debian/ jessie main" > /etc/apt/sources.list.d/packages.nixys.ru.list
-  ```
-  * Debian Stretch:
-  ```
-  echo "deb [arch=amd64] http://packages.nixys.ru/debian/ stretch main" > /etc/apt/sources.list.d/packages.nixys.ru.list
-  ```
-
-* Make an update:
-  ```
-  apt-get update
-  ```
-
-* Install nxs-chat-srv package:
-  ```
-  apt-get install nxs-chat-srv
-  ```
-
-### CentOS
-
-* Add Nixys repository key:
-  ```
-  rpm --import http://packages.nixys.ru/centos/repository.gpg.key
-  ```
-
-* Add the repository. Currently CentOS 7 is available:
-  ```
-  cat <<EOF > /etc/yum.repos.d/packages.nixys.ru.repo
-  [packages.nixys.ru]
-  name=Nixys Packages for CentOS \$releasever - \$basearch
-  baseurl=http://packages.nixys.ru/centos/\$releasever/\$basearch
-  enabled=1
-  gpgcheck=1
-  gpgkey=http://packages.nixys.ru/centos/repository.gpg.key
-  EOF
-  ```
-
-* Install nxs-chat-srv package:
-  ```
-  yum install nxs-chat-srv
-  ```
-
-### Docker Compose
-
-To install nxs-chat-srv with Docker see [docs](docs/docker-compose) directory. It is a complete example to deploy your own Telegram Bot for Redmine including retrieve SSL certificates.
-
-### Kubernetes
-
-To deploy Telegram Bot for Redmine in Kubernetes see [docs](docs/kubernetes) directory that contains an examples of manifests.
-
-Note: before you begin make sure you have deployed MySQL server (or Percona XtraDB Cluster) and [cert-manager](https://github.com/jetstack/cert-manager).
-
-### Redmine nxs-chat Redmine plugin
-
-Also you need to install [nxs-chat](https://github.com/nixys/nxs-chat-redmine) Redmine plugin.
+```
+docker push nixyslab/nxs-chat-srv:latest
+```
 
 ## Settings
 
-Default configuration file locacation is /etc/nxs-chat-srv/nxs-chat-srv.conf.
+Default configuration file locacation is /nxs-chat-srv.conf.
 Config file is in JSON format.
 
 ### `proc`
@@ -294,7 +199,7 @@ Go to https://demo.nxs-chat.nixys.ru/settings/plugin/nxs_chat and paste prepared
 
 Optionally you can disable nxs-chat-srv SSL verification.
 
-Edit the following option in /etc/nxs-chat-srv/nxs-chat-srv.conf config file:
+Edit the following option in /nxs-chat-srv.conf config file:
 
 * `redmine.auth_token`: generated secret string (e.g. `id35kn7resb536bfc8zywdgaugk1ur69cysowr2kpiq5ngw41q`)
 
@@ -311,7 +216,7 @@ Now you need to get the IDs of created statuses:
 
 ![Get the IDs of created statuses](docs/imgs/redmine-settings-statuses-1.png)
 
-and insert them in the following options in /etc/nxs-chat-srv/nxs-chat-srv.conf config file:
+and insert them in the following options in /nxs-chat-srv.conf config file:
 
 * `redmine.status_in_progress`: ID of `In progress` status
 * `redmine.status_need_feedback`: ID of `Need feedback` status
@@ -399,7 +304,7 @@ Get the created custom field ID:
 
 ![Get custom field ID](docs/imgs/redmine-settings-cf-3.png)
 
-and insert it in the following option in /etc/nxs-chat-srv/nxs-chat-srv.conf config file:
+and insert it in the following option in /nxs-chat-srv.conf config file:
 
 * `redmine.cf_telegram`: ID of created custom field
 
@@ -414,7 +319,7 @@ Make sure that project options match the following:
  
 ![Create presale project](docs/imgs/redmine-settings-projects-1.png)
 
-and insert its name in the following option in /etc/nxs-chat-srv/nxs-chat-srv.conf config file:
+and insert its name in the following option in /nxs-chat-srv.conf config file:
 
 * `redmine.presale_project_name`: `Pre-sale`
 
@@ -432,7 +337,7 @@ Get created query id:
 
 ![Get a created query id](docs/imgs/redmine-settings-query-2.png)
 
-and insert it the following option in /etc/nxs-chat-srv/nxs-chat-srv.conf config file:
+and insert it the following option in /nxs-chat-srv.conf config file:
 
 * `redmine.issue_list_query_id`: created query ID
 
@@ -448,7 +353,7 @@ Now log in as the new user and get the Rest API key:
 
 ![Get Rest API key for admin account](docs/imgs/redmine-settings-accounts-2.png)
 
-Insert it in the following option in /etc/nxs-chat-srv/nxs-chat-srv.conf config file:
+Insert it in the following option in /nxs-chat-srv.conf config file:
 
 * `redmine.api_key`: Rest API key for account with administrative permissions (e.g. `1e1df4d04909895dd8a7fa22e2d523b2c8cbf3fe`)
 
@@ -462,7 +367,7 @@ Now log in as the new user and get the Rest API key:
 
 ![Get Rest API key for presale account](docs/imgs/redmine-settings-accounts-4.png)
 
-Insert it in the following option in /etc/nxs-chat-srv/nxs-chat-srv.conf config file:
+Insert it in the following option in /nxs-chat-srv.conf config file:
 
 * `redmine.presale_api_key`: Rest API key for presale account (e.g. `bf14e3d4e819485a2729109dad2c8d464741f941`)
 
@@ -481,11 +386,11 @@ In this block set bind address, port and path to SSL certificate and private key
 
 **Block `mysql`**
 
-Create MySQL DB and specify the connection options in corresponding block in /etc/nxs-chat-srv/nxs-chat-srv.conf config file.
+Create MySQL DB and specify the connection options in corresponding block in /nxs-chat-srv.conf config file.
 
 **Block `redis`**
 
-Specify connection options in corresponding block in /etc/nxs-chat-srv/nxs-chat-srv.conf config file.
+Specify connection options in corresponding block in /nxs-chat-srv.conf config file.
 
 **Block `telegram`**
 

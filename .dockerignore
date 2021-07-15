@@ -1,0 +1,7 @@
+build/
+.project
+.autotools
+.cproject
+.settings/
+tmp/
+ssl/
