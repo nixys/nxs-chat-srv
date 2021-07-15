@@ -199,7 +199,7 @@ nxs_chat_srv_err_t nxs_chat_srv_d_rdmn_issues_add_comment(size_t           issue
 
 	switch(ret_code) {
 
-		case NXS_HTTP_CODE_200_OK:
+		case NXS_HTTP_CODE_204_NO_CONTENT:
 
 			nxs_log_write_debug(&process,
 			                    "[%s]: rdmn issue add note: note successfully added (issue id: %zu)",
