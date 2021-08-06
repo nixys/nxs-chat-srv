@@ -12,7 +12,7 @@ Compatible with Redmine 4.2+
 ### Docker
 
 ```
-docker push nixyslab/nxs-chat-srv:latest
+docker pull nixyslab/nxs-chat-srv:latest
 ```
 
 ## Settings
