@@ -30,6 +30,8 @@ RUN echo "ru_RU.UTF-8 UTF-8" > /etc/locale.gen && \
 
 ENV LC_ALL ru_RU.UTF-8
 
+RUN sed -i 's/mozilla\/DST_Root_CA_X3.crt/\!mozilla\/DST_Root_CA_X3.crt/g' /etc/ca-certificates.conf; update-ca-certificates
+
 # Copy binary from `build-env`
 COPY --from=build-env /usr/src/nxs-project/objs/nxs-chat-srv /
 
