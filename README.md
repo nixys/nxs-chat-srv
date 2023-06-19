@@ -1,3 +1,7 @@
+# DEPRECATED
+
+This repository is considered deprecated and will be archived. For the new version of this tool please go to [Nixys Support Bot](https://github.com/nixys/nxs-support-bot) project.
+
 # Introduction
 
 Nxs-chat-srv is a Telegram Bot that allows linking Redmine and Telegram.
