@@ -1,6 +1,6 @@
 # DEPRECATED
 
-This repository is considered deprecated and will be archived. For the new version of this tool please go to [Nixys Support Bot](https://github.com/nixys/nxs-support-bot) project.
+This repository is considered deprecated and will be archived. For the new version of this tool please go to [nxs-support-bot](https://github.com/nixys/nxs-support-bot) project.
 
 # Introduction
 
